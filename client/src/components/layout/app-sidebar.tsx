@@ -183,11 +183,17 @@ interface SidebarNavListProps {
   counters?: Record<string, { count: number; latestAt: string | null }>;
 }
 
-export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive, isFeatureLocked, counters }: SidebarNavListProps) {
+export function SidebarNavList({
+  navItems,
+  checkIsActive,
+  checkIsGroupActive,
+  isFeatureLocked,
+  counters,
+}: SidebarNavListProps) {
   const { t } = useTranslation();
 
   return (
-    <SidebarMenu className="gap-0.5 px-1">
+    <SidebarMenu className="gap-0.5 px-1 group-data-[collapsible=icon]:px-2">
       {navItems.map((item, idx) => {
         const translatedLabel = t(`nav.${item.labelKey}`);
         const showHeading = !!item.groupLabelKey && item.groupLabelKey !== navItems[idx - 1]?.groupLabelKey;
@@ -199,7 +205,9 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive, is
             <Fragment key={item.to}>
               {showHeading && (
                 <li aria-hidden="true" className="pointer-events-none list-none">
-                  <span className={`${navGroupHeadingClass} group-data-[collapsible=icon]:hidden`}>{t(item.groupLabelKey!)}</span>
+                  <span className={`${navGroupHeadingClass} group-data-[collapsible=icon]:hidden`}>
+                    {t(item.groupLabelKey!)}
+                  </span>
                 </li>
               )}
               <Collapsible asChild defaultOpen={isGroupActive} className="group/collapsible">
@@ -259,7 +267,9 @@ export function SidebarNavList({ navItems, checkIsActive, checkIsGroupActive, is
           <Fragment key={item.to}>
             {showHeading && (
               <li aria-hidden="true" className="pointer-events-none list-none">
-                <span className={`${navGroupHeadingClass} group-data-[collapsible=icon]:hidden`}>{t(item.groupLabelKey!)}</span>
+                <span className={`${navGroupHeadingClass} group-data-[collapsible=icon]:hidden`}>
+                  {t(item.groupLabelKey!)}
+                </span>
               </li>
             )}
             <SidebarMenuItem>
@@ -389,7 +399,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border/50 p-1 bg-sidebar">
+      <SidebarFooter className="border-t border-sidebar-border/50 p-1 bg-sidebar group-data-[collapsible=icon]:px-0">
         {user?.role === "CLIENT" &&
           groupedSubs.length > 0 &&
           !isPublicLegalPage &&
@@ -423,7 +433,7 @@ export function AppSidebar() {
             <ActiveSubCard subs={groupedSubs[0]} planNameMap={planNameMap} />
           ))}
         {user && !isPublicLegalPage && (
-          <SidebarMenu>
+          <SidebarMenu className="group-data-[collapsible=icon]:px-2">
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
