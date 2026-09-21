@@ -2000,7 +2000,7 @@ if (Test-Path $temp) {
    */
   async getTenantByokProfile(tenantId: string): Promise<{
     tenantId: string;
-    provider: 'openai' | 'anthropic' | 'custom';
+    provider: 'openai' | 'anthropic' | 'custom' | 'gemini';
     apiKey: string;
     model?: string | null;
     baseUrl?: string | null;
@@ -2009,7 +2009,7 @@ if (Test-Path $temp) {
       success: boolean;
       data: {
         tenantId: string;
-        provider: 'openai' | 'anthropic' | 'custom';
+        provider: 'openai' | 'anthropic' | 'custom' | 'gemini';
         apiKey: string;
         model?: string | null;
         baseUrl?: string | null;

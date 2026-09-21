@@ -1,9 +1,10 @@
 import axios from 'axios';
+import { GoogleGenAI } from '@google/genai';
 
 /**
  * Supported LLM Providers for Bring Your Own Key architecture.
  */
-export type ByokProvider = 'openai' | 'anthropic' | 'custom';
+export type ByokProvider = 'openai' | 'anthropic' | 'custom' | 'gemini';
 
 /**
  * Options for instantiating or executing a LLM request.
@@ -82,7 +83,9 @@ export class ByokLlmClient {
       process.env.BYOK_DEFAULT_API_KEY ||
       (this.defaultProvider === 'openai'
         ? process.env.OPENAI_API_KEY
-        : process.env.ANTHROPIC_API_KEY);
+        : this.defaultProvider === 'gemini'
+          ? process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
+          : process.env.ANTHROPIC_API_KEY);
     this.defaultBaseUrl = config.baseUrl;
     this.defaultModel = config.model;
   }
@@ -94,7 +97,11 @@ export class ByokLlmClient {
     const key =
       overrideKey ||
       this.defaultApiKey ||
-      (provider === 'openai' ? process.env.OPENAI_API_KEY : process.env.ANTHROPIC_API_KEY);
+      (provider === 'openai'
+        ? process.env.OPENAI_API_KEY
+        : provider === 'gemini'
+          ? process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
+          : process.env.ANTHROPIC_API_KEY);
 
     if (!key || key.trim().length === 0) {
       throw new ByokKeyMissingError(provider);
@@ -113,6 +120,10 @@ export class ByokLlmClient {
     const apiKey = this.resolveApiKey(options.apiKey, provider);
     const temperature = options.temperature ?? 0.2;
     const maxTokens = options.maxTokens ?? 2048;
+
+    if (provider === 'gemini') {
+      return this.callGemini(apiKey, options, temperature, maxTokens);
+    }
 
     if (provider === 'anthropic') {
       return this.callAnthropic(apiKey, options, temperature, maxTokens);
@@ -244,6 +255,59 @@ export class ByokLlmClient {
             completionTokens: response.data.usage.output_tokens,
             totalTokens:
               (response.data.usage.input_tokens || 0) + (response.data.usage.output_tokens || 0),
+          }
+        : undefined,
+    };
+  }
+
+  /**
+   * Calls the Google Gemini generateContent API via the official @google/genai SDK.
+   *
+   * Enables thinking (reasoning) via `thinkingConfig` and honors the system instruction.
+   *
+   * @param apiKey - Resolved tenant API key
+   * @param options - Prompt, system instructions, and provider overrides
+   * @param temperature - Sampling temperature
+   * @param maxTokens - Maximum output tokens
+   * @returns Standardized LLM response with token usage metadata
+   */
+  private async callGemini(
+    apiKey: string,
+    options: ByokGenerateOptions,
+    temperature: number,
+    maxTokens: number
+  ): Promise<ByokLlmResponse> {
+    const model =
+      options.model ||
+      this.defaultModel ||
+      process.env.BYOK_DEFAULT_MODEL ||
+      process.env.GEMINI_MODEL ||
+      'gemini-3.8-flash';
+
+    const ai = new GoogleGenAI({ apiKey });
+
+    const response = await ai.models.generateContent({
+      model,
+      contents: options.prompt,
+      config: {
+        systemInstruction: options.systemPrompt,
+        temperature,
+        maxOutputTokens: maxTokens,
+        thinkingConfig: { thinkingBudget: 1024 },
+        responseMimeType: 'text/plain',
+      },
+    });
+
+    const usage = response.usageMetadata;
+    return {
+      content: response.text || '',
+      provider: 'gemini',
+      model,
+      usage: usage
+        ? {
+            promptTokens: usage.promptTokenCount ?? 0,
+            completionTokens: usage.candidatesTokenCount ?? 0,
+            totalTokens: usage.totalTokenCount ?? 0,
           }
         : undefined,
     };
