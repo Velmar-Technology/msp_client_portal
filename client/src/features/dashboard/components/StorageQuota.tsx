@@ -28,7 +28,7 @@ export function StorageQuota({
 
   if (totalSlotsCount === 0) {
     return (
-      <div className="flex min-h-[120px] flex-col rounded-lg border border-border bg-card p-3.5 shadow-xs transition-all duration-200 hover:border-primary/40 hover:shadow-sm">
+      <div className="flex min-h-30 flex-col rounded-lg border border-border bg-card p-3.5 shadow-xs transition-all duration-200 hover:border-primary/40 hover:shadow-sm">
         <div className="flex items-center justify-between gap-2">
           <span className="truncate text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
             {t("dashboard.cloudStorage")}

@@ -1,11 +1,13 @@
 import { useState, useMemo, useCallback } from "react";
-import { Plus, Eye, MoreHorizontal, Ban, ChevronRight, List, LayoutGrid, Search } from "lucide-react";
+import { Plus, Eye, MoreHorizontal, Ban, ChevronRight, List, LayoutGrid, Search, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Page } from "@/components/Page";
 import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
 import type { ColumnDef, Column } from "@tanstack/react-table";
+import { useQueryClient } from "@tanstack/react-query";
+import { NAV_COUNTER_QUERY_KEYS } from "@/features/nav";
 import { useUrlState } from "@/hooks/useUrlState";
 import { useTicketsPage } from "../hooks/useTicketsPage";
 import type { TicketItem as Ticket, TicketResponseItem as TicketResponse } from "../api/ticketService";
@@ -163,6 +165,7 @@ export function TicketsPage() {
     handleTicketCreated,
     handleTicketAction,
     setSelectedTickets,
+    handleMarkAllAsRead,
   } = useTicketsPage();
 
   const { getParam, setParam } = useUrlState();
@@ -177,7 +180,33 @@ export function TicketsPage() {
     [setParam],
   );
 
-  const markTicketAsRead = useTicketReadStore((state) => state.markAsRead);
+  const rawMarkTicketAsRead = useTicketReadStore((state) => state.markAsRead);
+  const isTicketReadInStore = useTicketReadStore((state) => state.isTicketRead);
+  const queryClient = useQueryClient();
+
+  const markTicketAsRead = useCallback(
+    (ticketId: string, userId?: string) => {
+      const alreadyRead = isTicketReadInStore(ticketId, userId);
+      rawMarkTicketAsRead(ticketId, userId);
+
+      if (!alreadyRead) {
+        queryClient.setQueryData(
+          NAV_COUNTER_QUERY_KEYS.all,
+          (old: Record<string, { count: number; latestAt: string | null }> | undefined) => {
+            if (!old || !old.tickets || old.tickets.count <= 0) return old;
+            return {
+              ...old,
+              tickets: {
+                ...old.tickets,
+                count: Math.max(0, old.tickets.count - 1),
+              },
+            };
+          },
+        );
+      }
+    },
+    [rawMarkTicketAsRead, isTicketReadInStore, queryClient],
+  );
 
   const columns = useMemo<ColumnDef<Ticket>[]>(
     () => [
@@ -357,8 +386,21 @@ export function TicketsPage() {
             <Page.Title>{t("tickets.title")}</Page.Title>
             <Page.Description>{t("tickets.subtitle")}</Page.Description>
           </Page.TitleGroup>
-          {canCreateTicket && (
-            <Page.Actions maxVisible={3}>
+          <Page.Actions maxVisible={3}>
+            {tickets.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleMarkAllAsRead}
+                className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
+                title={t("tickets.markAllAsRead", "Mark all as read")}
+              >
+                <CheckCheck className="h-3.5 w-3.5" />
+                <span>{t("tickets.markAllAsRead", "Mark all as read")}</span>
+              </Button>
+            )}
+            {canCreateTicket && (
               <Button
                 type="button"
                 size="sm"
@@ -368,8 +410,8 @@ export function TicketsPage() {
                 <Plus className="h-3.5 w-3.5" />
                 <span>{t("tickets.newTicket")}</span>
               </Button>
-            </Page.Actions>
-          )}
+            )}
+          </Page.Actions>
         </Page.HeaderRow>
         <Page.Toolbar>
           <Page.Filters>

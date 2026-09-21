@@ -1,7 +1,7 @@
-import React from 'react';
-import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
+import React from "react";
+import { ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Trend metadata for MetricCard.
@@ -10,7 +10,7 @@ export interface MetricCardTrend {
   /** Metric delta or percentage representation (e.g. "+12%", "-3.4%") */
   value: React.ReactNode;
   /** Direction indicator */
-  direction?: 'up' | 'down' | 'neutral';
+  direction?: "up" | "down" | "neutral";
   /** Flag determining positive (emerald) vs negative (rose) trend styling */
   isPositive?: boolean;
 }
@@ -18,7 +18,7 @@ export interface MetricCardTrend {
 /**
  * Props for the unified Level 2 MetricCard primitive.
  */
-export interface MetricCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
+export interface MetricCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
   /** Card title / metric category label */
   title?: React.ReactNode;
   /** Primary metric value display */
@@ -52,7 +52,7 @@ export interface MetricCardProps extends Omit<React.HTMLAttributes<HTMLDivElemen
  */
 function renderIconNode(icon: React.ReactNode | React.ComponentType<{ className?: string }>) {
   if (!icon) return null;
-  if (typeof icon === 'function' || (typeof icon === 'object' && icon !== null && !React.isValidElement(icon))) {
+  if (typeof icon === "function" || (typeof icon === "object" && icon !== null && !React.isValidElement(icon))) {
     const IconComp = icon as React.ComponentType<{ className?: string }>;
     return <IconComp className="size-4 text-primary" />;
   }
@@ -89,8 +89,8 @@ export function MetricCardRoot({
         aria-busy="true"
         aria-live="polite"
         className={cn(
-          'group rounded-lg border border-border bg-card p-3.5 shadow-xs transition-all duration-200 flex flex-col justify-between min-h-[120px] select-none',
-          className
+          "group rounded-lg border border-border bg-card p-3.5 shadow-xs transition-all duration-200 flex flex-col justify-between min-h-30 select-none",
+          className,
         )}
         {...props}
       >
@@ -121,13 +121,13 @@ export function MetricCardRoot({
     return (
       <div
         data-slot="metric-card"
-        role={isInteractive ? 'button' : undefined}
+        role={isInteractive ? "button" : undefined}
         tabIndex={isInteractive ? 0 : undefined}
         onClick={onClick}
         onKeyDown={
           isInteractive
             ? (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+                if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   onClick?.();
                 }
@@ -135,10 +135,10 @@ export function MetricCardRoot({
             : undefined
         }
         className={cn(
-          'group rounded-lg border border-border bg-card p-3.5 shadow-xs transition-all duration-200 min-h-[120px] flex flex-col justify-between',
+          "group rounded-lg border border-border bg-card p-3.5 shadow-xs transition-all duration-200 min-h-30 flex flex-col justify-between",
           isInteractive &&
-            'cursor-pointer hover:border-primary/40 hover:shadow-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring select-none',
-          className
+            "cursor-pointer hover:border-primary/40 hover:shadow-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring select-none",
+          className,
         )}
         {...props}
       >
@@ -154,17 +154,17 @@ export function MetricCardRoot({
   let isNeutral = false;
 
   if (trend !== undefined && trend !== null) {
-    if (typeof trend === 'object' && !React.isValidElement(trend) && 'value' in (trend as object)) {
+    if (typeof trend === "object" && !React.isValidElement(trend) && "value" in (trend as object)) {
       const trendObj = trend as MetricCardTrend;
       trendContent = trendObj.value;
-      if (trendObj.direction === 'neutral') {
+      if (trendObj.direction === "neutral") {
         isNeutral = true;
       } else if (trendObj.isPositive !== undefined) {
         isPositive = trendObj.isPositive;
         isNegative = !trendObj.isPositive;
-      } else if (trendObj.direction === 'up') {
+      } else if (trendObj.direction === "up") {
         isPositive = true;
-      } else if (trendObj.direction === 'down') {
+      } else if (trendObj.direction === "down") {
         isNegative = true;
       }
     } else {
@@ -182,13 +182,13 @@ export function MetricCardRoot({
   return (
     <div
       data-slot="metric-card"
-      role={isInteractive ? 'button' : undefined}
+      role={isInteractive ? "button" : undefined}
       tabIndex={isInteractive ? 0 : undefined}
       onClick={onClick}
       onKeyDown={
         isInteractive
           ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
+              if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 onClick?.();
               }
@@ -196,10 +196,10 @@ export function MetricCardRoot({
           : undefined
       }
       className={cn(
-        'group rounded-lg border border-border bg-card p-3.5 shadow-xs transition-all duration-200 min-h-[120px] flex flex-col justify-between',
+        "group rounded-lg border border-border bg-card p-3.5 shadow-xs transition-all duration-200 min-h-30 flex flex-col justify-between",
         isInteractive &&
-          'cursor-pointer hover:border-primary/40 hover:shadow-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring select-none',
-        className
+          "cursor-pointer hover:border-primary/40 hover:shadow-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring select-none",
+        className,
       )}
       {...props}
     >
@@ -212,15 +212,14 @@ export function MetricCardRoot({
             </span>
           )}
           <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-            {badge && (
-              typeof badge === 'string' || typeof badge === 'number' ? (
+            {badge &&
+              (typeof badge === "string" || typeof badge === "number" ? (
                 <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-medium bg-muted text-muted-foreground border border-border">
                   {badge}
                 </span>
               ) : (
                 badge
-              )
-            )}
+              ))}
             {icon && (
               <div className="rounded-md bg-muted/60 p-1.5 text-muted-foreground transition-colors group-hover:bg-muted shrink-0">
                 {renderIconNode(icon)}
@@ -232,22 +231,17 @@ export function MetricCardRoot({
         {/* Middle Value & Trend Row */}
         <div className="mt-2.5 flex items-baseline justify-between gap-2">
           {value !== undefined && (
-            <div className="text-xl font-bold tracking-tight text-foreground font-heading truncate">
-              {value}
-            </div>
+            <div className="text-xl font-bold tracking-tight text-foreground font-heading truncate">{value}</div>
           )}
 
-          {trendContent !== null && (
-            typeof trendContent === 'string' || typeof trendContent === 'number' ? (
+          {trendContent !== null &&
+            (typeof trendContent === "string" || typeof trendContent === "number" ? (
               <span
                 className={cn(
-                  'inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none shrink-0 font-mono',
-                  isPositive &&
-                    'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
-                  isNegative &&
-                    'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20',
-                  isNeutral &&
-                    'bg-muted text-muted-foreground border border-border/60'
+                  "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none shrink-0 font-mono",
+                  isPositive && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
+                  isNegative && "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20",
+                  isNeutral && "bg-muted text-muted-foreground border border-border/60",
                 )}
               >
                 {isPositive && <ArrowUpRight className="size-2.5 shrink-0" />}
@@ -257,22 +251,16 @@ export function MetricCardRoot({
               </span>
             ) : (
               trendContent
-            )
-          )}
+            ))}
         </div>
 
         {/* Subtitle / Description */}
-        {(subtitle || description) && (
-          typeof (subtitle ?? description) === 'string' || typeof (subtitle ?? description) === 'number' ? (
-            <p className="mt-1 text-[9px] text-muted-foreground truncate">
-              {subtitle ?? description}
-            </p>
+        {(subtitle || description) &&
+          (typeof (subtitle ?? description) === "string" || typeof (subtitle ?? description) === "number" ? (
+            <p className="mt-1 text-[9px] text-muted-foreground truncate">{subtitle ?? description}</p>
           ) : (
-            <div className="mt-1 text-[9px] text-muted-foreground">
-              {subtitle ?? description}
-            </div>
-          )
-        )}
+            <div className="mt-1 text-[9px] text-muted-foreground">{subtitle ?? description}</div>
+          ))}
 
         {/* Optional Inner Child Content */}
         {children && <div className="mt-2">{children}</div>}
@@ -281,9 +269,7 @@ export function MetricCardRoot({
       {/* Footer Section */}
       {footer && (
         <div className="mt-3 pt-2 border-t border-border">
-          <div className="text-[9px] text-muted-foreground font-mono flex items-center justify-between">
-            {footer}
-          </div>
+          <div className="text-[9px] text-muted-foreground font-mono flex items-center justify-between">{footer}</div>
         </div>
       )}
     </div>
@@ -294,31 +280,19 @@ export function MetricCardRoot({
 // Compound Subcomponents
 // ---------------------------------------------------------------------------
 
-export function MetricCardHeader({
-  className,
-  children,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+export function MetricCardHeader({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div
-      data-slot="metric-card-header"
-      className={cn('flex items-center justify-between gap-2', className)}
-      {...props}
-    >
+    <div data-slot="metric-card-header" className={cn("flex items-center justify-between gap-2", className)} {...props}>
       {children}
     </div>
   );
 }
 
-export function MetricCardTitle({
-  className,
-  children,
-  ...props
-}: React.HTMLAttributes<HTMLSpanElement>) {
+export function MetricCardTitle({ className, children, ...props }: React.HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
       data-slot="metric-card-title"
-      className={cn('text-[11px] font-medium text-muted-foreground uppercase tracking-wider truncate', className)}
+      className={cn("text-[11px] font-medium text-muted-foreground uppercase tracking-wider truncate", className)}
       {...props}
     >
       {children}
@@ -326,15 +300,14 @@ export function MetricCardTitle({
   );
 }
 
-export function MetricCardIcon({
-  className,
-  children,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+export function MetricCardIcon({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       data-slot="metric-card-icon"
-      className={cn('rounded-md bg-muted/60 p-1.5 text-muted-foreground transition-colors group-hover:bg-muted shrink-0', className)}
+      className={cn(
+        "rounded-md bg-muted/60 p-1.5 text-muted-foreground transition-colors group-hover:bg-muted shrink-0",
+        className,
+      )}
       {...props}
     >
       {children}
@@ -342,15 +315,14 @@ export function MetricCardIcon({
   );
 }
 
-export function MetricCardBadge({
-  className,
-  children,
-  ...props
-}: React.HTMLAttributes<HTMLSpanElement>) {
+export function MetricCardBadge({ className, children, ...props }: React.HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
       data-slot="metric-card-badge"
-      className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-medium bg-muted text-muted-foreground border border-border', className)}
+      className={cn(
+        "inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-medium bg-muted text-muted-foreground border border-border",
+        className,
+      )}
       {...props}
     >
       {children}
@@ -358,15 +330,11 @@ export function MetricCardBadge({
   );
 }
 
-export function MetricCardValue({
-  className,
-  children,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+export function MetricCardValue({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       data-slot="metric-card-value"
-      className={cn('text-xl font-bold tracking-tight text-foreground font-heading truncate mt-2.5', className)}
+      className={cn("text-xl font-bold tracking-tight text-foreground font-heading truncate mt-2.5", className)}
       {...props}
     >
       {children}
@@ -374,15 +342,11 @@ export function MetricCardValue({
   );
 }
 
-export function MetricCardSubtitle({
-  className,
-  children,
-  ...props
-}: React.HTMLAttributes<HTMLParagraphElement>) {
+export function MetricCardSubtitle({ className, children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
     <p
       data-slot="metric-card-subtitle"
-      className={cn('mt-1 text-[9px] text-muted-foreground truncate', className)}
+      className={cn("mt-1 text-[9px] text-muted-foreground truncate", className)}
       {...props}
     >
       {children}
@@ -390,15 +354,14 @@ export function MetricCardSubtitle({
   );
 }
 
-export function MetricCardFooter({
-  className,
-  children,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+export function MetricCardFooter({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       data-slot="metric-card-footer"
-      className={cn('mt-3 pt-2 border-t border-border text-[9px] text-muted-foreground font-mono flex items-center justify-between', className)}
+      className={cn(
+        "mt-3 pt-2 border-t border-border text-[9px] text-muted-foreground font-mono flex items-center justify-between",
+        className,
+      )}
       {...props}
     >
       {children}

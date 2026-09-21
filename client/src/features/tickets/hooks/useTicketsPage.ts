@@ -8,6 +8,9 @@ import type { SubscriptionEquipment } from "@shared/contracts";
 import { useUrlState } from "@/hooks/useUrlState";
 import { useAuth } from "@/hooks/useAuth";
 import { useTickets as useTicketsQuery, useUpdateTicketStatus } from "../api/useTicketQueries";
+import { useMarkNavSeen, NAV_COUNTER_QUERY_KEYS } from "@/features/nav";
+import { useTicketReadStore } from "@/store/useTicketReadStore";
+import { useQueryClient } from "@tanstack/react-query";
 
 /**
  * Custom hook managing the Tickets listing page.
@@ -296,6 +299,20 @@ export function useTicketsPage() {
     }
   }, [navigate]);
 
+  const queryClient = useQueryClient();
+  const markNavSeenMutation = useMarkNavSeen();
+
+  const handleMarkAllAsRead = useCallback(() => {
+    if (!tickets.length) return;
+    const ticketIds = tickets.map((t) => t.id);
+    useTicketReadStore.getState().markAllAsRead(ticketIds, user?.id);
+    markNavSeenMutation.mutate("tickets", {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: NAV_COUNTER_QUERY_KEYS.all });
+      },
+    });
+  }, [tickets, user?.id, markNavSeenMutation, queryClient]);
+
   const canCreateTicket = true;
 
   return {
@@ -345,6 +362,7 @@ export function useTicketsPage() {
     confirmCancelIndividual,
     handleTicketCreated,
     handleTicketAction,
+    handleMarkAllAsRead,
   };
 }
 

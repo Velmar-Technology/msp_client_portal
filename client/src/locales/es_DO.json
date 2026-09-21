@@ -536,6 +536,7 @@
     "read": "Leído",
     "markAsRead": "Marcar como leído",
     "markAsUnread": "Marcar como no leído",
+    "markAllAsRead": "Marcar todos como leídos",
     "noTicketsFound": "No se encontraron tickets. Cree su primer ticket para comenzar.",
     "showing": "Mostrando",
     "statusOpen": "Abierto",
