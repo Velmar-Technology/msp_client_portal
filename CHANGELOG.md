@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.12.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.12.1...v1.12.2) (2026-09-21)
+
+
+### Features
+
+* **byok:** add Google Gemini as first-class BYOK provider ([b03e046](https://github.com/Velmar-Technology/msp_client_portal/commit/b03e0465d53eddf1050d91cbce8b1e1f89dd9352))
+* **client:** add document titles for crm and vaultwarden routes ([a11d486](https://github.com/Velmar-Technology/msp_client_portal/commit/a11d486a1f1187e88247d5df6f4f0a60dba958c0))
+* **client:** implement unified compound slot architecture for Page header and actions ([e584d0e](https://github.com/Velmar-Technology/msp_client_portal/commit/e584d0ef48cbf0b3cd9276f921403d427d495558))
+* **client:** migrate DevicesPage and ResourcesPage to Page view modes architecture ([4dcb444](https://github.com/Velmar-Technology/msp_client_portal/commit/4dcb44477d65b70e1fd7fe7b4ccc4b6aa65e8e34))
+* **client:** set dynamic document title as page name plus Portal suffix ([66150cb](https://github.com/Velmar-Technology/msp_client_portal/commit/66150cbfdf05e3266409556e0b2d8768107b4c61))
+* **client:** switch sidebar to icon-only collapsed mode ([059c329](https://github.com/Velmar-Technology/msp_client_portal/commit/059c3291eb65b8becfea9f6b8f24c23c8b950ce2))
+* **crm:** migrate CRM pipeline to Page multi-view architecture with calendar and analytics views ([0afc600](https://github.com/Velmar-Technology/msp_client_portal/commit/0afc6005dd1e148365817e721751153539916845))
+* **equipment:** add device RMM modal with telemetry and patch management ([ae1bfc7](https://github.com/Velmar-Technology/msp_client_portal/commit/ae1bfc71686c7b2d23e9f6ba60ea7fd56f9db4a1))
+* **equipment:** launch device RMM dashboard from actions menu and card ([ad87f4c](https://github.com/Velmar-Technology/msp_client_portal/commit/ad87f4c408e8548408c054e7f2c70b54820f3c8d))
+* **financial:** migrate finance page to Page multi-view with ledger and analytics ([efb4feb](https://github.com/Velmar-Technology/msp_client_portal/commit/efb4feb683f6c996390e74734c1eb30e2de2534d))
+* **nav:** add cross-device sidebar nav counters with live SSE updates ([51519c4](https://github.com/Velmar-Technology/msp_client_portal/commit/51519c4f788f47a4333bad6d5b5f9cf38e352a99))
+* **nav:** refine ticket counter into actionable unread attention model ([9d0100d](https://github.com/Velmar-Technology/msp_client_portal/commit/9d0100d5ee6cbb89de2b55862588bb4a49bc78e7))
+* **nav:** refine ticket counter into actionable unread attention model ([7e18420](https://github.com/Velmar-Technology/msp_client_portal/commit/7e1842026efe12baf446b5f940795c89dfa1d556))
+* **tickets:** migrate ticket filters to Page header toolbar and compact kanban cards ([26f8590](https://github.com/Velmar-Technology/msp_client_portal/commit/26f8590b1f83cbc29006c102e2672107d5eacd28))
+
+
+### Bug Fixes
+
+* **client:** call useNavigate unconditionally in PageBack ([b2138aa](https://github.com/Velmar-Technology/msp_client_portal/commit/b2138aac80cf96c9d13be2e6ab107a4fab42d1c0))
+* **client:** center sidebar nav and footer icons in collapsed icon mode ([a821569](https://github.com/Velmar-Technology/msp_client_portal/commit/a821569da5d176e45e7ab90dc55c014b2a0c54b8))
+* **infra:** add trailing slash redirect for vaultwarden in traefik and harden nginx static fallback ([3701959](https://github.com/Velmar-Technology/msp_client_portal/commit/370195985b348abd09ca3655f6002f6443d0ed3f))
+* **nav:** remove restricted raw db imports from NavCounterService ([e69b3f1](https://github.com/Velmar-Technology/msp_client_portal/commit/e69b3f107fe6ec7eaa068e81478bb53f35735bb9))
+* **settings:** restore zero-knowledge notice on password manager page ([e6b2365](https://github.com/Velmar-Technology/msp_client_portal/commit/e6b2365aa926bdb39c8c155e79a94b4bbee54117))
+* **tickets:** prevent recurring escalation sweep loops and notification spam ([23e87bb](https://github.com/Velmar-Technology/msp_client_portal/commit/23e87bb9ce13442c31c21179fd2bc5f2544b90b4))
+* **tickets:** resolve circular dependency between TicketStatusService and TechnicianEarningsService ([bf0eaba](https://github.com/Velmar-Technology/msp_client_portal/commit/bf0eaba1b23044e07925ee4dd095b8e1950d1360))
+
 ## [1.12.1](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.12.0...v1.12.1) (2026-09-18)
 
 
