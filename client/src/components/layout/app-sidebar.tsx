@@ -320,6 +320,10 @@ export function AppSidebar() {
         ...(item.items ?? []).map((sub) => ({ to: sub.to, counterKey: sub.counterKey })).filter((s) => s.counterKey),
       ]);
       for (const { to, counterKey } of flatItems) {
+        // Tickets destination is an actionable unread counter that must not be cleared blindly on navigation.
+        // It decrements when individual tickets are opened or when the user explicitly clicks 'Mark all as read'.
+        if (counterKey === "tickets") continue;
+
         if (pathname === to || (to !== "/dashboard" && pathname.startsWith(to))) {
           markSeenMutation.mutate(counterKey as NavKey);
           break;

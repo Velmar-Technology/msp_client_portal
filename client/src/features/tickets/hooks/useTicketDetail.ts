@@ -6,6 +6,8 @@ import type { PreviewFileState } from "../components/FilePreviewModal";
 import { useAuth } from "@/hooks/useAuth";
 import { userService, type TechnicianUser } from "@/features/users";
 import { useTicketReadStore } from "@/store/useTicketReadStore";
+import { useQueryClient } from "@tanstack/react-query";
+import { NAV_COUNTER_QUERY_KEYS } from "@/features/nav";
 
 /**
  * Custom hook managing the Ticket Detail view.
@@ -21,6 +23,7 @@ import { useTicketChatStream } from './useTicketChatStream';
 export function useTicketDetail(ticketId: string | undefined) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [timeline, setTimeline] = useState<(TicketEvent & { changed_by_name?: string })[]>([]);
@@ -70,7 +73,24 @@ export function useTicketDetail(ticketId: string | undefined) {
       setTimeline(events as (TicketEvent & { changed_by_name?: string })[]);
       setAttachments(atts);
       setResponses(resps);
-      useTicketReadStore.getState().markAsRead(tData.id, user?.id);
+      const readStore = useTicketReadStore.getState();
+      const wasRead = readStore.isTicketRead(tData.id, user?.id);
+      readStore.markAsRead(tData.id, user?.id);
+      if (!wasRead) {
+        queryClient.setQueryData(
+          NAV_COUNTER_QUERY_KEYS.all,
+          (old: Record<string, { count: number; latestAt: string | null }> | undefined) => {
+            if (!old || !old.tickets || old.tickets.count <= 0) return old;
+            return {
+              ...old,
+              tickets: {
+                ...old.tickets,
+                count: Math.max(0, old.tickets.count - 1),
+              },
+            };
+          },
+        );
+      }
     } catch (err: unknown) {
       console.error('Failed to load ticket', err);
       const axiosErr = err as { response?: { status?: number; data?: { code?: string; message?: string } } };
@@ -95,7 +115,7 @@ export function useTicketDetail(ticketId: string | undefined) {
     } finally {
       setLoading(false);
     }
-  }, [ticketId, t, user]);
+  }, [ticketId, t, user, queryClient]);
 
   useEffect(() => {
     loadTicketData();
