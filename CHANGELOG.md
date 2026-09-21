@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.12.3](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.12.2...v1.12.3) (2026-09-21)
+
+
+### Features
+
+* **equipment:** display live agent online/offline status alongside slot activation ([12c3e28](https://github.com/Velmar-Technology/msp_client_portal/commit/12c3e28d39e4fd114b2b97ab62ac317a8d5e4f21))
+* **sentinel:** add ticket:purge operation to SequenceSentinel operations engine ([16b5e83](https://github.com/Velmar-Technology/msp_client_portal/commit/16b5e830513206c12dcfe0b6e58546f7dd525de9))
+
+
+### Bug Fixes
+
+* **billing:** exclude complimentary subscriptions from MRR KPI (BL-703) ([ba9b0b6](https://github.com/Velmar-Technology/msp_client_portal/commit/ba9b0b68e9320ddec260614ddcdfa52671d0ac63))
+* **ci:** package WebView2Loader.dll with tray artifact for suite MSI build ([68b3c91](https://github.com/Velmar-Technology/msp_client_portal/commit/68b3c91c44a5398d57d601c443871a8a9e114ba6))
+
 ## [1.12.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.12.1...v1.12.2) (2026-09-21)
 
 
