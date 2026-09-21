@@ -187,7 +187,7 @@ export const DeviceToolbar = memo(function DeviceToolbar({
           {isAdmin ? (
             <Button
               type="button"
-              size="default"
+              size="sm"
               onClick={onOpenAddDevice}
               className="h-8 px-3 text-xs font-semibold gap-1 cursor-pointer shadow-xs"
             >
@@ -198,11 +198,9 @@ export const DeviceToolbar = memo(function DeviceToolbar({
             firstAvailableSlot && (
               <Button
                 type="button"
-                size="default"
+                size="sm"
                 variant="outline"
-                onClick={() =>
-                  onOpenActivateWithOtp(firstAvailableSlot.subscription_id, firstAvailableSlot.slot_index)
-                }
+                onClick={() => onOpenActivateWithOtp(firstAvailableSlot.subscription_id, firstAvailableSlot.slot_index)}
                 className="h-8 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
               >
                 <Laptop className="h-3.5 w-3.5" />

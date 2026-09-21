@@ -42,6 +42,12 @@ const PROVIDER_MODELS: Record<ByokProvider, { value: string; label: string }[]> 
     { value: "deepseek-r1:14b", label: "deepseek-r1:14b (DeepSeek R1 Reasoning)" },
     { value: "mistral:latest", label: "mistral:latest (Mistral 7B Local)" },
   ],
+  gemini: [
+    { value: "gemini-3.8-flash", label: "gemini-3.8-flash (Long-Horizon Coding & Autonomous Agents)" },
+    { value: "gemini-3.7-flash", label: "gemini-3.7-flash (Deep Software Engineering Workflows)" },
+    { value: "gemini-3.5-flash-lite", label: "gemini-3.5-flash-lite (Ultra-Fast Cost-Efficient Agentic Scale)" },
+    { value: "gemini-2.5-pro", label: "gemini-2.5-pro (Flagship Multimodal Reasoning, 1M Tokens)" },
+  ],
 };
 
 export function ByokSettingsPage() {
@@ -107,7 +113,6 @@ export function ByokSettingsPage() {
     return <FeatureLockedPreview requiredFeature={FEATURE_CODES.CAF_EDUCATION_AGENT} />;
   }
 
-
   const handleProviderChange = (val: ByokProvider) => {
     setProvider(val);
     setTestResult(null);
@@ -116,6 +121,9 @@ export function ByokSettingsPage() {
       setBaseUrl("");
     } else if (val === "anthropic") {
       setModel("claude-fable-5.1");
+      setBaseUrl("");
+    } else if (val === "gemini") {
+      setModel("gemini-3.8-flash");
       setBaseUrl("");
     } else if (val === "custom") {
       setModel("llama3.3:70b");
@@ -210,9 +218,7 @@ export function ByokSettingsPage() {
         <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
         <Page.HeaderRow>
           <Page.TitleGroup>
-            <Page.Title>
-              {t("byok.pageTitle", "Inteligencia Artificial & Calidad CAF")}
-            </Page.Title>
+            <Page.Title>{t("byok.pageTitle", "Inteligencia Artificial & Calidad CAF")}</Page.Title>
             <Page.Description>
               {t(
                 "byok.pageDesc",
@@ -226,9 +232,9 @@ export function ByokSettingsPage() {
                 {t("common.loading", "Cargando...")}
               </Badge>
             ) : byokStatus?.isConfigured ? (
-              <Badge variant="default" className="h-7 gap-1 bg-emerald-600 hover:bg-emerald-700">
+              <Badge variant="outline" className="h-7 gap-1">
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                {t("byok.statusConfigured", "Configurado:")}
+                {t("byok.statusConfigured", "Configurado")}
               </Badge>
             ) : (
               <Badge
@@ -284,6 +290,7 @@ export function ByokSettingsPage() {
                       <SelectContent>
                         <SelectItem value="openai">OpenAI</SelectItem>
                         <SelectItem value="anthropic">Anthropic</SelectItem>
+                        <SelectItem value="gemini">Google Gemini</SelectItem>
                         <SelectItem value="custom">Local</SelectItem>
                       </SelectContent>
                     </Select>
@@ -351,7 +358,9 @@ export function ByokSettingsPage() {
                           ? "•••••••••••••••••••••••••••••••• (Ingrese nueva para cambiar)"
                           : provider === "openai"
                             ? "sk-proj-..."
-                            : "sk-ant-..."
+                            : provider === "gemini"
+                              ? "AIza..."
+                              : "sk-ant-..."
                       }
                       className="h-7 text-xs font-mono pr-8"
                     />

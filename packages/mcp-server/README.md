@@ -4,7 +4,7 @@ Model Context Protocol (MCP) server engineered according to the **MCP 2026-07-28
 - **Enterprise MSP IT Support:** 59 diagnostic, telemetry, RMM, security, and remediation tools connected to the MSP Client Portal backend.
 - **Academic CAF Quality AIaaS:** 7 isolated tools for Dominican educational institutions executing Common Assessment Framework (CAF / Marco Común de Evaluación) evaluations, documentary gap detection, and Institutional Improvement Plan (PMI) generation.
 - **Dominican Law 172-13 Privacy Protection:** In-memory PII sanitization (names, cédulas, emails, phone numbers) before LLM egress.
-- **Zero-Liability Multi-Tenant BYOK:** Bring-Your-Own-Key LLM runtime (`TenantByokManager`) supporting OpenAI, Anthropic, and local custom endpoints funded directly by educational institutions.
+- **Zero-Liability Multi-Tenant BYOK:** Bring-Your-Own-Key LLM runtime (`TenantByokManager`) supporting OpenAI, Anthropic, Google Gemini, and local custom endpoints funded directly by educational institutions.
 
 ---
 
@@ -114,7 +114,7 @@ The server can be run in three profile modes via CLI flags (`--caf`, `--msp`, `-
 
 ### 13. CAF Educational Quality & PII Privacy (7 Tools - `caf-education` profile)
 
-- **`caf_configure_tenant_byok`**: Registers or updates private BYOK LLM credentials (OpenAI, Anthropic, or custom local endpoints) and model preferences for an educational institution with an isolated privacy partition.
+- **`caf_configure_tenant_byok`**: Registers or updates private BYOK LLM credentials (OpenAI, Anthropic, Gemini, or custom local endpoints) and model preferences for an educational institution with an isolated privacy partition.
 - **`caf_get_tenant_byok_status`**: Inspects tenant BYOK configuration, active LLM provider, and privacy partition status without exposing secret keys.
 - **`caf_audit_evidence`**: Audits institutional educational documents and records against the 9 CAF criteria with tenant-isolated PII sanitization (Dominican Law 172-13) and BYOK LLM evaluation.
 - **`caf_analyze_survey_sentiment`**: Analyzes stakeholder satisfaction surveys (Students, Teachers, Parents) with tenant-isolated PII redaction and computes quantitative impact scores for CAF Criteria 6 & 7.

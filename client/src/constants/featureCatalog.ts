@@ -751,7 +751,7 @@ export const FEATURE_CATALOG: FeatureCatalogItem[] = [
         key: 'byokProvider',
         label: 'LLM Provider',
         type: 'select',
-        options: ['OpenAI', 'Anthropic', 'Custom / Private vLLM'],
+        options: ['OpenAI', 'Anthropic', 'Google Gemini', 'Custom / Private vLLM'],
         defaultValue: 'OpenAI',
       },
       {

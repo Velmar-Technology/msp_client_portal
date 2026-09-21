@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
-import { X, Laptop, Loader2, Plus, Building2, Check, ChevronsUpDown, KeyRound, BadgeCheck } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/components/ui/input-otp';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { useState, useEffect, useMemo } from "react";
+import { X, Laptop, Loader2, Plus, Building2, Check, ChevronsUpDown, KeyRound, BadgeCheck } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -14,9 +14,9 @@ import {
   DialogDescription,
   DialogFooter,
   DialogClose,
-} from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
-import { equipmentService } from '../api/equipmentService';
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
+import { equipmentService } from "../api/equipmentService";
 
 export interface AddAdminDeviceModalProps {
   isOpen: boolean;
@@ -36,16 +36,16 @@ export function AddAdminDeviceModal({
   defaultTenantId,
 }: AddAdminDeviceModalProps) {
   const { t } = useTranslation();
-  const [otp, setOtp] = useState('');
-  const [deviceName, setDeviceName] = useState('');
-  const [deviceSerial, setDeviceSerial] = useState('');
-  const [selectedTenantId, setSelectedTenantId] = useState(defaultTenantId || '');
+  const [otp, setOtp] = useState("");
+  const [deviceName, setDeviceName] = useState("");
+  const [deviceSerial, setDeviceSerial] = useState("");
+  const [selectedTenantId, setSelectedTenantId] = useState(defaultTenantId || "");
   const [openTenantCombobox, setOpenTenantCombobox] = useState(false);
   const [detectedIdentity, setDetectedIdentity] = useState<{ hostname: string; serial: string } | null>(null);
   const [identityChecking, setIdentityChecking] = useState(false);
 
   const sortedTenantOptions = useMemo(
-    () => [...tenantOptions].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })),
+    () => [...tenantOptions].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" })),
     [tenantOptions],
   );
 
@@ -53,10 +53,10 @@ export function AddAdminDeviceModal({
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
     if (isOpen) {
-      setOtp('');
-      setDeviceName('');
+      setOtp("");
+      setDeviceName("");
       setDeviceSerial(`SN-ADM-${Math.floor(100000 + Math.random() * 900000)}`);
-      setSelectedTenantId(defaultTenantId || (sortedTenantOptions[0]?.id ?? ''));
+      setSelectedTenantId(defaultTenantId || (sortedTenantOptions[0]?.id ?? ""));
       setOpenTenantCombobox(false);
       setDetectedIdentity(null);
       setIdentityChecking(false);
@@ -67,7 +67,7 @@ export function AddAdminDeviceModal({
   const canSubmit = isValidOtp && deviceName.trim().length > 0 && !loading;
 
   const handleOtpChange = (value: string) => {
-    setOtp(value.replace(/\D/g, '').slice(0, 6));
+    setOtp(value.replace(/\D/g, "").slice(0, 6));
   };
 
   useEffect(() => {
@@ -87,10 +87,10 @@ export function AddAdminDeviceModal({
       .then(() => lookup(otp))
       .then((info) => {
         if (cancelled) return;
-        const hostname = info?.hostname?.trim() || '';
-        const serial = info?.serial?.trim() || '';
+        const hostname = info?.hostname?.trim() || "";
+        const serial = info?.serial?.trim() || "";
         setDetectedIdentity(hostname || serial ? { hostname, serial } : null);
-        if (hostname) setDeviceName((prev) => (!prev || prev.startsWith('SN-ADM-') ? hostname : prev));
+        if (hostname) setDeviceName((prev) => (!prev || prev.startsWith("SN-ADM-") ? hostname : prev));
         if (serial) setDeviceSerial(serial);
       })
       .catch(() => {
@@ -131,10 +131,10 @@ export function AddAdminDeviceModal({
             </div>
             <div>
               <DialogTitle className="text-sm font-bold text-foreground">
-                {t('devices.addAdminDeviceTitle', 'Add New Hardware Asset')}
+                {t("devices.addAdminDeviceTitle", "Add New Hardware Asset")}
               </DialogTitle>
               <DialogDescription className="text-[11px] text-muted-foreground">
-                {t('devices.addAdminDeviceDesc', 'Provision hardware on behalf of a tenant or general inventory')}
+                {t("devices.addAdminDeviceDesc", "Provision hardware on behalf of a tenant or general inventory")}
               </DialogDescription>
             </div>
           </div>
@@ -150,11 +150,11 @@ export function AddAdminDeviceModal({
 
         {/* Modal Form Body */}
         <form onSubmit={handleSubmit}>
-          <div className="p-5 space-y-4">
+          <div className="space-y-4">
             <p className="text-xs text-muted-foreground leading-normal">
               {t(
-                'devices.addAdminDeviceDesc',
-                'This device will be immediately provisioned with cloud backup storage and integrated into automated RMM telemetry.',
+                "devices.addAdminDeviceDesc",
+                "This device will be immediately provisioned with cloud backup storage and integrated into automated RMM telemetry.",
               )}
             </p>
 
@@ -163,11 +163,8 @@ export function AddAdminDeviceModal({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <KeyRound className="h-3.5 w-3.5 text-muted-foreground" />
-                  <label
-                    htmlFor="admin-dev-otp"
-                    className="text-[10px] uppercase font-bold text-muted-foreground"
-                  >
-                    {t('devices.otpInputLabel', 'Pairing Code (OTP)')} *
+                  <label htmlFor="admin-dev-otp" className="text-[10px] uppercase font-bold text-muted-foreground">
+                    {t("devices.otpInputLabel", "Pairing Code (OTP)")} *
                   </label>
                 </div>
               </div>
@@ -196,19 +193,19 @@ export function AddAdminDeviceModal({
 
                 {otp.length > 0 && !isValidOtp && (
                   <p className="text-[10px] text-destructive mt-1 self-center">
-                    {t('devices.otpInputInvalid', 'Pairing code must be 6 digits.')}
+                    {t("devices.otpInputInvalid", "Pairing code must be 6 digits.")}
                   </p>
                 )}
                 {identityChecking && (
                   <div className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground mt-1.5">
                     <Loader2 className="w-3 h-3 animate-spin" />
-                    {t('devices.detectedIdentityChecking', 'Detecting agent identity…')}
+                    {t("devices.detectedIdentityChecking", "Detecting agent identity…")}
                   </div>
                 )}
                 {detectedIdentity && (
                   <div className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 mt-1.5">
                     <BadgeCheck className="w-3.5 h-3.5" />
-                    {t('devices.detectedIdentityHint', 'Device details detected via MSP Agent — confirm below.')}
+                    {t("devices.detectedIdentityHint", "Device details detected via MSP Agent — confirm below.")}
                   </div>
                 )}
               </div>
@@ -216,8 +213,11 @@ export function AddAdminDeviceModal({
 
             <div className="space-y-3.5">
               <div>
-                <label htmlFor="admin-dev-name" className="block text-[10px] uppercase font-bold text-muted-foreground mb-1">
-                  {t('devices.deviceNameLabel', 'Device Name / Label')} *
+                <label
+                  htmlFor="admin-dev-name"
+                  className="block text-[10px] uppercase font-bold text-muted-foreground mb-1"
+                >
+                  {t("devices.deviceNameLabel", "Device Name / Label")} *
                 </label>
                 <Input
                   id="admin-dev-name"
@@ -232,8 +232,11 @@ export function AddAdminDeviceModal({
               </div>
 
               <div>
-                <label htmlFor="admin-dev-serial" className="block text-[10px] uppercase font-bold text-muted-foreground mb-1">
-                  {t('devices.deviceSerialLabel', 'Device Serial Number')}
+                <label
+                  htmlFor="admin-dev-serial"
+                  className="block text-[10px] uppercase font-bold text-muted-foreground mb-1"
+                >
+                  {t("devices.deviceSerialLabel", "Device Serial Number")}
                 </label>
                 <Input
                   id="admin-dev-serial"
@@ -251,7 +254,7 @@ export function AddAdminDeviceModal({
                     htmlFor="admin-dev-tenant"
                     className="block text-[10px] uppercase font-bold text-muted-foreground mb-1"
                   >
-                    {t('devices.tenantLabel', 'Target Workspace / Client')}
+                    {t("devices.tenantLabel", "Target Workspace / Client")}
                   </label>
                   <Popover open={openTenantCombobox} onOpenChange={setOpenTenantCombobox}>
                     <PopoverTrigger asChild>
@@ -267,7 +270,7 @@ export function AddAdminDeviceModal({
                           <span className="truncate">
                             {selectedTenantId
                               ? sortedTenantOptions.find((opt) => opt.id === selectedTenantId)?.name
-                              : t('devices.filterAllClients', 'Select Workspace')}
+                              : t("devices.filterAllClients", "Select Workspace")}
                           </span>
                         </div>
                         <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
@@ -278,9 +281,9 @@ export function AddAdminDeviceModal({
                       align="start"
                     >
                       <Command>
-                        <CommandInput placeholder={t('devices.searchTenantPlaceholder', 'Search client...')} />
+                        <CommandInput placeholder={t("devices.searchTenantPlaceholder", "Search client...")} />
                         <CommandList>
-                          <CommandEmpty>{t('devices.noTenantFound', 'No client found.')}</CommandEmpty>
+                          <CommandEmpty>{t("devices.noTenantFound", "No client found.")}</CommandEmpty>
                           <CommandGroup>
                             {sortedTenantOptions.map((opt) => (
                               <CommandItem
@@ -295,8 +298,8 @@ export function AddAdminDeviceModal({
                                 <span className="truncate">{opt.name}</span>
                                 <Check
                                   className={cn(
-                                    'ml-auto h-3.5 w-3.5',
-                                    selectedTenantId === opt.id ? 'opacity-100' : 'opacity-0',
+                                    "ml-auto h-3.5 w-3.5",
+                                    selectedTenantId === opt.id ? "opacity-100" : "opacity-0",
                                   )}
                                 />
                               </CommandItem>
@@ -312,14 +315,14 @@ export function AddAdminDeviceModal({
           </div>
 
           {/* Modal Footer */}
-          <DialogFooter className="p-4 border-t border-border flex flex-row justify-end gap-2 bg-muted/20">
+          <DialogFooter className="py-4 border-t border-border flex flex-row justify-end gap-2 bg-muted/20">
             <DialogClose
               type="button"
               onClick={onClose}
               disabled={loading}
               className="h-8 px-3 text-xs font-semibold text-muted-foreground hover:bg-muted border border-border rounded-md transition-colors cursor-pointer disabled:opacity-50 mt-0"
             >
-              {t('devices.cancel', 'Cancel')}
+              {t("devices.cancel", "Cancel")}
             </DialogClose>
             <Button
               type="submit"
@@ -329,12 +332,12 @@ export function AddAdminDeviceModal({
               {loading ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>{t('devices.activating', 'Adding...')}</span>
+                  <span>{t("devices.activating", "Adding...")}</span>
                 </>
               ) : (
                 <>
                   <Plus className="w-3.5 h-3.5" />
-                  <span>{t('devices.addAdminDeviceSubmit', 'Add & Provision Device')}</span>
+                  <span>{t("devices.addAdminDeviceSubmit", "Add & Provision Device")}</span>
                 </>
               )}
             </Button>

@@ -12,7 +12,7 @@ export function Footer() {
   const { t } = useTranslation();
 
   return (
-    <footer className="w-full mt-auto bg-background border-t border-border py-3">
+    <footer className="w-full mt-auto bg-card border-t border-border py-3">
       <div className="w-full px-4 md:px-8 flex flex-col md:flex-row justify-between items-center gap-2 text-[10px] md:text-xs">
         <span className="text-muted-foreground">{t("footer.copyright", { company: "Velmar Technology SRL" })}</span>
         <div className="flex gap-4">
@@ -46,14 +46,8 @@ export function BlockedPortalAlert({ onChoosePlan, choosePlanLabel }: BlockedPor
         <Shield className="h-5 w-5" />
       </div>
       <h2 className="text-sm font-bold text-foreground font-heading mb-1">{t("layout.blockedTitle")}</h2>
-      <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-        {t("layout.blockedDescription")}
-      </p>
-      <Button
-        size="sm"
-        onClick={onChoosePlan}
-        className="w-full text-xs font-semibold"
-      >
+      <p className="text-xs text-muted-foreground leading-relaxed mb-4">{t("layout.blockedDescription")}</p>
+      <Button size="sm" onClick={onChoosePlan} className="w-full text-xs font-semibold">
         {choosePlanLabel || t("layout.choosePlan")}
       </Button>
     </div>
@@ -94,7 +88,7 @@ export function AppLayout() {
       <SidebarInset className="flex flex-col min-h-screen bg-background">
         <TopNav />
         <main
-          className={`flex-1 w-full flex flex-col p-4 md:px-8 md:py-4 bg-background overflow-x-hidden ${isBlocked ? "items-center justify-center" : ""}`}
+          className={`flex-1 w-full flex flex-col p-4 md:px-8 md:py-4 bg-card overflow-x-hidden ${isBlocked ? "items-center justify-center" : ""}`}
         >
           {isBlocked ? (
             <BlockedPortalAlert onChoosePlan={() => navigate("/plans")} choosePlanLabel={t("layout.choosePlan")} />

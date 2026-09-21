@@ -1,15 +1,10 @@
-import { useState, useEffect } from 'react';
-import { X, KeyRound, Loader2, Laptop, BadgeCheck } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { equipmentService } from '../api/equipmentService';
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-  InputOTPSeparator,
-} from '@/components/ui/input-otp';
+import { useState, useEffect } from "react";
+import { X, KeyRound, Loader2, Laptop, BadgeCheck } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { equipmentService } from "../api/equipmentService";
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +13,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogClose,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 
 export interface ActivateWithOtpModalProps {
   isOpen: boolean;
@@ -38,9 +33,9 @@ export function ActivateWithOtpModal({
   slotIndex,
 }: ActivateWithOtpModalProps) {
   const { t } = useTranslation();
-  const [otp, setOtp] = useState('');
-  const [deviceName, setDeviceName] = useState('');
-  const [deviceSerial, setDeviceSerial] = useState('');
+  const [otp, setOtp] = useState("");
+  const [deviceName, setDeviceName] = useState("");
+  const [deviceSerial, setDeviceSerial] = useState("");
   const [detectedIdentity, setDetectedIdentity] = useState<{ hostname: string; serial: string } | null>(null);
   const [identityChecking, setIdentityChecking] = useState(false);
 
@@ -48,9 +43,9 @@ export function ActivateWithOtpModal({
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
     if (isOpen) {
-      setOtp('');
-      setDeviceName('');
-      setDeviceSerial('');
+      setOtp("");
+      setDeviceName("");
+      setDeviceSerial("");
       setDetectedIdentity(null);
       setIdentityChecking(false);
     }
@@ -60,7 +55,7 @@ export function ActivateWithOtpModal({
   const canSubmit = isValidOtp && deviceName.trim().length > 0 && deviceSerial.trim().length > 0 && !loading;
 
   const handleOtpChange = (value: string) => {
-    setOtp(value.replace(/\D/g, '').slice(0, 6));
+    setOtp(value.replace(/\D/g, "").slice(0, 6));
   };
 
   useEffect(() => {
@@ -80,8 +75,8 @@ export function ActivateWithOtpModal({
       .then(() => lookup(otp))
       .then((info) => {
         if (cancelled) return;
-        const hostname = info?.hostname?.trim() || '';
-        const serial = info?.serial?.trim() || '';
+        const hostname = info?.hostname?.trim() || "";
+        const serial = info?.serial?.trim() || "";
         setDetectedIdentity(hostname || serial ? { hostname, serial } : null);
         if (hostname) setDeviceName((prev) => prev || hostname);
         if (serial) setDeviceSerial((prev) => prev || serial);
@@ -98,7 +93,12 @@ export function ActivateWithOtpModal({
   }, [otp, isValidOtp]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <DialogContent className="max-w-md w-full bg-card border border-border rounded-lg p-0 text-foreground flex flex-col overflow-hidden">
         {/* Modal Header */}
         <DialogHeader className="px-5 py-3.5 border-b border-border flex flex-row justify-between items-center bg-card space-y-0 text-left">
@@ -107,8 +107,12 @@ export function ActivateWithOtpModal({
               <KeyRound className="h-4 w-4" />
             </div>
             <div>
-              <DialogTitle className="text-sm font-bold text-foreground">{t('devices.activateWithCodeTitle')}</DialogTitle>
-              <DialogDescription className="text-[10px] text-muted-foreground font-medium">{t('devices.activateWithCodeSubtitle')}</DialogDescription>
+              <DialogTitle className="text-sm font-bold text-foreground">
+                {t("devices.activateWithCodeTitle")}
+              </DialogTitle>
+              <DialogDescription className="text-[10px] text-muted-foreground font-medium">
+                {t("devices.activateWithCodeSubtitle")}
+              </DialogDescription>
             </div>
           </div>
           <button
@@ -121,18 +125,21 @@ export function ActivateWithOtpModal({
         </DialogHeader>
 
         {/* Modal Body */}
-        <div className="p-5 space-y-4">
+        <div className="space-y-4">
           {subscriptionId && slotIndex !== null && slotIndex !== undefined && (
             <div className="flex items-center gap-1.5 text-[10px] font-semibold text-foreground bg-muted/30 border border-border rounded-md px-2.5 py-1.5 self-start">
               <Laptop className="w-3 h-3 text-muted-foreground" />
-              {t('devices.bindingSlotContext', { slot: slotIndex + 1 })}
+              {t("devices.bindingSlotContext", { slot: slotIndex + 1 })}
             </div>
           )}
-          <p className="text-xs text-muted-foreground leading-normal">{t('devices.activateWithCodeDesc')}</p>
+          <p className="text-xs text-muted-foreground leading-normal">{t("devices.activateWithCodeDesc")}</p>
 
           <div className="flex flex-col items-center">
-            <label htmlFor="activate-otp-code" className="block text-[10px] uppercase font-bold text-muted-foreground mb-2 self-start">
-              {t('devices.otpInputLabel')}
+            <label
+              htmlFor="activate-otp-code"
+              className="block text-[10px] uppercase font-bold text-muted-foreground mb-2 self-start"
+            >
+              {t("devices.otpInputLabel")}
             </label>
             <InputOTP
               id="activate-otp-code"
@@ -155,7 +162,7 @@ export function ActivateWithOtpModal({
               </InputOTPGroup>
             </InputOTP>
             {otp.length > 0 && !isValidOtp && (
-              <p className="text-[10px] text-destructive mt-1.5 self-start">{t('devices.otpInputInvalid')}</p>
+              <p className="text-[10px] text-destructive mt-1.5 self-start">{t("devices.otpInputInvalid")}</p>
             )}
           </div>
 
@@ -163,40 +170,46 @@ export function ActivateWithOtpModal({
             {identityChecking && (
               <div className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground">
                 <Loader2 className="w-3 h-3 animate-spin" />
-                {t('devices.detectedIdentityChecking')}
+                {t("devices.detectedIdentityChecking")}
               </div>
             )}
             {detectedIdentity && (
               <div className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
                 <BadgeCheck className="w-3.5 h-3.5" />
-                {t('devices.detectedIdentityHint')}
+                {t("devices.detectedIdentityHint")}
               </div>
             )}
 
             <div>
-              <label htmlFor="activate-otp-dev-name" className="block text-[10px] uppercase font-bold text-muted-foreground mb-1">
-                {t('devices.deviceNameLabel')}
+              <label
+                htmlFor="activate-otp-dev-name"
+                className="block text-[10px] uppercase font-bold text-muted-foreground mb-1"
+              >
+                {t("devices.deviceNameLabel")}
               </label>
               <Input
                 id="activate-otp-dev-name"
                 type="text"
                 value={deviceName}
                 onChange={(e) => setDeviceName(e.target.value)}
-                placeholder={t('devices.deviceNamePlaceholder')}
+                placeholder={t("devices.deviceNamePlaceholder")}
                 className="w-full bg-card border rounded-md text-xs h-8"
               />
             </div>
 
             <div>
-              <label htmlFor="activate-otp-dev-serial" className="block text-[10px] uppercase font-bold text-muted-foreground mb-1">
-                {t('devices.deviceSerialLabel')}
+              <label
+                htmlFor="activate-otp-dev-serial"
+                className="block text-[10px] uppercase font-bold text-muted-foreground mb-1"
+              >
+                {t("devices.deviceSerialLabel")}
               </label>
               <Input
                 id="activate-otp-dev-serial"
                 type="text"
                 value={deviceSerial}
                 onChange={(e) => setDeviceSerial(e.target.value)}
-                placeholder={t('devices.deviceSerialPlaceholder')}
+                placeholder={t("devices.deviceSerialPlaceholder")}
                 className="w-full bg-card border rounded-md text-xs h-8"
               />
             </div>
@@ -204,14 +217,14 @@ export function ActivateWithOtpModal({
         </div>
 
         {/* Modal Footer */}
-        <DialogFooter className="p-4 border-t border-border flex flex-row justify-end gap-2 bg-muted/20">
+        <DialogFooter className="border-t border-border flex flex-row justify-end gap-2 bg-muted/20">
           <DialogClose
             type="button"
             onClick={onClose}
             disabled={loading}
             className="h-8 px-3 text-xs font-semibold text-muted-foreground hover:bg-muted border border-border rounded-md transition-colors cursor-pointer disabled:opacity-50 mt-0"
           >
-            {t('devices.cancel')}
+            {t("devices.cancel")}
           </DialogClose>
           <Button
             type="button"
@@ -223,12 +236,12 @@ export function ActivateWithOtpModal({
             {loading ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>{t('devices.activating')}</span>
+                <span>{t("devices.activating")}</span>
               </>
             ) : (
               <>
                 <Laptop className="w-3.5 h-3.5" />
-                <span>{t('devices.activateWithCodeSubmit')}</span>
+                <span>{t("devices.activateWithCodeSubmit")}</span>
               </>
             )}
           </Button>

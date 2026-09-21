@@ -132,6 +132,57 @@ describe('TenantByokService', () => {
       expect(result.message).toContain('Anthropic API key validated');
     });
 
+    it('returns success when Google Gemini returns 200 with a model list', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          models: [
+            { name: 'models/gemini-2.5-flash' },
+            { name: 'models/gemini-2.5-pro' },
+          ],
+        }),
+      });
+
+      const result = await service.testConnection({
+        provider: 'gemini',
+        apiKey: 'AIzaSy-valid-key',
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('Gemini API key validated');
+      expect(result.modelsAvailable).toContain('gemini-2.5-flash');
+      expect(result.modelsAvailable).toContain('gemini-2.5-pro');
+    });
+
+    it('returns a descriptive error when Gemini returns 401 unauthorized', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+        json: async () => ({
+          error: { message: 'API key not valid. Please pass a valid API key.' },
+        }),
+      });
+
+      const result = await service.testConnection({
+        provider: 'gemini',
+        apiKey: 'AIzaSy-invalid-key',
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('API key not valid. Please pass a valid API key.');
+    });
+
+    it('returns an error when Gemini key is missing', async () => {
+      const result = await service.testConnection({
+        provider: 'gemini',
+        apiKey: '',
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.message).toBe('Gemini API key is required for validation');
+    });
+
     it('handles network timeouts gracefully', async () => {
       global.fetch = vi.fn().mockRejectedValue(new Error('Connection timed out'));
 

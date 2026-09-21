@@ -12,6 +12,7 @@ describe('BYOK Contract Validation Suite', () => {
     expect(ByokProviderSchema.safeParse('openai').success).toBe(true);
     expect(ByokProviderSchema.safeParse('anthropic').success).toBe(true);
     expect(ByokProviderSchema.safeParse('custom').success).toBe(true);
+    expect(ByokProviderSchema.safeParse('gemini').success).toBe(true);
     expect(ByokProviderSchema.safeParse('invalid_provider').success).toBe(false);
   });
 

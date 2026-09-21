@@ -12,7 +12,7 @@ import type {
 
 export interface DecryptedTenantByok {
   tenantId: string;
-  provider: 'openai' | 'anthropic' | 'custom';
+  provider: 'openai' | 'anthropic' | 'custom' | 'gemini';
   apiKey: string;
   model?: string | null;
   baseUrl?: string | null;
@@ -197,7 +197,7 @@ export class TenantByokService {
     const row = rows[0];
     return {
       tenantId: row.tenant_id,
-      provider: row.provider as 'openai' | 'anthropic' | 'custom',
+      provider: row.provider as 'openai' | 'anthropic' | 'custom' | 'gemini',
       model: row.model,
       baseUrl: row.base_url,
       isConfigured: true,
@@ -236,7 +236,7 @@ export class TenantByokService {
       );
       return {
         tenantId: row.tenant_id,
-        provider: row.provider as 'openai' | 'anthropic' | 'custom',
+        provider: row.provider as 'openai' | 'anthropic' | 'custom' | 'gemini',
         apiKey,
         model: row.model,
         baseUrl: row.base_url,
@@ -356,6 +356,49 @@ export class TenantByokService {
           message: res.ok
             ? 'Custom endpoint validated successfully'
             : `Custom endpoint returned status ${res.status}`,
+        };
+      }
+
+      if (provider === 'gemini') {
+        if (!apiKey) {
+          return {
+            success: false,
+            latencyMs: Date.now() - startTime,
+            message: 'Gemini API key is required for validation',
+          };
+        }
+        const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
+          method: 'GET',
+          headers: {
+            'x-goog-api-key': apiKey,
+          },
+          signal: AbortSignal.timeout(8000),
+        });
+
+        const latencyMs = Date.now() - startTime;
+        if (res.ok) {
+          const data: any = await res.json().catch(() => ({}));
+          const modelsAvailable = Array.isArray(data?.models)
+            ? data.models
+                .map((m: any) => m.name?.replace(/^models\//, '') || m.name)
+                .filter(Boolean)
+                .slice(0, 5)
+            : undefined;
+          return {
+            success: true,
+            latencyMs,
+            message: 'Google Gemini API key validated successfully',
+            modelsAvailable,
+          };
+        }
+
+        const errData: any = await res.json().catch(() => ({}));
+        const errMsg =
+          errData?.error?.message || `Google Gemini returned status ${res.status}`;
+        return {
+          success: false,
+          latencyMs,
+          message: errMsg,
         };
       }
 

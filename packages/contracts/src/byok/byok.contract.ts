@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * Supported AI Providers for Educational & IT Automation Agents.
  */
-export const ByokProviderSchema = z.enum(['openai', 'anthropic', 'custom']);
+export const ByokProviderSchema = z.enum(['openai', 'anthropic', 'custom', 'gemini']);
 export type ByokProvider = z.infer<typeof ByokProviderSchema>;
 
 /**
