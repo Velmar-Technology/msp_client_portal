@@ -54,11 +54,6 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
 
   return (
     <div className="rounded-lg border border-border bg-card shadow-xs">
-      <div className="border-b border-border px-3.5 py-3">
-        <h3 className="text-xs font-semibold text-foreground">{t("financial.transactions")}</h3>
-        <p className="text-[10px] text-muted-foreground">{t("financial.transactionsDesc")}</p>
-      </div>
-
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-left text-[11px] leading-normal">
           <thead>
@@ -78,13 +73,8 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
                 : `-$${Math.abs(txn.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
               return (
-                <tr
-                  key={txn.id}
-                  className="transition-colors duration-150 hover:bg-muted/50"
-                >
-                  <td className="whitespace-nowrap px-3.5 py-2 font-mono text-muted-foreground">
-                    {txn.date}
-                  </td>
+                <tr key={txn.id} className="transition-colors duration-150 hover:bg-muted/50">
+                  <td className="whitespace-nowrap px-3.5 py-2 font-mono text-muted-foreground">{txn.date}</td>
                   <td className="px-3.5 py-2 font-medium text-foreground">
                     <div>{txn.description}</div>
                     {txn.expense_identifier && (

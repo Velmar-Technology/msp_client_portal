@@ -1,87 +1,186 @@
-# Tasks: DevicesPage Migration to `<Page />` View Modes Architecture
+# Tasks: Unified L2 Metric Card Primitive (`<MetricCard />`)
 
-## Task 1: Add Devices View Mode i18n Localization Keys
-**Description:** Add localization strings for devices view modes (`devices.views.list`, `devices.views.tiled`, `devices.views.rmm`, `devices.views.graph`) and fleet analytics in `client/src/locales/en_US.json` and `client/src/locales/es_DO.json`.
+## Task 1: Create `client/src/components/shared/MetricCard.tsx`
+**Description:** Implement the canonical L2 shared primitive `<MetricCard />` using Radix UI `Card` (`@/components/ui/card`), supporting hybrid flat props (`title`, `value`, `trend`, `icon`, `badge`, `subtitle`, `footer`, `isLoading`, `onClick`) and compound slots (`MetricCard.Header`, `MetricCard.Title`, `MetricCard.Icon`, `MetricCard.Badge`, `MetricCard.Value`, `MetricCard.Trend`, `MetricCard.Subtitle`, `MetricCard.Footer`).
 
 **Acceptance criteria:**
-- [x] Added translations for all 4 view mode labels in `en_US.json`
-- [x] Added translations for all 4 view mode labels in `es_DO.json`
-- [x] Added translations for analytics chart titles and subtitles
-- [x] Both JSON files parse without syntax errors
+- [x] Conforms to unified density: `p-3.5`, `min-h-[120px]`, `border-border`, subtle hover elevation.
+- [x] Supports both direct flat props and compound subcomponent composition.
+- [x] Trend pill supports `direction: "up" | "down" | "neutral"`, `isPositive: boolean`, and string/number/ReactNode values.
+- [x] Built-in skeleton state (`isLoading`) matching the exact card dimensions and inner hierarchy.
+- [x] Keyboard accessibility (`role="button"`, `tabIndex={0}`, Enter/Space key triggers) when `onClick` is provided.
+- [x] Full JSDoc/TSDoc documentation with `@param`, `@returns`, and `@see`.
 
 **Verification:**
-- [x] Build succeeds: `npm -w client run build`
+- [x] File exists at `client/src/components/shared/MetricCard.tsx`
+- [x] Types compile cleanly without errors
 
 **Dependencies:** None
 **Files likely touched:**
-- `client/src/locales/en_US.json`
-- `client/src/locales/es_DO.json`
+- `client/src/components/shared/MetricCard.tsx`
+**Estimated scope:** Small (1 file)
 
 ---
 
-## Task 2: Refactor DevicesPage.tsx Root Container & View Modes
-**Description:** Refactor `DevicesPage.tsx` root container to pass `activeView`, `onViewChange`, `defaultView="list"`, and `availableViews` to `<Page>`. Position `<Page.ViewSwitcher>` inside `<Page.Controls>` within `<Page.Toolbar>`. Map legacy `?tab=rmm` to `rmm` and `?tab=devices` to `list`, while maintaining dual sync for legacy compatibility.
+## Task 2: Create unit tests in `MetricCard.test.tsx` and export from `index.ts`
+**Description:** Author unit tests covering all rendering modes: flat props, compound slots, trend badge states, loading skeleton, click handlers, and keyboard events. Export `MetricCard` and `type MetricCardProps` from `client/src/components/shared/index.ts`.
 
 **Acceptance criteria:**
-- [x] `<Page>` is configured with `availableViews` covering `list`, `tiled`, `rmm`, and `graph`
-- [x] `<Page.ViewSwitcher>` is placed in `<Page.Controls>` inside `<Page.Toolbar>`
-- [x] Legacy `?tab=rmm` activates the `rmm` view
-- [x] Default view is `list`
-- [x] Consolidated duplicate `ViewToggle` and middle `Tabs` bar
+- [x] Unit tests test flat prop rendering (title, value, subtitle, footer, icon, badge).
+- [x] Unit tests test compound subcomponents rendering.
+- [x] Unit tests test positive, negative, and neutral trend badge variants.
+- [x] Unit tests test `isLoading` skeleton rendering and `aria-busy`.
+- [x] Unit tests test click and keyboard trigger (`Enter`, `Space`) when `onClick` is provided.
+- [x] Re-exported from `client/src/components/shared/index.ts`.
 
 **Verification:**
-- [x] Build succeeds: `npm -w client run build`
-- [x] Tests pass: `npm -w client run test:run -- src/features/equipment/pages/DevicesPage.test.tsx`
+- [x] Focused tests pass: `npm -w client run test:run client/src/components/shared/MetricCard.test.tsx`
 
 **Dependencies:** Task 1
 **Files likely touched:**
-- `client/src/features/equipment/pages/DevicesPage.tsx`
+- `client/src/components/shared/MetricCard.test.tsx`
+- `client/src/components/shared/index.ts`
+**Estimated scope:** Small (2 files)
 
 ---
 
-## Task 3: Implement Dedicated View Slots (list, tiled, rmm, graph)
-**Description:** Add `<Page.View>` slots for all 4 views in `DevicesPage.tsx`, with `list` rendering `DataTable`, `tiled` rendering responsive `DeviceCard` grid with pagination, `rmm` rendering `RmmDashboard`, and `graph` rendering `<Page.Graph>` fleet analytics.
+### Checkpoint: Foundation
+- [x] `MetricCard` unit tests pass cleanly
+- [x] Export verified from `@/components/shared`
+
+---
+
+## Task 3: Migrate `StatCard` call-sites and remove `StatCard.tsx`
+**Description:** Refactor all usages of `StatCard` across `UserStatsBar.tsx`, `CRMPage.tsx`, and `StyleGuidePage.tsx` to `<MetricCard />`. Update `StyleGuidePage.test.tsx` and delete `client/src/components/shared/StatCard.tsx`.
 
 **Acceptance criteria:**
-- [x] `<Page.View type="list">` contains `DeviceToolbar` and `DataTable`
-- [x] `<Page.View type="tiled">` contains `DeviceToolbar`, `DeviceCard` grid, and pagination
-- [x] `<Page.View type="rmm">` contains `RmmDashboard`
-- [x] `<Page.View type="graph">` contains `<Page.Graph>` components showing status & OS allocation
-- [x] Modals and confirmation dialogs remain accessible across all views
+- [x] `client/src/features/users/components/UserStatsBar.tsx` uses `MetricCard`.
+- [x] `client/src/features/crm/pages/CRMPage.tsx` uses `MetricCard`.
+- [x] `client/src/components/shared/StyleGuidePage.tsx` and its test use `MetricCard`.
+- [x] `client/src/components/shared/StatCard.tsx` is deleted.
+- [x] `client/src/components/shared/index.ts` no longer exports `StatCard`.
 
 **Verification:**
-- [x] Build succeeds: `npm -w client run build`
-- [x] Tests pass: `npm -w client run test:run -- src/features/equipment/pages/DevicesPage.test.tsx`
+- [x] `npm -w client run test:run client/src/components/shared/StyleGuidePage.test.tsx` passes
+- [x] No remaining references to `StatCard` in `client/src`
 
 **Dependencies:** Task 2
 **Files likely touched:**
-- `client/src/features/equipment/pages/DevicesPage.tsx`
+- `client/src/features/users/components/UserStatsBar.tsx`
+- `client/src/features/crm/pages/CRMPage.tsx`
+- `client/src/components/shared/StyleGuidePage.tsx`
+- `client/src/components/shared/StyleGuidePage.test.tsx`
+- `client/src/components/shared/StatCard.tsx` (DELETE)
+- `client/src/components/shared/index.ts`
+**Estimated scope:** Medium (6 files)
 
 ---
 
-## Task 4: Expand DevicesPage.test.tsx for All View Modes and Legacy Fallback
-**Description:** Update `DevicesPage.test.tsx` with unit tests validating that all four views render when selected, that the view switcher operates properly, and that legacy `?tab=rmm` correctly defaults to the RMM telemetry view.
+### Checkpoint: StatCard Migration
+- [x] StyleGuide and UserStatsBar compile and pass tests
+
+---
+
+## Task 4: Migrate `SummaryCard` call-sites to `MetricCard`
+**Description:** Refactor all usages of `SummaryCard` across `ApiStatusPage.tsx`, `TechDashboardPage.tsx`, `DashboardSummaryStats.tsx`, `StorageQuota.tsx`, `AdminDashboardView.tsx`, and `RmmKpiGrid.tsx` to `<MetricCard />`.
 
 **Acceptance criteria:**
-- [x] Test verifies that default view is `list`
-- [x] Test verifies switching to `tiled` renders cards grid
-- [x] Test verifies switching to `rmm` renders RMM dashboard
-- [x] Test verifies switching to `graph` renders fleet analytics
-- [x] Test verifies that providing `?tab=rmm` directly renders the RMM view
+- [x] `ApiStatusPage.tsx` uses `MetricCard` for all endpoint telemetry and incident metric cards.
+- [x] `TechDashboardPage.tsx` uses `MetricCard` for assigned ticket metrics.
+- [x] `DashboardSummaryStats.tsx` uses `MetricCard` for top-level MSP KPIs.
+- [x] `StorageQuota.tsx` uses compound `<MetricCard>` with custom progress bar.
+- [x] `AdminDashboardView.tsx` uses `MetricCard` with `isLoading` support.
+- [x] `RmmKpiGrid.tsx` uses `MetricCard` for device health telemetry.
 
 **Verification:**
-- [x] Tests pass: `npm -w client run test:run -- src/features/equipment/pages/DevicesPage.test.tsx`
-- [x] Full client test suite passes: `npm -w client run test:run`
-- [x] Build succeeds: `npm -w client run build`
+- [x] Type check passes on modified files: `npm -w client run build`
 
 **Dependencies:** Task 3
 **Files likely touched:**
-- `client/src/features/equipment/pages/DevicesPage.test.tsx`
+- `client/src/features/system/pages/ApiStatusPage.tsx`
+- `client/src/features/dashboard/pages/TechDashboardPage.tsx`
+- `client/src/features/dashboard/components/DashboardSummaryStats.tsx`
+- `client/src/features/dashboard/components/StorageQuota.tsx`
+- `client/src/features/dashboard/components/AdminDashboardView.tsx`
+- `client/src/components/devices/RmmKpiGrid.tsx`
+**Estimated scope:** Medium (6 files)
+
+---
+
+## Task 5: Remove `SummaryCard.tsx`, test file, and dashboard re-export
+**Description:** Delete `SummaryCard.tsx`, `SummaryCard.test.tsx`, and `client/src/components/dashboard/summary-card.tsx`. Update `client/src/components/shared/index.ts` to remove `SummaryCard` export.
+
+**Acceptance criteria:**
+- [x] `client/src/components/shared/SummaryCard.tsx` deleted.
+- [x] `client/src/components/shared/SummaryCard.test.tsx` deleted.
+- [x] `client/src/components/dashboard/summary-card.tsx` deleted.
+- [x] Zero references to `SummaryCard` remain in `client/src`.
+
+**Verification:**
+- [x] Ripgrep for `SummaryCard` yields 0 results in `client/src`
+
+**Dependencies:** Task 4
+**Files likely touched:**
+- `client/src/components/shared/SummaryCard.tsx` (DELETE)
+- `client/src/components/shared/SummaryCard.test.tsx` (DELETE)
+- `client/src/components/dashboard/summary-card.tsx` (DELETE)
+- `client/src/components/shared/index.ts`
+**Estimated scope:** Small (4 files)
+
+---
+
+### Checkpoint: SummaryCard Migration
+- [x] No remaining `SummaryCard` references in the entire workspace
+
+---
+
+## Task 6: Refactor `PageDashboardKpi` and `KpiCards.tsx` to `MetricCard`
+**Description:** Update `client/src/components/page/PageDashboard.tsx` so that `PageDashboardKpi` delegates to or wraps `<MetricCard />` with unified styling. Update `client/src/features/financial/components/KpiCards.tsx` to use `MetricCard` directly or via `Page.DashboardKpi`. Update test files `client/src/components/Page.test.tsx` and `client/src/features/financial/pages/FinancialPage.test.tsx`.
+
+**Acceptance criteria:**
+- [x] `PageDashboardKpi` renders with unified `MetricCard` tokens.
+- [x] `KpiCards.tsx` renders four financial KPIs cleanly without layout distortion.
+- [x] `Page.test.tsx` and `FinancialPage.test.tsx` assertions pass.
+
+**Verification:**
+- [x] `npm -w client run test:run client/src/components/Page.test.tsx` passes
+- [x] `npm -w client run test:run client/src/features/financial/pages/FinancialPage.test.tsx` passes
+
+**Dependencies:** Task 5
+**Files likely touched:**
+- `client/src/components/page/PageDashboard.tsx`
+- `client/src/features/financial/components/KpiCards.tsx`
+- `client/src/components/Page.test.tsx`
+- `client/src/features/financial/pages/FinancialPage.test.tsx`
+**Estimated scope:** Medium (4 files)
+
+---
+
+### Checkpoint: Financials & Page Component
+- [x] Financial and Page test suites pass green
+
+---
+
+## Task 7: Global Verification & DoD Audit
+**Description:** Run comprehensive TypeScript build, full Vitest test suite, and linter to verify zero regressions across the monorepo.
+
+**Acceptance criteria:**
+- [x] `npm -w client run build` succeeds with zero errors.
+- [x] `npm -w client run test:run` passes with zero failing tests.
+- [x] Zero TypeScript errors and complete Clean Architecture boundary compliance.
+- [x] JSDoc and Clean Architecture standards verified.
+
+**Verification:**
+- [x] Terminal logs confirm green compilation and test passes
+
+**Dependencies:** Task 6
+**Files likely touched:**
+- None (verification only)
+**Estimated scope:** XS (0 files)
 
 ---
 
 ### Checkpoint: Complete Verification
-- [x] Full client test suite passes: `npm -w client run test:run` (all test suites green)
-- [x] Zero TypeScript compile errors: `npm -w client run build`
-- [x] Definition of Done satisfied per `AGENTS.md`
-
+- [x] All 7 tasks completed and verified
+- [x] Clean Git status
+- [x] DoD satisfied

@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Headphones, Wrench, CloudUpload, ArrowRight } from "lucide-react";
-import SummaryCard from "@/components/dashboard/summary-card";
+import { MetricCard } from "@/components/shared";
 import { Link } from "react-router-dom";
 import { StorageQuota } from "./StorageQuota";
 import { useClientDashboard } from "../hooks/useClientDashboard";
@@ -14,7 +14,7 @@ export function DashboardSummaryStats() {
   return (
     <StatsGrid className="w-full">
       {/* Support Status Card */}
-      <SummaryCard
+      <MetricCard
         icon={<Headphones className="h-3.5 w-3.5" />}
         title={t("dashboard.technicalSupport")}
         subtitle={t("dashboard.activeTickets")}
@@ -30,7 +30,7 @@ export function DashboardSummaryStats() {
         }
       />
       {/* Maintenance Card */}
-      <SummaryCard
+      <MetricCard
         icon={<Wrench className="h-3.5 w-3.5" />}
         title={t("dashboard.maintenance")}
         value="15 Oct 2024"
@@ -46,7 +46,7 @@ export function DashboardSummaryStats() {
         }
       />
       {/* Backups Card */}
-      <SummaryCard
+      <MetricCard
         icon={<CloudUpload className="h-3.5 w-3.5" />}
         title={t("dashboard.lastBackup")}
         value="15 Oct 2024"

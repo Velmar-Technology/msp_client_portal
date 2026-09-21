@@ -18,7 +18,7 @@ import {
 import { useApiStatus } from "../hooks/useApiStatus";
 import { Page } from "@/components/Page";
 import { Button } from "@/components/ui/button";
-import SummaryCard from "@/components/dashboard/summary-card";
+import { MetricCard } from "@/components/shared";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -420,55 +420,55 @@ export function ApiStatusPage() {
             {/* KPI Metrics Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
               {/* Card 1: Total Services */}
-              <SummaryCard
+              <MetricCard
                 icon={<Server className="h-4 w-4 text-zinc-600 dark:text-zinc-400 shrink-0" />}
                 title={t("apiStatus.kpiTotal")}
                 value={
-                  <span className="font-mono text-2xl font-extrabold text-zinc-900 dark:text-zinc-100">
+                  <span className="font-mono text-xl font-extrabold text-zinc-900 dark:text-zinc-100">
                     {isLoading ? <Skeleton className="h-8 w-12 inline-block" /> : data?.totalServices || 0}
                   </span>
                 }
               />
 
               {/* Card 2: Operational Services */}
-              <SummaryCard
+              <MetricCard
                 icon={<CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
                 title={<span className="text-emerald-600 dark:text-emerald-400">{t("apiStatus.kpiOperational")}</span>}
                 value={
-                  <span className="font-mono text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                  <span className="font-mono text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
                     {isLoading ? <Skeleton className="h-8 w-12 inline-block" /> : data?.operationalCount || 0}
                   </span>
                 }
               />
 
               {/* Card 3: Degraded Services */}
-              <SummaryCard
+              <MetricCard
                 icon={<AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />}
                 title={<span className="text-amber-600 dark:text-amber-400">{t("apiStatus.kpiDegraded")}</span>}
                 value={
-                  <span className="font-mono text-2xl font-extrabold text-amber-600 dark:text-amber-400">
+                  <span className="font-mono text-xl font-extrabold text-amber-600 dark:text-amber-400">
                     {isLoading ? <Skeleton className="h-8 w-12 inline-block" /> : data?.degradedCount || 0}
                   </span>
                 }
               />
 
               {/* Card 4: Outages */}
-              <SummaryCard
+              <MetricCard
                 icon={<XCircle className="h-4 w-4 text-red-500 shrink-0" />}
                 title={<span className="text-red-600 dark:text-red-400">{t("apiStatus.kpiDown")}</span>}
                 value={
-                  <span className="font-mono text-2xl font-extrabold text-red-600 dark:text-red-400">
+                  <span className="font-mono text-xl font-extrabold text-red-600 dark:text-red-400">
                     {isLoading ? <Skeleton className="h-8 w-12 inline-block" /> : data?.downCount || 0}
                   </span>
                 }
               />
 
               {/* Card 5: Average Latency */}
-              <SummaryCard
+              <MetricCard
                 icon={<Clock className="h-4 w-4 text-zinc-600 dark:text-zinc-400 shrink-0" />}
                 title={t("apiStatus.kpiAvgLatency")}
                 value={
-                  <span className="font-mono text-2xl font-extrabold text-zinc-900 dark:text-zinc-100">
+                  <span className="font-mono text-xl font-extrabold text-zinc-900 dark:text-zinc-100">
                     {isLoading ? (
                       <Skeleton className="h-8 w-16 inline-block" />
                     ) : (
@@ -543,46 +543,46 @@ export function ApiStatusPage() {
             {/* KPI Metrics Cards for Env Vars */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
               {/* Total Env Vars */}
-              <SummaryCard
+              <MetricCard
                 icon={<Sliders className="h-4 w-4 text-zinc-600 dark:text-zinc-400 shrink-0" />}
                 title={t("apiStatus.kpiEnvTotal")}
                 value={
-                  <span className="font-mono text-2xl font-extrabold text-zinc-900 dark:text-zinc-100">
+                  <span className="font-mono text-xl font-extrabold text-zinc-900 dark:text-zinc-100">
                     {isLoading ? <Skeleton className="h-8 w-12 inline-block" /> : data?.envTotal || 0}
                   </span>
                 }
               />
 
               {/* Fully Configured */}
-              <SummaryCard
+              <MetricCard
                 icon={<CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
                 title={
                   <span className="text-emerald-600 dark:text-emerald-400">{t("apiStatus.kpiEnvConfigured")}</span>
                 }
                 value={
-                  <span className="font-mono text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                  <span className="font-mono text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
                     {isLoading ? <Skeleton className="h-8 w-12 inline-block" /> : data?.envConfiguredCount || 0}
                   </span>
                 }
               />
 
               {/* Default Placeholders */}
-              <SummaryCard
+              <MetricCard
                 icon={<AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />}
                 title={<span className="text-amber-600 dark:text-amber-400">{t("apiStatus.kpiEnvDegraded")}</span>}
                 value={
-                  <span className="font-mono text-2xl font-extrabold text-amber-600 dark:text-amber-400">
+                  <span className="font-mono text-xl font-extrabold text-amber-600 dark:text-amber-400">
                     {isLoading ? <Skeleton className="h-8 w-12 inline-block" /> : data?.envDegradedCount || 0}
                   </span>
                 }
               />
 
               {/* Missing / Unset */}
-              <SummaryCard
+              <MetricCard
                 icon={<XCircle className="h-4 w-4 text-red-500 shrink-0" />}
                 title={<span className="text-red-600 dark:text-red-400">{t("apiStatus.kpiEnvMissing")}</span>}
                 value={
-                  <span className="font-mono text-2xl font-extrabold text-red-600 dark:text-red-400">
+                  <span className="font-mono text-xl font-extrabold text-red-600 dark:text-red-400">
                     {isLoading ? <Skeleton className="h-8 w-12 inline-block" /> : data?.envMissingCount || 0}
                   </span>
                 }

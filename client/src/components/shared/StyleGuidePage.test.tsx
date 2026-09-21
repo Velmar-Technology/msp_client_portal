@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { PageHeader } from './PageHeader';
-import { StatCard } from './StatCard';
+import { MetricCard } from './MetricCard';
 import { EmptyState } from './EmptyState';
 import { ModalFooter } from './ModalFooter';
 import { TableToolbar } from './TableToolbar';
@@ -21,9 +21,9 @@ describe('Composed Shared Components', () => {
     expect(screen.getByText('Click Me')).toBeInTheDocument();
   });
 
-  it('renders StatCard with title and formatted value', () => {
+  it('renders MetricCard with title and formatted value', () => {
     render(
-      <StatCard
+      <MetricCard
         title="Total Invoices"
         value="$1,234.56"
         description="Overdue amount"

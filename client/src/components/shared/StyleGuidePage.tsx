@@ -1,11 +1,10 @@
 import React from 'react';
 import { Page } from '@/components/Page';
-import { StatCard } from './StatCard';
+import { MetricCard } from './MetricCard';
 import { EmptyState } from './EmptyState';
 import { TableToolbar } from './TableToolbar';
 import { ModalFooter } from './ModalFooter';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 /**
@@ -14,19 +13,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
  */
 export const StyleGuidePage: React.FC = () => {
   return (
-    <Page className="space-y-8 p-6 w-full">
+    <Page>
       <Page.Header>
         <Page.HeaderRow>
           <Page.TitleGroup>
-            <div className="flex items-center gap-2">
-              <Page.Title>Design System Style Guide</Page.Title>
-              <Badge variant="outline">Dev Only</Badge>
-            </div>
+            <Page.Title>Design System Style Guide</Page.Title>
             <Page.Description>
-              Live reference page showcasing composed layout blocks, semantic color tokens, and UI primitives.
+              Canonical showcase of unified L1 and L2 primitives, layout blocks, and theme tokens.
             </Page.Description>
           </Page.TitleGroup>
           <Page.Actions>
+            <Button variant="outline" size="sm">
+              Secondary
+            </Button>
             <Button size="sm">
               Primary Action
             </Button>
@@ -35,21 +34,21 @@ export const StyleGuidePage: React.FC = () => {
       </Page.Header>
 
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-foreground">Composed Stat Cards</h2>
+        <h2 className="text-xl font-semibold text-foreground">Composed Metric Cards</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <StatCard
+          <MetricCard
             title="Total Revenue"
             value="$45,231.89"
             description="+20.1% from last month"
             trend={{ value: "+20.1%", isPositive: true }}
           />
-          <StatCard
+          <MetricCard
             title="Active Subscriptions"
             value="124"
             description="+12 new this week"
             trend={{ value: "+10.5%", isPositive: true }}
           />
-          <StatCard
+          <MetricCard
             title="Open Tickets"
             value="12"
             description="3 critical SLA tickets"

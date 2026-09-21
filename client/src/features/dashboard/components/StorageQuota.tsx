@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Cloud, CloudOff, ArrowRight } from "lucide-react";
 import { formatBytes } from "../hooks/useClientDashboard";
-import SummaryCard from "@/components/dashboard/summary-card";
+import { MetricCard } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 
 interface StorageQuotaProps {
@@ -28,7 +28,7 @@ export function StorageQuota({
 
   if (totalSlotsCount === 0) {
     return (
-      <div className="flex min-h-[120px] flex-col rounded-lg border border-border bg-card p-3.5 shadow-xs transition-all duration-200 hover:border-primary/40 hover:shadow-sm">
+      <div className="flex min-h-30 flex-col rounded-lg border border-border bg-card p-3.5 shadow-xs transition-all duration-200 hover:border-primary/40 hover:shadow-sm">
         <div className="flex items-center justify-between gap-2">
           <span className="truncate text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
             {t("dashboard.cloudStorage")}
@@ -56,7 +56,7 @@ export function StorageQuota({
   }
 
   return (
-    <SummaryCard
+    <MetricCard
       icon={<Cloud className="h-3.5 w-3.5" />}
       title={t("dashboard.cloudStorage")}
       value={`${usagePercentage}%`}

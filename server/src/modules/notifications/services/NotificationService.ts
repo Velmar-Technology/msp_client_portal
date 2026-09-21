@@ -460,6 +460,17 @@ export class NotificationService {
   async clearAllForUser(userId: string): Promise<number> {
     return this.notificationRepo.deleteAllForUser(userId);
   }
+
+  /**
+   * Broadcasts a nav counter invalidation event to all connected browser tabs for a user.
+   * Domain services call this after mutations that should refresh sidebar counters.
+   *
+   * @param userId - User UUID
+   * @param navKey - Destination key that changed (e.g. 'tickets', 'billing')
+   */
+  broadcastNavInvalidate(userId: string, navKey: string): void {
+    this.sendRealTimeUpdate(userId, 'nav:invalidate', { navKey, ts: Date.now() });
+  }
 }
 
 export const notificationService = new NotificationService();

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Page } from '@/components/Page';
-import { SummaryCard } from '@/components/shared/SummaryCard';
+import { MetricCard } from '@/components/shared';
 import { StatsGrid } from '@/components/stats-grid';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/ui/data-table';
@@ -472,35 +472,35 @@ export function TechDashboardPage() {
         <section aria-label="Technician Metrics">
           <StatsGrid className="w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
             {/* Total Assigned */}
-            <SummaryCard
+            <MetricCard
               icon={<ClipboardList className="h-3.5 w-3.5" />}
               title={t('techDashboard.assignedTickets')}
               value={totalAssigned}
             />
 
             {/* Open */}
-            <SummaryCard
+            <MetricCard
               icon={<Clock className="h-3.5 w-3.5" />}
               title={t('techDashboard.openTickets')}
               value={openCount}
             />
 
             {/* In Progress */}
-            <SummaryCard
+            <MetricCard
               icon={<Play className="h-3.5 w-3.5" />}
               title={t('techDashboard.inProgressTickets')}
               value={inProgressCount}
             />
 
             {/* Completed */}
-            <SummaryCard
+            <MetricCard
               icon={<CheckCircle2 className="h-3.5 w-3.5" />}
               title={t('techDashboard.resolvedTickets')}
               value={completedCount}
             />
 
             {/* My Earnings & Closed Bounties */}
-            <SummaryCard
+            <MetricCard
               icon={<DollarSign className="h-3.5 w-3.5 text-emerald-500" />}
               title={t('techDashboard.myEarnings')}
               value={`$${(earningsSummary?.total_earned || 0).toFixed(2)}`}

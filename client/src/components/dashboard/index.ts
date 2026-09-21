@@ -1,2 +1,2 @@
 export { DashboardSkeleton } from './DashboardSkeleton';
-export { SummaryCard, type SummaryCardProps } from '@/components/shared';
+export { MetricCard, type MetricCardProps } from '@/components/shared';

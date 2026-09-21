@@ -183,6 +183,7 @@ Dependencies point strictly **INWARD**: `Frameworks/Drivers` $\rightarrow$ `Inte
   - If a dedicated MCP tool does NOT exist for the requested query (e.g. querying users when only equipment/tickets tools exist), do NOT execute intermediate ad-hoc scripts, parse unrelated payloads (like `/equipment/slots`), or synthesize data through roundabout methods.
   - Immediately inform the user of the available tools, report the missing capability, or offer to register a first-class MCP tool.
 * **Conventional Commits:** `<type>(<scope>): <imperative summary>` (`feat`, `fix`, `refactor`, `test`, `chore` with scopes `tickets`, `billing`, `auth`, `client`, `server`, etc.).
+* **Pull Request & Walkthrough Formatting:** When drafting PRs or presenting completed tasks, adhere strictly to `.github/pull_request_template.md` and `docs/guidelines/pull-request-protocol.md` (Context, Visual Evidence / Terminal Logs, Reproducible Step-by-Step Verification Recipe, Type, and Constraint Checklist). For automated bot reviews (e.g. CodeRabbit), evaluate inline diff suggestions and either apply valid diffs or document technical justification before resolving.
 
 ---
 
@@ -195,4 +196,5 @@ A task or agent turn is complete ONLY when:
 4. **Test Coverage:** New domain services, policies, or business logic include co-located unit tests (`*.spec.ts` / `*.test.ts`).
 5. **JSDoc / Documentation:** All exported services, repository queries, hooks, and utilities include standard JSDoc/TSDoc annotations with `@param`, `@returns`, and `@throws`.
 6. **Git Discipline:** Commit conforms to Conventional Commits.
+7. **Reproducible Verification Proof:** Walkthroughs or PR descriptions include explicit, numbered verification recipes and visual/terminal evidence.
 

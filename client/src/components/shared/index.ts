@@ -1,7 +1,7 @@
 export { Page, type PageProps } from '@/components/Page';
 export { MaxWidthWrapper, type MaxWidthWrapperProps } from './MaxWidthWrapper';
 export { StatsGrid, type StatsGridProps } from './StatsGrid';
-export { SummaryCard, type SummaryCardProps } from './SummaryCard';
+export { MetricCard, type MetricCardProps, type MetricCardTrend } from './MetricCard';
 export { DatePicker, type DatePickerProps } from './DatePicker';
 export { ThemeProvider } from './ThemeProvider';
 export { useTheme, type Theme, type ThemeProviderProps, type ThemeProviderState } from './useTheme';
@@ -10,7 +10,6 @@ export { ThemeToggle } from '@/components/layout/ThemeToggle';
 export { NotificationBell } from '@/components/layout/NotificationBell';
 
 export { PageHeader, type PageHeaderProps } from './PageHeader';
-export { StatCard, type StatCardProps } from './StatCard';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { ModalFooter, type ModalFooterProps } from './ModalFooter';
 export { TableToolbar, type TableToolbarProps } from './TableToolbar';

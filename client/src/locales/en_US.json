@@ -54,7 +54,10 @@
     "crm": "CRM Pipeline",
     "passwordManager": "Password Manager",
     "cafAiSettings": "AI & CAF Quality",
-    "upgradeBadge": "Upgrade"
+    "upgradeBadge": "Upgrade",
+    "counters": {
+      "ariaLabel": "{{count}} new items"
+    }
   },
   "byok": {
     "pageTitle": "Artificial Intelligence & CAF Quality",
@@ -533,6 +536,7 @@
     "read": "Read",
     "markAsRead": "Mark as read",
     "markAsUnread": "Mark as unread",
+    "markAllAsRead": "Mark all as read",
     "noTicketsFound": "No tickets found. Create your first ticket to get started.",
     "showing": "Showing",
     "statusOpen": "Open",
