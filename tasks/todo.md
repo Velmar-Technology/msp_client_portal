@@ -133,13 +133,14 @@
 
 **Acceptance criteria:**
 - [x] `slot_id` in `msp-agent.json` updated to valid active slot.
-- [ ] `MSPEndpointAgent` service restarted and reports Online.
-- [ ] `msp_list_connected_agents` returns 1 online agent (pending local service restart).
-- [x] `ratelimit:gw:186.6.42.61` does not surge (verified at 2/1000).
+- [x] `MSPEndpointAgent` running and reports Online (`online: true`).
+- [x] `msp_list_connected_agents` returns 1 online agent (`DEV-PC-1`, Lenovo 20LD001HUS).
+- [x] `ratelimit:gw:186.6.42.61` does not surge (verified at 0/1000).
 
 **Verification:**
 - [x] MCP tool `msp_list_connected_agents` executes cleanly without 429 rate limit errors.
-- [x] Redis ZCARD check confirms portal quota is healthy (2/1000).
+- [x] MCP tool `msp_remote_diagnose_pc` executes live telemetry command in 963ms.
+- [x] Redis ZCARD check confirms portal quota is healthy (0/1000).
 
 **Dependencies:** Tasks 1-6
 **Files likely touched:**
@@ -149,5 +150,5 @@
 ---
 
 ### Checkpoint: Complete Verification
-- [ ] All 7 tasks completed
-- [ ] DoD satisfied
+- [x] All 7 tasks completed
+- [x] DoD satisfied
