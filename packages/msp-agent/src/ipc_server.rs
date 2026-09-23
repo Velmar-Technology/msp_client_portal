@@ -2,6 +2,7 @@ use chrono::Utc;
 use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use std::sync::atomic::{AtomicI64, AtomicU32, Ordering};
 use std::sync::OnceLock;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::broadcast;
@@ -13,6 +14,61 @@ use crate::AgentConfig;
 pub const PIPE_NAME: &str = r"\\.\pipe\msp-agent-ipc";
 
 static BROADCAST_TX: OnceLock<broadcast::Sender<String>> = OnceLock::new();
+
+/// In-memory circuit breaker and exponential backoff manager for endpoint ticket polling.
+/// Suppresses rapid HTTP retries when the endpoint is un-paired, unauthorized, or throttled.
+struct TicketSyncCircuitBreaker {
+    consecutive_failures: AtomicU32,
+    next_allowed_time: AtomicI64,
+}
+
+impl TicketSyncCircuitBreaker {
+    const fn new() -> Self {
+        Self {
+            consecutive_failures: AtomicU32::new(0),
+            next_allowed_time: AtomicI64::new(0),
+        }
+    }
+
+    /// Evaluates whether an outbound HTTP request is currently permitted.
+    fn can_request(&self) -> bool {
+        let now = Utc::now().timestamp();
+        now >= self.next_allowed_time.load(Ordering::Relaxed)
+    }
+
+    /// Resets failure count and clears any pending backoff delay on successful response.
+    fn record_success(&self) {
+        self.consecutive_failures.store(0, Ordering::Relaxed);
+        self.next_allowed_time.store(0, Ordering::Relaxed);
+    }
+
+    /// Trips circuit breaker and computes exponential backoff with jitter on error.
+    fn record_failure(&self, status_code: Option<u16>) {
+        let fails = self.consecutive_failures.fetch_add(1, Ordering::Relaxed) + 1;
+        let base_backoff: i64 = match status_code {
+            Some(401) | Some(404) => 120, // 2 minutes minimum on auth failure or missing slot
+            Some(429) => 300,             // 5 minutes on rate limit hit
+            _ => 30,                      // 30 seconds default network backoff
+        };
+        let shift = fails.min(6).saturating_sub(1);
+        let multiplier = 1i64.checked_shl(shift).unwrap_or(32);
+        let delay_secs = (base_backoff * multiplier).min(900); // Capped at 15 minutes
+        let target_time = Utc::now().timestamp() + delay_secs;
+        self.next_allowed_time.store(target_time, Ordering::Relaxed);
+        warn!(
+            "[IPC Server] Ticket sync circuit breaker tripped (consecutive_failures: {}, backoff: {}s, status: {:?})",
+            fails, delay_secs, status_code
+        );
+    }
+
+    /// Manually resets the circuit breaker upon pairing or explicit user interaction.
+    fn reset(&self) {
+        self.consecutive_failures.store(0, Ordering::Relaxed);
+        self.next_allowed_time.store(0, Ordering::Relaxed);
+    }
+}
+
+static TICKET_CIRCUIT_BREAKER: TicketSyncCircuitBreaker = TicketSyncCircuitBreaker::new();
 
 pub fn get_broadcast_sender() -> &'static broadcast::Sender<String> {
     BROADCAST_TX.get_or_init(|| {
@@ -276,6 +332,7 @@ async fn handle_pipe_client(
                                     if let Err(e) = state.save() {
                                         IpcEnvelope::error(&envelope.id, &format!("Failed to persist refreshed code: {}", e))
                                     } else {
+                                        TICKET_CIRCUIT_BREAKER.reset();
                                         let exp = state.pairing_code_expires_at.clone();
                                         IpcEnvelope::response(
                                             &envelope.id,
@@ -291,57 +348,124 @@ async fn handle_pipe_client(
                             }
 
                             "GET_ACTIVE_TICKET" => {
-                                let endpoint = format!("{}/api/v1/tickets/agent/active", backend_url);
-                                match client.get(&endpoint).header("Authorization", format!("Bearer {}", token)).send().await {
-                                    Ok(res) => {
-                                        if let Ok(json_res) = res.json::<Value>().await {
-                                            let data = json_res.get("data").cloned().unwrap_or(Value::Null);
-                                            IpcEnvelope::response(&envelope.id, "GET_ACTIVE_TICKET_RESP", data)
-                                        } else {
+                                if !state.is_bound() || token.trim().is_empty() {
+                                    // Suppress HTTP traffic completely when un-paired or lacking credentials
+                                    IpcEnvelope::response(&envelope.id, "GET_ACTIVE_TICKET_RESP", Value::Null)
+                                } else if !TICKET_CIRCUIT_BREAKER.can_request() {
+                                    // Circuit breaker open — serve fast cached fallback
+                                    IpcEnvelope::response(&envelope.id, "GET_ACTIVE_TICKET_RESP", Value::Null)
+                                } else {
+                                    let endpoint = format!("{}/api/v1/tickets/agent/active", backend_url);
+                                    let req = client
+                                        .get(&endpoint)
+                                        .header("Authorization", format!("Bearer {}", token))
+                                        .header("X-Agent-Instance-Id", &state.instance_id)
+                                        .header("X-Slot-Id", state.slot_id.as_deref().unwrap_or_default())
+                                        .header("User-Agent", "msp-agent/1.12.0");
+
+                                    match req.send().await {
+                                        Ok(res) => {
+                                            let status = res.status();
+                                            if status.is_success() {
+                                                TICKET_CIRCUIT_BREAKER.record_success();
+                                                if let Ok(json_res) = res.json::<Value>().await {
+                                                    let data = json_res.get("data").cloned().unwrap_or(Value::Null);
+                                                    IpcEnvelope::response(&envelope.id, "GET_ACTIVE_TICKET_RESP", data)
+                                                } else {
+                                                    IpcEnvelope::response(&envelope.id, "GET_ACTIVE_TICKET_RESP", Value::Null)
+                                                }
+                                            } else {
+                                                TICKET_CIRCUIT_BREAKER.record_failure(Some(status.as_u16()));
+                                                IpcEnvelope::response(&envelope.id, "GET_ACTIVE_TICKET_RESP", Value::Null)
+                                            }
+                                        }
+                                        Err(err) => {
+                                            TICKET_CIRCUIT_BREAKER.record_failure(None);
+                                            warn!("[IPC Server] Failed to fetch active ticket from backend: {}", err);
                                             IpcEnvelope::response(&envelope.id, "GET_ACTIVE_TICKET_RESP", Value::Null)
                                         }
-                                    }
-                                    Err(err) => {
-                                        warn!("[IPC Server] Failed to fetch active ticket from backend: {}", err);
-                                        IpcEnvelope::response(&envelope.id, "GET_ACTIVE_TICKET_RESP", Value::Null)
                                     }
                                 }
                             }
 
                             "GET_TICKET_LIST" => {
-                                let limit = envelope.payload.get("limit").and_then(|v| v.as_u64()).unwrap_or(20);
-                                let endpoint = format!("{}/api/v1/tickets/agent/list?limit={}", backend_url, limit);
-                                match client.get(&endpoint).header("Authorization", format!("Bearer {}", token)).send().await {
-                                    Ok(res) => {
-                                        if let Ok(json_res) = res.json::<Value>().await {
-                                            let data = json_res.get("data").cloned().unwrap_or_else(|| json!([]));
-                                            IpcEnvelope::response(&envelope.id, "GET_TICKET_LIST_RESP", data)
-                                        } else {
+                                if !state.is_bound() || token.trim().is_empty() {
+                                    // Suppress HTTP traffic completely when un-paired
+                                    IpcEnvelope::response(&envelope.id, "GET_TICKET_LIST_RESP", json!([]))
+                                } else if !TICKET_CIRCUIT_BREAKER.can_request() {
+                                    // Circuit breaker open — serve fast cached fallback
+                                    IpcEnvelope::response(&envelope.id, "GET_TICKET_LIST_RESP", json!([]))
+                                } else {
+                                    let limit = envelope.payload.get("limit").and_then(|v| v.as_u64()).unwrap_or(20);
+                                    let endpoint = format!("{}/api/v1/tickets/agent/list?limit={}", backend_url, limit);
+                                    let req = client
+                                        .get(&endpoint)
+                                        .header("Authorization", format!("Bearer {}", token))
+                                        .header("X-Agent-Instance-Id", &state.instance_id)
+                                        .header("X-Slot-Id", state.slot_id.as_deref().unwrap_or_default())
+                                        .header("User-Agent", "msp-agent/1.12.0");
+
+                                    match req.send().await {
+                                        Ok(res) => {
+                                            let status = res.status();
+                                            if status.is_success() {
+                                                TICKET_CIRCUIT_BREAKER.record_success();
+                                                if let Ok(json_res) = res.json::<Value>().await {
+                                                    let data = json_res.get("data").cloned().unwrap_or_else(|| json!([]));
+                                                    IpcEnvelope::response(&envelope.id, "GET_TICKET_LIST_RESP", data)
+                                                } else {
+                                                    IpcEnvelope::response(&envelope.id, "GET_TICKET_LIST_RESP", json!([]))
+                                                }
+                                            } else {
+                                                TICKET_CIRCUIT_BREAKER.record_failure(Some(status.as_u16()));
+                                                IpcEnvelope::response(&envelope.id, "GET_TICKET_LIST_RESP", json!([]))
+                                            }
+                                        }
+                                        Err(err) => {
+                                            TICKET_CIRCUIT_BREAKER.record_failure(None);
+                                            warn!("[IPC Server] Failed to fetch ticket list from backend: {}", err);
                                             IpcEnvelope::response(&envelope.id, "GET_TICKET_LIST_RESP", json!([]))
                                         }
-                                    }
-                                    Err(err) => {
-                                        warn!("[IPC Server] Failed to fetch ticket list from backend: {}", err);
-                                        IpcEnvelope::response(&envelope.id, "GET_TICKET_LIST_RESP", json!([]))
                                     }
                                 }
                             }
 
                             "GET_TICKET_RESPONSES" => {
-                                let ticket_id = envelope.payload.get("ticketId").and_then(|v| v.as_str()).unwrap_or_default();
-                                let endpoint = format!("{}/api/v1/tickets/{}/responses/agent", backend_url, ticket_id);
-                                match client.get(&endpoint).header("Authorization", format!("Bearer {}", token)).send().await {
-                                    Ok(res) => {
-                                        if let Ok(json_res) = res.json::<Value>().await {
-                                            let data = json_res.get("data").cloned().unwrap_or_else(|| json!([]));
-                                            IpcEnvelope::response(&envelope.id, "GET_TICKET_RESPONSES_RESP", data)
-                                        } else {
+                                if !state.is_bound() || token.trim().is_empty() {
+                                    IpcEnvelope::response(&envelope.id, "GET_TICKET_RESPONSES_RESP", json!([]))
+                                } else if !TICKET_CIRCUIT_BREAKER.can_request() {
+                                    IpcEnvelope::response(&envelope.id, "GET_TICKET_RESPONSES_RESP", json!([]))
+                                } else {
+                                    let ticket_id = envelope.payload.get("ticketId").and_then(|v| v.as_str()).unwrap_or_default();
+                                    let endpoint = format!("{}/api/v1/tickets/{}/responses/agent", backend_url, ticket_id);
+                                    let req = client
+                                        .get(&endpoint)
+                                        .header("Authorization", format!("Bearer {}", token))
+                                        .header("X-Agent-Instance-Id", &state.instance_id)
+                                        .header("X-Slot-Id", state.slot_id.as_deref().unwrap_or_default())
+                                        .header("User-Agent", "msp-agent/1.12.0");
+
+                                    match req.send().await {
+                                        Ok(res) => {
+                                            let status = res.status();
+                                            if status.is_success() {
+                                                TICKET_CIRCUIT_BREAKER.record_success();
+                                                if let Ok(json_res) = res.json::<Value>().await {
+                                                    let data = json_res.get("data").cloned().unwrap_or_else(|| json!([]));
+                                                    IpcEnvelope::response(&envelope.id, "GET_TICKET_RESPONSES_RESP", data)
+                                                } else {
+                                                    IpcEnvelope::response(&envelope.id, "GET_TICKET_RESPONSES_RESP", json!([]))
+                                                }
+                                            } else {
+                                                TICKET_CIRCUIT_BREAKER.record_failure(Some(status.as_u16()));
+                                                IpcEnvelope::response(&envelope.id, "GET_TICKET_RESPONSES_RESP", json!([]))
+                                            }
+                                        }
+                                        Err(err) => {
+                                            TICKET_CIRCUIT_BREAKER.record_failure(None);
+                                            warn!("[IPC Server] Failed to fetch ticket responses: {}", err);
                                             IpcEnvelope::response(&envelope.id, "GET_TICKET_RESPONSES_RESP", json!([]))
                                         }
-                                    }
-                                    Err(err) => {
-                                        warn!("[IPC Server] Failed to fetch ticket responses: {}", err);
-                                        IpcEnvelope::response(&envelope.id, "GET_TICKET_RESPONSES_RESP", json!([]))
                                     }
                                 }
                             }

@@ -140,6 +140,48 @@ describe('API Gateway Layer Middleware', () => {
       expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Remaining', '999');
       expect(next).toHaveBeenCalledWith();
     });
+
+    it('partitions agent requests into dedicated ratelimit:agent bucket and protects human IP quota', async () => {
+      const limiter = createGatewayRateLimiter({
+        windowMs: 60000,
+        maxRequests: 5,
+        agentMaxRequests: 1,
+      });
+
+      // 1. Agent request from IP 186.6.42.61 hitting /api/v1/tickets/agent/list
+      const agentReq = {
+        ...req,
+        ip: '186.6.42.61',
+        originalUrl: '/api/v1/tickets/agent/list',
+        headers: { 'user-agent': 'msp-agent/1.0.0' },
+      } as unknown as Request;
+
+      // Agent request 1 succeeds
+      await limiter(agentReq, res as Response, next);
+      expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Limit', '1');
+      expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Remaining', '0');
+      expect(next).toHaveBeenLastCalledWith();
+
+      // Agent request 2 exceeds agent quota (429)
+      await limiter(agentReq, res as Response, next);
+      const err = (next as any).mock.calls[(next as any).mock.calls.length - 1][0];
+      expect(err).toBeInstanceOf(RateLimitError);
+      expect(err.statusCode).toBe(429);
+
+      // 2. Human browser session from the EXACT SAME IP (186.6.42.61) visiting portal
+      const browserReq = {
+        ...req,
+        ip: '186.6.42.61',
+        originalUrl: '/api/v1/tickets',
+        headers: { 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+      } as unknown as Request;
+
+      // Browser request MUST succeed because agent traffic was isolated to ratelimit:agent:*
+      await limiter(browserReq, res as Response, next);
+      expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Limit', '5');
+      expect(res.setHeader).toHaveBeenCalledWith('X-RateLimit-Remaining', '4');
+      expect(next).toHaveBeenLastCalledWith();
+    });
   });
 
   describe('gatewayHeaderPropagatorMiddleware — Header Propagation', () => {

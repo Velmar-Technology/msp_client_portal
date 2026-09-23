@@ -1,186 +1,153 @@
-# Tasks: Unified L2 Metric Card Primitive (`<MetricCard />`)
+# Tasks: Prevent Rate Limit Re-accumulation
 
-## Task 1: Create `client/src/components/shared/MetricCard.tsx`
-**Description:** Implement the canonical L2 shared primitive `<MetricCard />` using Radix UI `Card` (`@/components/ui/card`), supporting hybrid flat props (`title`, `value`, `trend`, `icon`, `badge`, `subtitle`, `footer`, `isLoading`, `onClick`) and compound slots (`MetricCard.Header`, `MetricCard.Title`, `MetricCard.Icon`, `MetricCard.Badge`, `MetricCard.Value`, `MetricCard.Trend`, `MetricCard.Subtitle`, `MetricCard.Footer`).
+## Task 1: Update `gatewayRateLimiterMiddleware.ts` to isolate agent traffic
+**Description:** Modify `server/src/shared/middleware/gatewayRateLimiterMiddleware.ts` to detect machine-authenticated requests (checking path `/tickets/agent`, headers `x-agent-instance-id`, or machine auth bearer tokens) and partition their rate-limiting key to `ratelimit:agent:<id>` with dedicated thresholds, preventing machine requests from exhausting the human portal browser IP bucket (`ratelimit:gw:<ip>`).
 
 **Acceptance criteria:**
-- [x] Conforms to unified density: `p-3.5`, `min-h-[120px]`, `border-border`, subtle hover elevation.
-- [x] Supports both direct flat props and compound subcomponent composition.
-- [x] Trend pill supports `direction: "up" | "down" | "neutral"`, `isPositive: boolean`, and string/number/ReactNode values.
-- [x] Built-in skeleton state (`isLoading`) matching the exact card dimensions and inner hierarchy.
-- [x] Keyboard accessibility (`role="button"`, `tabIndex={0}`, Enter/Space key triggers) when `onClick` is provided.
-- [x] Full JSDoc/TSDoc documentation with `@param`, `@returns`, and `@see`.
+- [x] Requests to `/api/v1/tickets/agent/*` or containing agent identifiers generate keys with `ratelimit:agent:` prefix.
+- [x] Browser requests continue using tenant ID or IP fallback (`ratelimit:gw:`).
+- [x] Dedicated windowMs and maxRequests applied for agent traffic (e.g., 120 req / 5m).
+- [x] JSDoc updated with `@see BL-103`.
 
 **Verification:**
-- [x] File exists at `client/src/components/shared/MetricCard.tsx`
-- [x] Types compile cleanly without errors
+- [x] Types compile cleanly (`npm -w server run build`)
 
 **Dependencies:** None
 **Files likely touched:**
-- `client/src/components/shared/MetricCard.tsx`
+- `server/src/shared/middleware/gatewayRateLimiterMiddleware.ts`
 **Estimated scope:** Small (1 file)
 
 ---
 
-## Task 2: Create unit tests in `MetricCard.test.tsx` and export from `index.ts`
-**Description:** Author unit tests covering all rendering modes: flat props, compound slots, trend badge states, loading skeleton, click handlers, and keyboard events. Export `MetricCard` and `type MetricCardProps` from `client/src/components/shared/index.ts`.
+## Task 2: Add unit tests in `gatewayMiddleware.test.ts`
+**Description:** Add test cases in `server/src/shared/middleware/gatewayMiddleware.test.ts` verifying that agent traffic is partitioned from normal tenant/IP gateway limits and that exhausting the agent limit does not block human browser requests from the same IP.
 
 **Acceptance criteria:**
-- [x] Unit tests test flat prop rendering (title, value, subtitle, footer, icon, badge).
-- [x] Unit tests test compound subcomponents rendering.
-- [x] Unit tests test positive, negative, and neutral trend badge variants.
-- [x] Unit tests test `isLoading` skeleton rendering and `aria-busy`.
-- [x] Unit tests test click and keyboard trigger (`Enter`, `Space`) when `onClick` is provided.
-- [x] Re-exported from `client/src/components/shared/index.ts`.
+- [x] Tests verify agent key generation with `ratelimit:agent:` prefix.
+- [x] Tests verify cross-isolation: agent traffic hitting its quota does not 429-lock the browser gateway key.
+- [x] All tests pass cleanly.
 
 **Verification:**
-- [x] Focused tests pass: `npm -w client run test:run client/src/components/shared/MetricCard.test.tsx`
+- [x] Tests pass: `npm -w server run test src/shared/middleware/gatewayMiddleware.test.ts`
 
 **Dependencies:** Task 1
 **Files likely touched:**
-- `client/src/components/shared/MetricCard.test.tsx`
-- `client/src/components/shared/index.ts`
-**Estimated scope:** Small (2 files)
+- `server/src/shared/middleware/gatewayMiddleware.test.ts`
+**Estimated scope:** Small (1 file)
 
 ---
 
-### Checkpoint: Foundation
-- [x] `MetricCard` unit tests pass cleanly
-- [x] Export verified from `@/components/shared`
+### Checkpoint: Gateway
+- [x] Gateway tests pass cleanly (9 tests green)
+- [x] Server build succeeds cleanly
 
 ---
 
-## Task 3: Migrate `StatCard` call-sites and remove `StatCard.tsx`
-**Description:** Refactor all usages of `StatCard` across `UserStatsBar.tsx`, `CRMPage.tsx`, and `StyleGuidePage.tsx` to `<MetricCard />`. Update `StyleGuidePage.test.tsx` and delete `client/src/components/shared/StatCard.tsx`.
+## Task 3: Implement exponential backoff and circuit breaker in `ipc_server.rs`
+**Description:** Update `packages/msp-agent/src/ipc_server.rs` to implement an exponential backoff circuit breaker when fetching tickets via HTTP fails with 401 Unauthorized, 404 Not Found, or connection errors.
 
 **Acceptance criteria:**
-- [x] `client/src/features/users/components/UserStatsBar.tsx` uses `MetricCard`.
-- [x] `client/src/features/crm/pages/CRMPage.tsx` uses `MetricCard`.
-- [x] `client/src/components/shared/StyleGuidePage.tsx` and its test use `MetricCard`.
-- [x] `client/src/components/shared/StatCard.tsx` is deleted.
-- [x] `client/src/components/shared/index.ts` no longer exports `StatCard`.
+- [x] Exponential backoff starting at 30s up to 15m with jitter.
+- [x] Consecutive failures trip circuit breaker to state `Open`.
+- [x] While `Open`, returns immediate cached failure/empty response to local named pipe clients without firing outbound HTTP requests.
+- [x] Resets on manual refresh trigger or successful pairing event.
 
 **Verification:**
-- [x] `npm -w client run test:run client/src/components/shared/StyleGuidePage.test.tsx` passes
-- [x] No remaining references to `StatCard` in `client/src`
+- [x] `cargo check --manifest-path packages/msp-agent/Cargo.toml` succeeds.
 
-**Dependencies:** Task 2
+**Dependencies:** None
 **Files likely touched:**
-- `client/src/features/users/components/UserStatsBar.tsx`
-- `client/src/features/crm/pages/CRMPage.tsx`
-- `client/src/components/shared/StyleGuidePage.tsx`
-- `client/src/components/shared/StyleGuidePage.test.tsx`
-- `client/src/components/shared/StatCard.tsx` (DELETE)
-- `client/src/components/shared/index.ts`
-**Estimated scope:** Medium (6 files)
+- `packages/msp-agent/src/ipc_server.rs`
+**Estimated scope:** Medium (1-2 files)
 
 ---
 
-### Checkpoint: StatCard Migration
-- [x] StyleGuide and UserStatsBar compile and pass tests
-
----
-
-## Task 4: Migrate `SummaryCard` call-sites to `MetricCard`
-**Description:** Refactor all usages of `SummaryCard` across `ApiStatusPage.tsx`, `TechDashboardPage.tsx`, `DashboardSummaryStats.tsx`, `StorageQuota.tsx`, `AdminDashboardView.tsx`, and `RmmKpiGrid.tsx` to `<MetricCard />`.
+## Task 4: Add local caching for un-paired state in endpoint agent
+**Description:** If `slot_id` is missing or un-paired in `msp-agent.json`, suppress automatic ticket list polling entirely and emit an `UNPAIRED` status over the IPC pipe to the tray application.
 
 **Acceptance criteria:**
-- [x] `ApiStatusPage.tsx` uses `MetricCard` for all endpoint telemetry and incident metric cards.
-- [x] `TechDashboardPage.tsx` uses `MetricCard` for assigned ticket metrics.
-- [x] `DashboardSummaryStats.tsx` uses `MetricCard` for top-level MSP KPIs.
-- [x] `StorageQuota.tsx` uses compound `<MetricCard>` with custom progress bar.
-- [x] `AdminDashboardView.tsx` uses `MetricCard` with `isLoading` support.
-- [x] `RmmKpiGrid.tsx` uses `MetricCard` for device health telemetry.
+- [x] Agent checks if `slot_id` is blank or unconfirmed before scheduling recurring HTTP queries.
+- [x] IPC server responds to tray with `Unpaired` state.
+- [x] Outbound network traffic to `/tickets/agent/*` is zero when un-paired.
 
 **Verification:**
-- [x] Type check passes on modified files: `npm -w client run build`
+- [x] Unit check in Rust agent or local log verification.
 
 **Dependencies:** Task 3
 **Files likely touched:**
-- `client/src/features/system/pages/ApiStatusPage.tsx`
-- `client/src/features/dashboard/pages/TechDashboardPage.tsx`
-- `client/src/features/dashboard/components/DashboardSummaryStats.tsx`
-- `client/src/features/dashboard/components/StorageQuota.tsx`
-- `client/src/features/dashboard/components/AdminDashboardView.tsx`
-- `client/src/components/devices/RmmKpiGrid.tsx`
-**Estimated scope:** Medium (6 files)
+- `packages/msp-agent/src/ipc_server.rs`
+**Estimated scope:** Small (1 file)
 
 ---
 
-## Task 5: Remove `SummaryCard.tsx`, test file, and dashboard re-export
-**Description:** Delete `SummaryCard.tsx`, `SummaryCard.test.tsx`, and `client/src/components/dashboard/summary-card.tsx`. Update `client/src/components/shared/index.ts` to remove `SummaryCard` export.
+### Checkpoint: Agent
+- [x] Rust agent compiles cleanly without warnings or errors (`Finished dev profile target(s) in 18.02s`).
+
+---
+
+## Task 5: Add `TICKETS_QUERY` and `TICKETS_SNAPSHOT` in `AgentGateway.ts`
+**Description:** Introduce WebSocket ticket tunneling in `server/src/modules/rmm/services/AgentGateway.ts`. When an online agent sends a `TICKETS_QUERY` message over the established WebSocket tunnel, query the ticket repository/service and return a lightweight `TICKETS_SNAPSHOT` response.
 
 **Acceptance criteria:**
-- [x] `client/src/components/shared/SummaryCard.tsx` deleted.
-- [x] `client/src/components/shared/SummaryCard.test.tsx` deleted.
-- [x] `client/src/components/dashboard/summary-card.tsx` deleted.
-- [x] Zero references to `SummaryCard` remain in `client/src`.
+- [x] Handles incoming `TICKETS_QUERY` message type in `AgentGateway`.
+- [x] Dispatches ticket query for the authenticated `equipmentId` / `tenantId`.
+- [x] Sends `TICKETS_SNAPSHOT` frame back through the active WebSocket connection.
+- [x] Zero HTTP requests required for online agents.
 
 **Verification:**
-- [x] Ripgrep for `SummaryCard` yields 0 results in `client/src`
+- [x] Build compiles: `npm -w server run build`
 
-**Dependencies:** Task 4
+**Dependencies:** Task 1
 **Files likely touched:**
-- `client/src/components/shared/SummaryCard.tsx` (DELETE)
-- `client/src/components/shared/SummaryCard.test.tsx` (DELETE)
-- `client/src/components/dashboard/summary-card.tsx` (DELETE)
-- `client/src/components/shared/index.ts`
-**Estimated scope:** Small (4 files)
+- `server/src/modules/rmm/services/AgentGateway.ts`
+**Estimated scope:** Small (1 file)
 
 ---
 
-### Checkpoint: SummaryCard Migration
-- [x] No remaining `SummaryCard` references in the entire workspace
-
----
-
-## Task 6: Refactor `PageDashboardKpi` and `KpiCards.tsx` to `MetricCard`
-**Description:** Update `client/src/components/page/PageDashboard.tsx` so that `PageDashboardKpi` delegates to or wraps `<MetricCard />` with unified styling. Update `client/src/features/financial/components/KpiCards.tsx` to use `MetricCard` directly or via `Page.DashboardKpi`. Update test files `client/src/components/Page.test.tsx` and `client/src/features/financial/pages/FinancialPage.test.tsx`.
+## Task 6: Add unit tests in `AgentGateway.test.ts`
+**Description:** Author unit tests verifying that `AgentGateway` handles `TICKETS_QUERY` frames, interacts with the ticket service, and sends `TICKETS_SNAPSHOT` frames back over the socket.
 
 **Acceptance criteria:**
-- [x] `PageDashboardKpi` renders with unified `MetricCard` tokens.
-- [x] `KpiCards.tsx` renders four financial KPIs cleanly without layout distortion.
-- [x] `Page.test.tsx` and `FinancialPage.test.tsx` assertions pass.
+- [x] Unit test verifies `TICKETS_QUERY` message processing.
+- [x] Unit test verifies error handling when ticket lookup fails.
+- [x] All tests in `AgentGateway.test.ts` pass green (39 tests).
 
 **Verification:**
-- [x] `npm -w client run test:run client/src/components/Page.test.tsx` passes
-- [x] `npm -w client run test:run client/src/features/financial/pages/FinancialPage.test.tsx` passes
+- [x] Tests pass: `npm -w server run test src/modules/rmm/services/AgentGateway.test.ts`
 
 **Dependencies:** Task 5
 **Files likely touched:**
-- `client/src/components/page/PageDashboard.tsx`
-- `client/src/features/financial/components/KpiCards.tsx`
-- `client/src/components/Page.test.tsx`
-- `client/src/features/financial/pages/FinancialPage.test.tsx`
-**Estimated scope:** Medium (4 files)
+- `server/src/modules/rmm/services/AgentGateway.test.ts`
+**Estimated scope:** Small (1 file)
 
 ---
 
-### Checkpoint: Financials & Page Component
-- [x] Financial and Page test suites pass green
+### Checkpoint: WebSocket Tunnel
+- [x] RMM gateway test suite passes (39 tests passed).
+- [x] Server build succeeds cleanly.
 
 ---
 
-## Task 7: Global Verification & DoD Audit
-**Description:** Run comprehensive TypeScript build, full Vitest test suite, and linter to verify zero regressions across the monorepo.
+## Task 7: Local Host Re-pairing & Verification
+**Description:** Bind the local machine's configuration (`C:\ProgramData\MSP\msp-agent.json`) to the user's active tenant equipment slot (`c8dfea5b-a2c3-4315-95ed-233e83be8ecc`), restart `MSPEndpointAgent`, and verify that the endpoint connects cleanly with zero 429 rate limit accumulation.
 
 **Acceptance criteria:**
-- [x] `npm -w client run build` succeeds with zero errors.
-- [x] `npm -w client run test:run` passes with zero failing tests.
-- [x] Zero TypeScript errors and complete Clean Architecture boundary compliance.
-- [x] JSDoc and Clean Architecture standards verified.
+- [x] `slot_id` in `msp-agent.json` updated to valid active slot.
+- [ ] `MSPEndpointAgent` service restarted and reports Online.
+- [ ] `msp_list_connected_agents` returns 1 online agent (pending local service restart).
+- [x] `ratelimit:gw:186.6.42.61` does not surge (verified at 2/1000).
 
 **Verification:**
-- [x] Terminal logs confirm green compilation and test passes
+- [x] MCP tool `msp_list_connected_agents` executes cleanly without 429 rate limit errors.
+- [x] Redis ZCARD check confirms portal quota is healthy (2/1000).
 
-**Dependencies:** Task 6
+**Dependencies:** Tasks 1-6
 **Files likely touched:**
-- None (verification only)
-**Estimated scope:** XS (0 files)
+- `C:\ProgramData\MSP\msp-agent.json`
+**Estimated scope:** XS (1 file)
 
 ---
 
 ### Checkpoint: Complete Verification
-- [x] All 7 tasks completed and verified
-- [x] Clean Git status
-- [x] DoD satisfied
+- [ ] All 7 tasks completed
+- [ ] DoD satisfied

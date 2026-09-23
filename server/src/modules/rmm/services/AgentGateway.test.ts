@@ -684,4 +684,131 @@ describe('AgentGateway', () => {
       expect(mockClusterBroker.isAgentPresent).toHaveBeenCalledWith('remote-agent-01');
     });
   });
+
+  describe('WebSocket Ticket Tunneling (TICKETS_QUERY)', () => {
+    it('handles TICKETS_QUERY and streams TICKETS_SNAPSHOT back through the active socket', async () => {
+      const mockEquipRepo = {
+        findByAgentToken: vi.fn().mockResolvedValue({
+          equipment: { id: 'eq-ws-01', agent_hostname: 'DESK-PC' },
+          clientId: 'client-01',
+          tenantId: 'tenant-01',
+        }),
+        findById: vi.fn().mockResolvedValue({
+          id: 'eq-ws-01',
+          tenant_id: 'tenant-01',
+        }),
+      } as any;
+
+      const mockTicketQuerySvc = {
+        getTicketsForAgent: vi.fn().mockResolvedValue([
+          {
+            id: 'tick-001',
+            ticket_number: 'TCK-1001',
+            title: 'Printer issue',
+            status: 'OPEN',
+            priority: 'MEDIUM',
+            category: 'HARDWARE',
+            created_at: new Date('2026-09-23T12:00:00Z'),
+            assigned_tech_name: 'John Doe',
+          },
+        ]),
+      } as any;
+
+      const customGateway = new AgentGateway(
+        undefined,
+        undefined,
+        mockEquipRepo,
+        mockTicketQuerySvc
+      );
+      const customWss = new MockWebSocketServer();
+      customGateway.init(customWss as any);
+
+      const ws = new MockWebSocket();
+      customWss.emit('connection', ws, createMockReq('eq-ws-01', 'token-abc'));
+
+      // Send TICKETS_QUERY frame
+      ws.emit(
+        'message',
+        Buffer.from(
+          JSON.stringify({
+            command: 'TICKETS_QUERY',
+            correlation_id: 'corr-ticket-1',
+            payload: { limit: 10 },
+          })
+        )
+      );
+
+      // Await tick for async resolution
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(mockTicketQuerySvc.getTicketsForAgent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          equipmentId: 'eq-ws-01',
+          tenantId: 'tenant-01',
+        }),
+        10
+      );
+
+      expect(ws.send).toHaveBeenCalled();
+      const sentPayload = JSON.parse(ws.send.mock.calls[0][0]);
+      expect(sentPayload).toEqual({
+        command: 'TICKETS_SNAPSHOT',
+        correlation_id: 'corr-ticket-1',
+        success: true,
+        tickets: [
+          expect.objectContaining({
+            id: 'tick-001',
+            ticketNumber: 'TCK-1001',
+            title: 'Printer issue',
+            status: 'OPEN',
+          }),
+        ],
+      });
+    });
+
+    it('returns TICKETS_SNAPSHOT with error when ticket lookup fails', async () => {
+      const mockEquipRepo = {
+        findByAgentToken: vi.fn().mockResolvedValue({
+          equipment: { id: 'eq-err-01' },
+          clientId: 'client-01',
+          tenantId: 'tenant-01',
+        }),
+        findById: vi.fn().mockResolvedValue({ id: 'eq-err-01', tenant_id: 'tenant-01' }),
+      } as any;
+
+      const mockTicketQuerySvc = {
+        getTicketsForAgent: vi.fn().mockRejectedValue(new Error('Database timeout')),
+      } as any;
+
+      const customGateway = new AgentGateway(
+        undefined,
+        undefined,
+        mockEquipRepo,
+        mockTicketQuerySvc
+      );
+      const customWss = new MockWebSocketServer();
+      customGateway.init(customWss as any);
+
+      const ws = new MockWebSocket();
+      customWss.emit('connection', ws, createMockReq('eq-err-01', 'token-xyz'));
+
+      ws.emit(
+        'message',
+        Buffer.from(
+          JSON.stringify({
+            command: 'TICKETS_QUERY',
+            correlation_id: 'corr-err-1',
+          })
+        )
+      );
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(ws.send).toHaveBeenCalled();
+      const sentPayload = JSON.parse(ws.send.mock.calls[0][0]);
+      expect(sentPayload.success).toBe(false);
+      expect(sentPayload.error).toBe('Database timeout');
+      expect(sentPayload.tickets).toEqual([]);
+    });
+  });
 });
