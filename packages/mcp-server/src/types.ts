@@ -479,3 +479,21 @@ export interface ManageFeaturesResult {
   message: string;
 }
 
+export interface AgentScreenshotResult {
+  success: boolean;
+  displays_count: number;
+  virtual_screen: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    scaled_width: number;
+    scaled_height: number;
+  };
+  mime_type: string;
+  image_base64: string;
+  captured_at: string;
+  session_state: string;
+  error?: string;
+}
+

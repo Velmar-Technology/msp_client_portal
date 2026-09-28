@@ -267,6 +267,18 @@ if (Test-Path $temp) {
       agentResponse: result,
     });
   }
+
+  /**
+   * Captures a multi-screen virtual desktop screenshot from the remote agent.
+   *
+   * @param req - Express request with equipmentId in params
+   * @param res - Express response returning screenshot metrics and base64 image
+   */
+  async captureScreenshot(req: Request, res: Response): Promise<void> {
+    const target = await this.resolveTarget(String(req.params.equipmentId));
+    const result = await agentGateway.sendCommand(target, 'CAPTURE_SCREEN', req.body, 20_000);
+    res.json({ success: true, data: result });
+  }
 }
 
 export const agentGatewayController = new AgentGatewayController();

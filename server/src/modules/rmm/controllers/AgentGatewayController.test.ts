@@ -114,4 +114,34 @@ describe('AgentGatewayController', () => {
       await expect(controller.upgradeAgent(req, res)).rejects.toThrow(ValidationError);
     });
   });
+
+  describe('captureScreenshot', () => {
+    it('should send CAPTURE_SCREEN command to agent gateway and return result', async () => {
+      const mockResult = {
+        success: true,
+        displays_count: 2,
+        virtual_screen: { width: 3840, height: 1080, scaled_width: 2560, scaled_height: 720 },
+        mime_type: 'image/jpeg',
+        image_base64: 'mock_base64_data',
+        session_state: 'ACTIVE',
+      };
+      vi.mocked(agentGateway.sendCommand).mockResolvedValueOnce(mockResult);
+
+      const req: any = {
+        params: { equipmentId: 'slot-123' },
+        body: {},
+      };
+      const res: any = {
+        json: vi.fn(),
+      };
+
+      await controller.captureScreenshot(req, res);
+
+      expect(agentGateway.sendCommand).toHaveBeenCalledWith('slot-123', 'CAPTURE_SCREEN', {}, 20000);
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        data: mockResult,
+      });
+    });
+  });
 });
