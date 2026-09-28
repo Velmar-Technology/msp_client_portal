@@ -32,6 +32,7 @@ import type {
   InfrastructureAuditResult,
   InfrastructureContainerSummary,
   ManageFeaturesResult,
+  AgentScreenshotResult,
 } from '../types.js';
 
 export class MspApiClient {
@@ -799,6 +800,20 @@ if (Test-Path $temp) {
         sha256Checksum,
         rollbackTimeoutSecs,
       },
+    });
+    return res.data || res;
+  }
+
+  /**
+   * Captures a unified multi-screen virtual desktop screenshot from the remote workstation.
+   *
+   * @param equipmentId - The UUID of the equipment/slot
+   * @returns Multi-screen capture payload with metrics and base64 encoded JPEG
+   */
+  async captureAgentScreenshot(equipmentId: string): Promise<AgentScreenshotResult> {
+    const res = await this.request<any>({
+      method: 'POST',
+      url: `/rmm/agent/${equipmentId}/screenshot`,
     });
     return res.data || res;
   }

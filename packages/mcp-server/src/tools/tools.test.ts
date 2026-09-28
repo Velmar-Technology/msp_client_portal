@@ -653,6 +653,61 @@ describe('MSP MCP Server Tools Registration and Execution', () => {
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Agent for equipment is offline');
     });
+
+    it('should handle msp_remote_capture_screenshot successfully with image content block', async () => {
+      vi.spyOn(mockApiClient, 'captureAgentScreenshot').mockResolvedValueOnce({
+        success: true,
+        displays_count: 2,
+        virtual_screen: {
+          x: 0,
+          y: 0,
+          width: 3840,
+          height: 1080,
+          scaled_width: 2560,
+          scaled_height: 720,
+        },
+        mime_type: 'image/jpeg',
+        image_base64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+        captured_at: '2026-09-28T20:00:00Z',
+        session_state: 'ACTIVE',
+      });
+
+      registerRmmTools(server, mockApiClient);
+      const tools = (server as any)._registeredTools;
+      const screenshotTool = tools['msp_remote_capture_screenshot'];
+      expect(screenshotTool).toBeDefined();
+
+      const result = await screenshotTool.handler({
+        equipmentId: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+      });
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content).toHaveLength(2);
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Workstation Multi-Screen Capture');
+      expect(result.content[0].text).toContain('**Displays Count:** 2');
+      expect(result.content[0].text).toContain('3840x1080');
+      expect(result.content[1].type).toBe('image');
+      expect(result.content[1].mimeType).toBe('image/jpeg');
+      expect(result.content[1].data).toBeDefined();
+    });
+
+    it('should handle msp_remote_capture_screenshot errors gracefully', async () => {
+      vi.spyOn(mockApiClient, 'captureAgentScreenshot').mockRejectedValueOnce(
+        new Error('Device slot offline or unresponsive')
+      );
+
+      registerRmmTools(server, mockApiClient);
+      const tools = (server as any)._registeredTools;
+      const screenshotTool = tools['msp_remote_capture_screenshot'];
+
+      const result = await screenshotTool.handler({
+        equipmentId: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Remote screenshot capture failed: Device slot offline or unresponsive');
+    });
   });
 
   describe('Equipment Quota Management Tool', () => {

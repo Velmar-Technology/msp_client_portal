@@ -48,4 +48,7 @@ router.post('/agent/:equipmentId/security-audit', (req, res) => agentGatewayCont
 /** POST /api/rmm/agent/:equipmentId/upgrade — Trigger autonomous self-upgrade on remote agent */
 router.post('/agent/:equipmentId/upgrade', (req, res) => agentGatewayController.upgradeAgent(req, res));
 
+/** POST /api/rmm/agent/:equipmentId/screenshot — Capture multi-screen screenshot from remote agent */
+router.post('/agent/:equipmentId/screenshot', (req, res) => agentGatewayController.captureScreenshot(req, res));
+
 export default router;
