@@ -761,7 +761,7 @@ describe('MSP MCP Server Tools Registration and Execution', () => {
     });
   });
 
-  describe('SequenceSentinel Tools (BL-101 to BL-802)', () => {
+  describe('Sentinel Tools (BL-101 to BL-802)', () => {
     it('should successfully execute msp_provision_subscription_plan', async () => {
       vi.spyOn(mockApiClient, 'provisionSubscriptionPlan').mockResolvedValueOnce({
         success: true,

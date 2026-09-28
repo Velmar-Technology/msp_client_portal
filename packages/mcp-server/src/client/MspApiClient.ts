@@ -1077,7 +1077,7 @@ if (Test-Path $temp) {
   }
 
   /**
-   * Executes a passive SequenceSentinel integrity audit verifying BL-101 to BL-802 business rules.
+   * Executes a passive Sentinel integrity audit verifying BL-101 to BL-802 business rules.
    *
    * @param params - Audit temporal hours, optional tenant filter, and whether to synthesize tests
    * @returns Comprehensive AuditReport payload
@@ -1234,7 +1234,7 @@ if (Test-Path $temp) {
    * 1. Resolves target client user and tenant organization by email, name, or UUID.
    * 2. Resolves target plan catalog ID (e.g. "PL-001" or "Basic").
    * 3. Calls /subscriptions to initialize contract, device slots (PENDING_ACTIVATION), and 18% ITBIS invoice.
-   * 4. Auto-verifies post-condition via SequenceSentinel audit to guarantee zero invariant drift.
+   * 4. Auto-verifies post-condition via Sentinel audit to guarantee zero invariant drift.
    *
    * @param params - User/tenant identifier, plan code, equipment count, billing cycle, and options
    * @returns ProvisionSubscriptionResult summary
@@ -1310,7 +1310,7 @@ if (Test-Path $temp) {
       .map((f: any) => (typeof f === 'string' ? f : f.code))
       .filter(Boolean);
 
-    // 6. Advisory SequenceSentinel integrity verification
+    // 6. Advisory Sentinel integrity verification
     let sentinelVerification: { passed: boolean; violationsCount: number } | undefined;
     try {
       const audit = await this.runSentinelAudit({ hours: 1, tenantId });

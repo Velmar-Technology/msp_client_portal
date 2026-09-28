@@ -1,6 +1,6 @@
 # Canonical Sentinel Rule Recipe (Integrity Checkers & Autonomous Remediators)
 
-This document defines the canonical engineering recipe for adding or extending business logic invariant checkers, autonomous self-healing remediators, and regression test synthesizers in the **SequenceSentinel** subsystem (`server/src/modules/system/sentinel/`).
+This document defines the canonical engineering recipe for adding or extending business logic invariant checkers, autonomous self-healing remediators, and regression test synthesizers in the **Sentinel** subsystem (`server/src/modules/system/sentinel/`).
 
 ---
 
@@ -117,7 +117,7 @@ If the new invariant verifies data from an audit table or domain not yet aggrega
      }
    }
    ```
-3. Register the checker in `server/src/modules/system/sentinel/services/SequenceSentinelService.ts`:
+3. Register the checker in `server/src/modules/system/sentinel/services/SentinelService.ts`:
    ```typescript
    import { BackupCompletionChecker } from '../checkers/security/BackupCompletionChecker';
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * SequenceSentinel Unified Operations Engine
+ * Sentinel Unified Operations Engine
  * Executes all platform, subscription, feature, and identity mutations in a single atomic pass.
  * Automatically handles database transactions, tenant isolation, Redis cache invalidation,
  * and invariant verification.
@@ -118,7 +118,7 @@ async function handleFeatureManage(opts) {
     process.exit(1);
   }
 
-  console.log(`🛡️  [SequenceSentinel] Executing feature:manage...`);
+  console.log(`🛡️  [Sentinel] Executing feature:manage...`);
   if (user) console.log(`   Target User:        ${user}`);
   if (plan) console.log(`   Target Plan:        ${plan}`);
   if (addFeatures.length) console.log(`   Adding Features:    [${addFeatures.join(', ')}]`);
@@ -250,7 +250,7 @@ async function handleSubExtend(opts) {
   const isFree = !shouldBill || opts.free === true || opts['no-invoice'] === true;
   const markPaid = opts['mark-paid'] !== false;
 
-  console.log(`🛡️  [SequenceSentinel] Executing sub:extend...`);
+  console.log(`🛡️  [Sentinel] Executing sub:extend...`);
   console.log(`   Target User:     ${user}`);
   console.log(`   Extension:       ${extension}`);
   console.log(`   Pricing:         ${isFree ? 'FREE / COMPLIMENTARY (Zero Invoice Default)' : (markPaid ? 'PAID ($203.90 USD incl. 18% ITBIS)' : 'PENDING')}`);
@@ -326,7 +326,7 @@ async function handleUserRole(opts) {
   const clientType = opts['client-type'] ? opts['client-type'].toUpperCase() : null;
   const isActive = opts.active !== undefined ? String(opts.active) === 'true' : null;
 
-  console.log(`🛡️  [SequenceSentinel] Executing user:role...`);
+  console.log(`🛡️  [Sentinel] Executing user:role...`);
   console.log(`   Target User:     ${user}`);
   if (role) console.log(`   New Role:        ${role}`);
   if (clientType) console.log(`   Client Type:     ${clientType}`);
@@ -360,7 +360,7 @@ async function handlePlanProvision(opts) {
   const cycle = opts.cycle || 'monthly';
   const markPaid = opts['mark-paid'] !== false;
 
-  console.log(`🛡️  [SequenceSentinel] Executing plan:provision...`);
+  console.log(`🛡️  [Sentinel] Executing plan:provision...`);
   console.log(`   Target User:     ${user}`);
   console.log(`   Plan:            ${plan}`);
   console.log(`   Capacity:        ${capacity} slot(s)`);
@@ -422,7 +422,7 @@ async function handleInfraAudit(opts) {
   const endpoint = opts.endpoint || ENDPOINT_ID;
   const stack = opts.stack || STACK_ID;
 
-  console.log(`🛡️  [SequenceSentinel] Executing infra:audit...`);
+  console.log(`🛡️  [Sentinel] Executing infra:audit...`);
   console.log(`   Portainer URL:   ${PORTAINER_URL}`);
   console.log(`   Endpoint:        ${endpoint}`);
   console.log(`   Stack ID:        ${stack}\n`);
@@ -464,7 +464,7 @@ async function handleSubPlan(opts) {
     console.error('Error: --user=<email|uuid> and --plan=<code> are required.');
     process.exit(1);
   }
-  console.log(`🛡️  [SequenceSentinel] Rebinding user subscription plan...`);
+  console.log(`🛡️  [Sentinel] Rebinding user subscription plan...`);
   console.log(`   Target User: ${user}`);
   console.log(`   Target Plan: ${plan}`);
 
@@ -494,7 +494,7 @@ async function handleInvoiceVoid(opts) {
     console.error('Error: Either --invoice=<number> or --user=<email> is required.');
     process.exit(1);
   }
-  console.log(`🛡️  [SequenceSentinel] Voiding / removing invoice...`);
+  console.log(`🛡️  [Sentinel] Voiding / removing invoice...`);
   let sql = '';
   if (invoice) {
     console.log(`   Target Invoice:  ${invoice}`);
@@ -525,7 +525,7 @@ async function handleTicketPurge(opts) {
     process.exit(1);
   }
 
-  console.log(`🛡️  [SequenceSentinel] Purging production tickets...`);
+  console.log(`🛡️  [Sentinel] Purging production tickets...`);
 
   let filter = '';
   if (ticketId) {
@@ -578,7 +578,7 @@ async function handleTicketPurge(opts) {
 
 async function handleInvoiceCreateDiscounted(opts) {
   const user = opts.user || 'e.a.polanco.robles@gmail.com';
-  console.log(`🛡️  [SequenceSentinel] Creating 100% discounted invoice for user '${user}'...`);
+  console.log(`🛡️  [Sentinel] Creating 100% discounted invoice for user '${user}'...`);
 
   const users = await execSqlJson(`SELECT id, email, tenant_id FROM users WHERE email = '${user}' OR id::text = '${user}' OR name ILIKE '%${user}%' LIMIT 1`);
   if (!users.length) throw new Error(`User '${user}' not found`);
@@ -625,7 +625,7 @@ async function handleInvoiceCreateDiscounted(opts) {
 
 async function handleWorkspaceInspect(opts) {
   const q = opts.search || opts.user || '';
-  console.log(`🛡️  [SequenceSentinel] Inspecting workspaces / users matching '${q}'...`);
+  console.log(`🛡️  [Sentinel] Inspecting workspaces / users matching '${q}'...`);
 
   const users = await execSqlJson(`
     SELECT u.id as user_id, u.email, u.name as user_name, u.role, u.tenant_id,
@@ -686,7 +686,7 @@ async function handleDeviceMove(opts) {
   const to = opts.to || opts['to-user'] || opts['to-workspace'] || 'vmaldonado@velmartech.com.do';
   const dryRun = opts['dry-run'] === true;
 
-  console.log(`🛡️  [SequenceSentinel] Executing device:move...`);
+  console.log(`🛡️  [Sentinel] Executing device:move...`);
   console.log(`   Source:          ${from}`);
   console.log(`   Destination:     ${to}`);
   console.log(`   Dry Run:         ${dryRun ? 'YES (No mutations will be made)' : 'NO (Live Execution)'}`);
@@ -988,7 +988,7 @@ async function main() {
 
     default:
       console.log(`
-SequenceSentinel Operations CLI
+Sentinel Operations CLI
 Usage:
   node scripts/sentinel-ops.mjs <action> [options]
 
@@ -1009,6 +1009,6 @@ Actions:
 }
 
 main().catch(err => {
-  console.error('\n❌ [SequenceSentinel ERROR]:', err.message);
+  console.error('\n❌ [Sentinel ERROR]:', err.message);
   process.exit(1);
 });

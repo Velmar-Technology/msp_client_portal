@@ -1,6 +1,6 @@
 /**
- * Core type definitions, contracts, and invariant structures for SequenceSentinel.
- * SequenceSentinel passively audits production sequences against Master Business Logic (BL-101 to BL-802).
+ * Core type definitions, contracts, and invariant structures for Sentinel.
+ * Sentinel passively audits production sequences against Master Business Logic (BL-101 to BL-802).
  */
 
 /** Target entity classification for audit sequences */
@@ -153,7 +153,7 @@ export interface RemediationHandler {
 }
 
 /**
- * Comprehensive diagnostic report output by SequenceSentinel.
+ * Comprehensive diagnostic report output by Sentinel.
  */
 export interface AuditReport {
   readonly generatedAt: Date;

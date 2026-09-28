@@ -472,14 +472,14 @@ The platform implements a distributed background job orchestration pattern desig
 
 ---
 
-## SequenceSentinel: Business Logic Integrity Auditor & Autonomous Remediation (@see ADR-009)
+## Sentinel: Business Logic Integrity Auditor & Autonomous Remediation (@see ADR-009)
 
-SequenceSentinel is a dual-mode subsystem ([`server/src/modules/system/sentinel/`](server/src/modules/system/sentinel/)) that passively audits production action sequences against all Master Business Logic invariants (BL-101 to BL-802) and autonomously remediates actionable drift under tenant-isolated circuit breakers.
+Sentinel is a dual-mode subsystem ([`server/src/modules/system/sentinel/`](server/src/modules/system/sentinel/)) that passively audits production action sequences against all Master Business Logic invariants (BL-101 to BL-802) and autonomously remediates actionable drift under tenant-isolated circuit breakers.
 
 **Pipeline:**
 - **Aggregation:** [`SequenceAggregatorService.ts`](server/src/modules/system/sentinel/services/SequenceAggregatorService.ts) reconstructs chronological `ActionSequence` graphs from ticket, invoice, alert, and lead event streams.
 - **Invariant Checking:** Co-located `InvariantChecker` implementations under `sentinel/checkers/{ticketing,billing,subscriptions,financial,security,crm_health}/` — e.g. `SlaCancellationChecker`, `RoundRobinDispatchChecker`, `TierEscalationChecker`, `AlertNoiseFlappingChecker`, `NonPaymentEnforcementChecker`, `SubscriptionReactivationChecker`, `TaxAndNcfChecker`, `TechnicianBountyChecker`, `ProfitSplitChecker`, `FeatureGatingChecker`, `StateMachineChecker`, `AuthorizationAndJitChecker`.
-- **Orchestration & Remediation:** [`SequenceSentinelService.ts`](server/src/modules/system/sentinel/services/SequenceSentinelService.ts) runs the audit window; [`SelfHealingService.ts`](server/src/modules/system/sentinel/services/SelfHealingService.ts) dispatches autonomous remediations (`sentinel/remediators/`, e.g. `FlappingAlertRemediator`, `TierEscalationRemediator`, `TechnicianBountyRemediator`, `SubscriptionReactivationRemediator`, `DeviceVaultSessionRemediator`).
+- **Orchestration & Remediation:** [`SentinelService.ts`](server/src/modules/system/sentinel/services/SentinelService.ts) runs the audit window; [`SelfHealingService.ts`](server/src/modules/system/sentinel/services/SelfHealingService.ts) dispatches autonomous remediations (`sentinel/remediators/`, e.g. `FlappingAlertRemediator`, `TierEscalationRemediator`, `TechnicianBountyRemediator`, `SubscriptionReactivationRemediator`, `DeviceVaultSessionRemediator`).
 - **Regression Synthesis:** [`VitestRegressionSynthesizer.ts`](server/src/modules/system/sentinel/services/VitestRegressionSynthesizer.ts) generates co-located Vitest regression specs from detected invariant drift.
 - **Typing:** Core contracts (`ActionSequence`, `InvariantCheckResult`, `AuditReport`) are declared in `sentinel/types.ts`.
 

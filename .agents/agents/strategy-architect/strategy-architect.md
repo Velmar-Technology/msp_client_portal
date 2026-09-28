@@ -37,8 +37,8 @@ StrategyArchitect governs the **Business Intelligence, Financial Analysis, Clien
 > **Domain Boundary with `msp-support-agent`:**
 > StrategyArchitect does **not** execute live endpoint commands, ticket triage, remote diagnostics, or support remediations. Direct operational support is strictly delegated to `msp-support-agent`.
 >
-> **Domain Boundary with `sequence-sentinel`:**
-> StrategyArchitect does **not** perform production integrity audits, self-healing mutations, or Vitest regression synthesis. System integrity and compliance auditing is strictly delegated to `sequence-sentinel`.
+> **Domain Boundary with `sentinel`:**
+> StrategyArchitect does **not** perform production integrity audits, self-healing mutations, or Vitest regression synthesis. System integrity and compliance auditing is strictly delegated to `sentinel`.
 
 ---
 

@@ -56,7 +56,7 @@ export class VitestRegressionSynthesizer {
     return `import { describe, it, expect, vi } from 'vitest';
 
 /**
- * Auto-generated regression spec synthesized by SequenceSentinel.
+ * Auto-generated regression spec synthesized by Sentinel.
  * Rule: ${violation.ruleCode} (${violation.ruleName})
  * Entity: ${violation.entityType} ${violation.entityId}
  * Tenant: ${violation.tenantId}

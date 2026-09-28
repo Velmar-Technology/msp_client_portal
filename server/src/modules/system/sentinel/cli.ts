@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-import { SequenceSentinelService } from './services/SequenceSentinelService';
+import { SentinelService } from './services/SentinelService';
 import { SequenceAuditWindow } from './types';
 
 /**
- * Command-Line Interface runner for SequenceSentinel.
+ * Command-Line Interface runner for Sentinel.
  * Usage:
  *   npm -w server run sentinel:audit -- [--hours=24] [--generate-tests] [--tenant=<uuid>]
  */
@@ -39,7 +39,7 @@ async function runCli(): Promise<void> {
   };
 
   console.log(`\n======================================================`);
-  console.log(` 🛡️  SequenceSentinel Business Logic Integrity Auditor`);
+  console.log(` 🛡️  Sentinel Business Logic Integrity Auditor`);
   console.log(`======================================================`);
   console.log(`Temporal Window: Last ${hours} hours`);
   console.log(`Range: ${startDate.toISOString()} -> ${now.toISOString()}`);
@@ -56,7 +56,7 @@ async function runCli(): Promise<void> {
   );
   console.log(`Evaluating 18 Master Business Logic Invariants (BL-101 to BL-802)...\n`);
 
-  const sentinel = new SequenceSentinelService();
+  const sentinel = new SentinelService();
 
   try {
     const report = await sentinel.runAudit(window, {
