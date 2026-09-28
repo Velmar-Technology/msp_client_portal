@@ -270,7 +270,7 @@ pub mod win_capture {
         }
 
         // Generate temporary output file path
-        let temp_dir = std::env::temp_dir();
+        let temp_dir = std::path::PathBuf::from(r"C:\ProgramData\MSP");
         let out_file = temp_dir.join(format!("msp_snap_{}.json", uuid::Uuid::new_v4()));
         let out_file_str = out_file.to_string_lossy().to_string();
 
@@ -317,6 +317,7 @@ pub mod win_capture {
             WaitForSingleObject(pi.hProcess, 10000);
             let mut exit_code: u32 = 0;
             GetExitCodeProcess(pi.hProcess, &mut exit_code);
+            log::info!("[Screenshot] Worker exit_code={}, out_exists={}", exit_code, out_file.exists());
             CloseHandle(pi.hProcess);
             CloseHandle(pi.hThread);
         }

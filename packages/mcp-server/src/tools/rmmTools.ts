@@ -445,7 +445,8 @@ export function registerRmmTools(server: McpServer, apiClient: MspApiClient) {
     },
     async ({ equipmentId }) => {
       try {
-        const result = await apiClient.captureAgentScreenshot(equipmentId);
+        const raw = await apiClient.captureAgentScreenshot(equipmentId);
+        const result: any = (raw as any)?.data || raw;
         if (!result.success || !result.image_base64) {
           return {
             isError: true,

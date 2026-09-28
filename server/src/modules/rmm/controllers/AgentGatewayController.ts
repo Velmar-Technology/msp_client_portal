@@ -86,7 +86,7 @@ export class AgentGatewayController {
 
     const target = await this.resolveTarget(String(req.params.equipmentId));
     const result = await agentGateway.sendCommand(target, command, payload, timeoutMs);
-    res.json({ success: true, data: result });
+    res.json({ success: true, data: (result as any)?.data || result });
   }
 
   /**
@@ -98,7 +98,7 @@ export class AgentGatewayController {
   async getDiagnostics(req: Request, res: Response): Promise<void> {
     const target = await this.resolveTarget(String(req.params.equipmentId));
     const result = await agentGateway.sendCommand(target, 'DIAGNOSE_PC');
-    res.json({ success: true, data: result });
+    res.json({ success: true, data: (result as any)?.data || result });
   }
 
   /**
@@ -110,7 +110,7 @@ export class AgentGatewayController {
   async getHardwareComponents(req: Request, res: Response): Promise<void> {
     const target = await this.resolveTarget(String(req.params.equipmentId));
     const result = await agentGateway.sendCommand(target, 'GET_HARDWARE_COMPONENTS');
-    res.json({ success: true, data: result });
+    res.json({ success: true, data: (result as any)?.data || result });
   }
 
   /**
@@ -167,7 +167,7 @@ if (Test-Path $temp) {
 `.trim();
 
     const result = await agentGateway.sendCommand(target, 'EXEC_POWERSHELL', { script });
-    res.json({ success: true, data: result });
+    res.json({ success: true, data: (result as any)?.data || result });
   }
 
   /**
@@ -184,7 +184,7 @@ if (Test-Path $temp) {
       level: level || 'Error',
       max_events: max_events || 5,
     });
-    res.json({ success: true, data: result });
+    res.json({ success: true, data: (result as any)?.data || result });
   }
 
   /**
@@ -196,7 +196,7 @@ if (Test-Path $temp) {
   async getSecurityAudit(req: Request, res: Response): Promise<void> {
     const target = await this.resolveTarget(String(req.params.equipmentId));
     const result = await agentGateway.sendCommand(target, 'SECURITY_AUDIT');
-    res.json({ success: true, data: result });
+    res.json({ success: true, data: (result as any)?.data || result });
   }
 
   /**
@@ -277,7 +277,7 @@ if (Test-Path $temp) {
   async captureScreenshot(req: Request, res: Response): Promise<void> {
     const target = await this.resolveTarget(String(req.params.equipmentId));
     const result = await agentGateway.sendCommand(target, 'CAPTURE_SCREEN', req.body, 20_000);
-    res.json({ success: true, data: result });
+    res.json({ success: true, data: (result as any)?.data || result });
   }
 }
 
