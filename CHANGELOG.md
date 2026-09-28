@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.12.4](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.12.3...v1.12.4) (2026-09-28)
+
+
+### Features
+
+* **mcp:** add OAuth 2.0 protocol support for Google Gemini ([30b45c4](https://github.com/Velmar-Technology/msp_client_portal/commit/30b45c461fb7f25e5c2d64b57314995c143740fd))
+* **rmm:** implement multi-screen screenshot capture for msp-agent ([8c8801d](https://github.com/Velmar-Technology/msp_client_portal/commit/8c8801d6c8032dd2297e3abc07ca87cf96aa9811))
+* **rmm:** segregate agent rate limits and implement backoff circuit breaker ([356103d](https://github.com/Velmar-Technology/msp_client_portal/commit/356103d93844794c48ca62f3d8fc9133b2852633))
+
 ## [1.12.3](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.12.2...v1.12.3) (2026-09-21)
 
 
