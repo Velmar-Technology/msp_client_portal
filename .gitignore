@@ -37,6 +37,7 @@ coverage/
 # Temp
 tmp/
 temp/
+scratch/
 
 # Rust
 target/

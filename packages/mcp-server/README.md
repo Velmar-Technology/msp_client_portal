@@ -216,6 +216,35 @@ The server supports two distinct Copilot Studio deployment targets:
 
 ---
 
+## Google Gemini Connected Apps & Gemini Spark OAuth 2.0 Integration
+
+The MCP server implements the official **MCP 2026-07-28 OAuth 2.0 / 2.1 Specification** (RFC 9728 & RFC 8414), allowing **Google Gemini Connected Apps** and **Gemini Spark** to connect directly via OAuth:
+
+### Connection Parameters
+
+| Setting | Value / Recommended Input | Description |
+| :--- | :--- | :--- |
+| **MCP server URL** | `https://helpdesk.velmartech.com.do/mcp` | Hosted Streamable HTTP MCP endpoint |
+| **Client ID** | `gemini_spark_client` *(or any designated client ID)* | OAuth 2.0 client identifier (matched against `MCP_OAUTH_CLIENT_ID` if set) |
+| **Client secret** | `<MSP_API_KEY>` *(or `MCP_OAUTH_CLIENT_SECRET`)* | OAuth 2.0 client secret or admin master key |
+| **Redirect URI** | Auto-detected from Gemini UI *(Copy redirect URI)* | Gemini OAuth callback URL (e.g. `https://vertexaisearch.cloud.google.com/oauth-redirect`) |
+
+### OAuth Protocol Endpoints
+
+* **Protected Resource Metadata (RFC 9728):**
+  * `GET https://helpdesk.velmartech.com.do/mcp/.well-known/oauth-protected-resource`
+* **Authorization Server Metadata (RFC 8414 & OpenID Connect):**
+  * `GET https://helpdesk.velmartech.com.do/mcp/.well-known/oauth-authorization-server`
+  * `GET https://helpdesk.velmartech.com.do/mcp/.well-known/openid-configuration`
+* **Authorization Consent Endpoint:**
+  * `GET/POST https://helpdesk.velmartech.com.do/mcp/oauth/authorize` (interactive Velmar consent screen with PKCE support)
+* **Token Exchange Endpoint:**
+  * `POST https://helpdesk.velmartech.com.do/mcp/oauth/token` (supports `authorization_code` with PKCE `S256`/`plain`, `client_credentials`, and `refresh_token`)
+* **Dynamic Client Registration (RFC 7591):**
+  * `POST https://helpdesk.velmartech.com.do/mcp/oauth/register`
+
+---
+
 ## Production Docker Deployment
 
 The MCP server runs as container `msp_mcp_prod` within the `msp_portal` Docker Compose stack on the helpdesk VPS:

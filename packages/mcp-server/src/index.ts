@@ -6,6 +6,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { MspApiClient } from './client/MspApiClient.js';
 import { createMspMcpServer, type McpServerProfile } from './serverFactory.js';
 import { validateInboundApiKey } from './authUtils.js';
+import { OAuthServer } from './auth/OAuthServer.js';
 
 // Load environment variables (.env)
 dotenv.config();
@@ -88,6 +89,12 @@ async function main(): Promise<void> {
   if (isHttpMode) {
     const port = Number(process.env.MCP_HTTP_PORT || process.env.MCP_PORT || 3005);
 
+    const oauthServer = new OAuthServer({
+      configuredClientId: process.env.MCP_OAUTH_CLIENT_ID,
+      configuredClientSecret: process.env.MCP_OAUTH_CLIENT_SECRET,
+      fallbackSecret: (process.env.MCP_SERVER_API_KEY || apiToken).trim(),
+    });
+
     const httpServer = http.createServer(async (req, res) => {
       // CORS & standard headers
       res.setHeader('Access-Control-Allow-Origin', '*');
@@ -103,9 +110,70 @@ async function main(): Promise<void> {
         return;
       }
 
+      const proto = (req.headers['x-forwarded-proto'] as string) || 'https';
+      const host = (req.headers['x-forwarded-host'] as string) || req.headers.host || 'helpdesk.velmartech.com.do';
+      const origin = process.env.MCP_SERVER_PUBLIC_URL || `${proto}://${host}`;
       const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
 
-      // 1. Health check & Capabilities Discovery
+      // 1. OAuth 2.0 / 2.1 Protected Resource Metadata (RFC 9728)
+      if (
+        req.method === 'GET' &&
+        (url.pathname === '/.well-known/oauth-protected-resource' ||
+          url.pathname === '/mcp/.well-known/oauth-protected-resource' ||
+          url.pathname === '/api/v1/mcp/.well-known/oauth-protected-resource')
+      ) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(oauthServer.getProtectedResourceMetadata(origin)));
+        return;
+      }
+
+      // 2. OAuth 2.0 Authorization Server Metadata (RFC 8414 & OpenID Connect Discovery)
+      if (
+        req.method === 'GET' &&
+        (url.pathname === '/.well-known/oauth-authorization-server' ||
+          url.pathname === '/mcp/.well-known/oauth-authorization-server' ||
+          url.pathname === '/.well-known/openid-configuration' ||
+          url.pathname === '/mcp/.well-known/openid-configuration' ||
+          url.pathname === '/api/v1/mcp/.well-known/oauth-authorization-server')
+      ) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(oauthServer.getAuthorizationServerMetadata(origin)));
+        return;
+      }
+
+      // 3. OAuth 2.0 Authorize Endpoint
+      if (
+        url.pathname === '/mcp/oauth/authorize' ||
+        url.pathname === '/oauth/authorize' ||
+        url.pathname === '/api/v1/mcp/oauth/authorize'
+      ) {
+        await oauthServer.handleAuthorize(req, res, origin);
+        return;
+      }
+
+      // 4. OAuth 2.0 Token Endpoint
+      if (
+        req.method === 'POST' &&
+        (url.pathname === '/mcp/oauth/token' ||
+          url.pathname === '/oauth/token' ||
+          url.pathname === '/api/v1/mcp/oauth/token')
+      ) {
+        await oauthServer.handleToken(req, res);
+        return;
+      }
+
+      // 5. OAuth 2.0 Dynamic Client Registration (RFC 7591)
+      if (
+        req.method === 'POST' &&
+        (url.pathname === '/mcp/oauth/register' ||
+          url.pathname === '/oauth/register' ||
+          url.pathname === '/api/v1/mcp/oauth/register')
+      ) {
+        await oauthServer.handleRegister(req, res);
+        return;
+      }
+
+      // 6. Health check & Capabilities Discovery
       if (
         url.pathname === '/health' ||
         url.pathname === '/' ||
@@ -122,6 +190,11 @@ async function main(): Promise<void> {
             spec: 'MCP 2026-07-28 (Stateless Streamable HTTP)',
             transport: 'streamable-http',
             activeProfile,
+            auth: {
+              oauthSupported: true,
+              authorizationServerMetadata: `${origin}/mcp/.well-known/oauth-authorization-server`,
+              protectedResourceMetadata: `${origin}/mcp/.well-known/oauth-protected-resource`,
+            },
             availableEndpoints: {
               cafIsolated: '/mcp/caf (Academic CAF 9 Criteria & PII Privacy Only)',
               supportAdmin: '/mcp (Configured Profile / Administrative)',
@@ -132,7 +205,7 @@ async function main(): Promise<void> {
         return;
       }
 
-      // 2. Route: /mcp/caf -> STRICTLY ISOLATED CAF EDUCATIONAL TOOLS ONLY
+      // 7. Route: /mcp/caf -> STRICTLY ISOLATED CAF EDUCATIONAL TOOLS ONLY
       if (url.pathname === '/mcp/caf' || url.pathname === '/api/v1/mcp/caf') {
         try {
           const transport = new StreamableHTTPServerTransport({
@@ -152,12 +225,23 @@ async function main(): Promise<void> {
         return;
       }
 
-      // 3. Route: /mcp (Standard / Admin Endpoint)
+      // 8. Route: /mcp (Standard / Admin Endpoint)
       if (url.pathname === '/mcp' || url.pathname === '/api/v1/mcp') {
         const expectedInboundKey = (process.env.MCP_SERVER_API_KEY || apiToken).trim();
         const requireAuth = process.env.MCP_REQUIRE_AUTH !== 'false';
 
-        if (requireAuth && expectedInboundKey && !validateInboundApiKey(req, expectedInboundKey)) {
+        const isAuthorized =
+          !requireAuth ||
+          validateInboundApiKey(req, expectedInboundKey, (token) =>
+            oauthServer.verifyAccessToken(token)
+          );
+
+        if (!isAuthorized) {
+          const resourceMetadataUrl = `${origin.replace(/\/+$/, '')}/mcp/.well-known/oauth-protected-resource`;
+          res.setHeader(
+            'WWW-Authenticate',
+            `Bearer resource_metadata="${resourceMetadataUrl}", error="unauthorized"`
+          );
           res.writeHead(401, { 'Content-Type': 'application/json' });
           res.end(
             JSON.stringify({
@@ -165,7 +249,7 @@ async function main(): Promise<void> {
               error: {
                 code: -32000,
                 message:
-                  'Unauthorized: Missing or invalid API key. Provide a valid key via "X-API-Key" or "Authorization: Bearer <key>".',
+                  'Unauthorized: Missing or invalid credentials. Provide an API key or OAuth 2.0 Bearer token.',
               },
             })
           );
@@ -192,6 +276,7 @@ async function main(): Promise<void> {
       res.writeHead(404, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Not Found', path: url.pathname }));
     });
+
 
     httpServer.listen(port, () => {
       console.log(`[MSP MCP Server] Stateless Streamable HTTP Server listening on port ${port}`);
@@ -254,3 +339,9 @@ export {
   type TenantByokProfile,
   type TenantByokStatus,
 } from './byok/TenantByokManager.js';
+
+export {
+  OAuthServer,
+  type OAuthClient,
+  type OAuthServerOptions,
+} from './auth/OAuthServer.js';

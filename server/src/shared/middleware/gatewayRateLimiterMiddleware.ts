@@ -11,12 +11,42 @@ export interface RateLimiterOptions {
   keyGenerator?: (req: Request) => string;
   prefix?: string;
   message?: string;
+  agentWindowMs?: number;
+  agentMaxRequests?: number;
 }
 
 const getDefaultOptions = () => ({
   windowMs: env?.RATE_LIMIT_WINDOW_MS ?? 15 * 60 * 1000, // 15 minutes window
   maxRequests: env?.RATE_LIMIT_MAX_REQUESTS ?? 1000, // max 1000 requests per window
+  agentWindowMs: 5 * 60 * 1000, // 5 minutes window for endpoint agents
+  agentMaxRequests: 300, // max 300 requests per 5m for endpoint agents (~1 req/sec burst)
 });
+
+/**
+ * Detects whether an incoming request originates from an endpoint RMM agent / machine ticket interface.
+ *
+ * @param req - Express request
+ * @returns boolean indicating if request originates from an RMM endpoint agent
+ * @see BL-103
+ */
+export function isAgentRequest(req: Request): boolean {
+  const path = req.originalUrl || req.url || req.path || '';
+  if (
+    path.includes('/tickets/agent') ||
+    path.endsWith('/responses/agent') ||
+    path.endsWith('/status/agent')
+  ) {
+    return true;
+  }
+  if (req.headers['x-agent-instance-id'] || req.headers['x-agent-id'] || req.headers['x-slot-id']) {
+    return true;
+  }
+  const userAgent = (req.headers['user-agent'] || '').toLowerCase();
+  if (userAgent.includes('msp-agent') || userAgent.includes('endpoint-agent')) {
+    return true;
+  }
+  return false;
+}
 
 /**
  * In-memory fallback sliding window store mapping keys to timestamp arrays.
@@ -103,16 +133,18 @@ function checkMemorySlidingWindow(
 
 /**
  * Creates a sliding-window rate limiter middleware backed by Redis with in-memory LRU fallback.
+ * Automatically partitions endpoint agent requests away from human browser sessions to prevent quota starvation.
  *
  * @param options - Custom windowMs, maxRequests, keyGenerator, prefix, or error message
  * @returns Express middleware function
  * @throws {RateLimitError} When request count exceeds maxRequests within windowMs
+ * @see BL-103
  */
 export function createGatewayRateLimiter(options: RateLimiterOptions = {}) {
   const defaults = getDefaultOptions();
-  const windowMs = options.windowMs ?? defaults.windowMs;
-  const maxRequests = options.maxRequests ?? defaults.maxRequests;
-  const prefix = options.prefix ?? 'ratelimit:gw';
+  const baseWindowMs = options.windowMs ?? defaults.windowMs;
+  const baseMaxRequests = options.maxRequests ?? defaults.maxRequests;
+  const defaultPrefix = options.prefix;
 
   return async function gatewayRateLimiterMiddleware(
     req: Request,
@@ -120,9 +152,43 @@ export function createGatewayRateLimiter(options: RateLimiterOptions = {}) {
     next: NextFunction
   ): Promise<void> {
     const now = Date.now();
-    const identifier = options.keyGenerator
-      ? options.keyGenerator(req)
-      : (req.headers['x-tenant-id'] as string) || ((req as any).user?.tenantId as string) || req.ip || '127.0.0.1';
+    const isAgent = isAgentRequest(req);
+
+    // Prefix: explicit option > agent segregation > default gateway
+    const prefix = defaultPrefix ?? (isAgent ? 'ratelimit:agent' : 'ratelimit:gw');
+
+    // Dynamic thresholds: agent sub-quota vs standard gateway window
+    const windowMs =
+      isAgent && options.agentWindowMs
+        ? options.agentWindowMs
+        : isAgent && !options.windowMs
+          ? defaults.agentWindowMs
+          : baseWindowMs;
+
+    const maxRequests =
+      isAgent && options.agentMaxRequests
+        ? options.agentMaxRequests
+        : isAgent && !options.maxRequests
+          ? defaults.agentMaxRequests
+          : baseMaxRequests;
+
+    let identifier: string;
+    if (options.keyGenerator) {
+      identifier = options.keyGenerator(req);
+    } else if (isAgent) {
+      identifier =
+        (req.headers['x-agent-instance-id'] as string) ||
+        (req.headers['x-agent-id'] as string) ||
+        (req.headers['x-slot-id'] as string) ||
+        req.ip ||
+        '127.0.0.1';
+    } else {
+      identifier =
+        (req.headers['x-tenant-id'] as string) ||
+        ((req as any).user?.tenantId as string) ||
+        req.ip ||
+        '127.0.0.1';
+    }
 
     const fullKey = `${prefix}:${identifier}`;
 

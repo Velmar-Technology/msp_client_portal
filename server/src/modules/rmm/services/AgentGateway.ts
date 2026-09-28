@@ -5,6 +5,8 @@ import { logger } from '@shared/utils/logger';
 import { metricsService } from '@shared/metrics/metricsService';
 import { TelemetryBufferService, telemetryBufferService } from './TelemetryBufferService';
 import { AgentClusterBroker, agentClusterBroker } from './AgentClusterBroker';
+import { EquipmentRepository, equipmentRepository } from '@modules/equipment';
+import { TicketQueryService, ticketQueryService } from '@modules/tickets';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -28,6 +30,10 @@ interface ConnectedAgent {
   token?: string;
   /** Portal slot id this agent has been bound to (set after BIND). */
   slotId?: string;
+  /** Associated tenant identifier for authorized ticket and resource scoping. */
+  tenantId?: string;
+  /** Associated client identifier. */
+  clientId?: string;
   /** Whether the connection is secured via TLS/HTTPS/WSS. */
   isSecure?: boolean;
   /** Protocol scheme used ('wss' or 'ws'). */
@@ -101,14 +107,18 @@ export class AgentGateway {
   private onAgentHelloHandler: AgentHelloHandler | null = null;
 
   /**
-   * Initializes AgentGateway with TelemetryBufferService and AgentClusterBroker dependencies.
+   * Initializes AgentGateway with TelemetryBufferService, AgentClusterBroker, EquipmentRepository, and TicketQueryService dependencies.
    *
    * @param telemetryBuffer - Buffered telemetry ingestion service
    * @param clusterBroker - Clustered WebSocket Pub/Sub broker
+   * @param equipmentRepo - Equipment entity repository for slot resolution
+   * @param ticketQuerySvc - Ticket query service for real-time ticket streaming
    */
   constructor(
     private readonly telemetryBuffer: TelemetryBufferService = telemetryBufferService,
-    private readonly clusterBroker: AgentClusterBroker = agentClusterBroker
+    private readonly clusterBroker: AgentClusterBroker = agentClusterBroker,
+    private readonly equipmentRepo: EquipmentRepository = equipmentRepository,
+    private readonly ticketQuerySvc: TicketQueryService = ticketQueryService
   ) {
     this.registerClusterHandlers();
   }
@@ -287,6 +297,25 @@ export class AgentGateway {
           return;
         }
 
+        // Handle TICKETS_QUERY over persistent WebSocket tunnel
+        if (data.command === 'TICKETS_QUERY') {
+          this.handleTicketsQuery(agent, equipmentId, data).catch((err) => {
+            logger.warn(`[AgentGateway] Failed to handle TICKETS_QUERY for ${equipmentId}:`, err);
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(
+                JSON.stringify({
+                  command: 'TICKETS_SNAPSHOT',
+                  correlation_id: data.correlation_id,
+                  success: false,
+                  tickets: [],
+                  error: err?.message || 'Failed to query tickets',
+                })
+              );
+            }
+          });
+          return;
+        }
+
         // Handle RESPONSE correlation
         if (data.correlation_id && this.pendingRequests.has(data.correlation_id)) {
           const pending = this.pendingRequests.get(data.correlation_id)!;
@@ -330,6 +359,91 @@ export class AgentGateway {
     }, 30_000);
 
     ws.on('close', () => clearInterval(pingInterval));
+  }
+
+  /**
+   * Processes a real-time ticket query from a connected agent over WebSocket.
+   * Resolves the agent's tenant association and returns a lightweight ticket snapshot.
+   *
+   * @param agent - In-memory connected agent record
+   * @param equipmentId - Target equipment identifier
+   * @param data - Incoming WebSocket frame with command, payload, and correlationId
+   * @see BL-103
+   */
+  private async handleTicketsQuery(
+    agent: ConnectedAgent,
+    equipmentId: string,
+    data: any
+  ): Promise<void> {
+    const limit = typeof data.payload?.limit === 'number' ? Math.min(data.payload.limit, 50) : 20;
+
+    let tenantId = agent.tenantId;
+    let clientId = agent.clientId;
+
+    if (!tenantId && agent.token) {
+      const equip = await this.equipmentRepo.findByAgentToken(agent.token);
+      if (equip) {
+        tenantId = equip.tenantId;
+        clientId = equip.clientId;
+        agent.tenantId = tenantId;
+        agent.clientId = clientId;
+      }
+    }
+
+    if (!tenantId) {
+      const equip = await this.equipmentRepo.findById(equipmentId);
+      if (equip) {
+        tenantId = equip.tenant_id;
+        agent.tenantId = tenantId;
+      }
+    }
+
+    if (!tenantId) {
+      if (agent.ws.readyState === WebSocket.OPEN) {
+        agent.ws.send(
+          JSON.stringify({
+            command: 'TICKETS_SNAPSHOT',
+            correlation_id: data.correlation_id,
+            success: false,
+            tickets: [],
+            error: 'Equipment slot not associated with a tenant',
+          })
+        );
+      }
+      return;
+    }
+
+    const tickets = await this.ticketQuerySvc.getTicketsForAgent(
+      {
+        equipmentId,
+        slotId: agent.slotId || equipmentId,
+        tenantId,
+        clientId: clientId || 'system',
+        hostname: agent.hostname || null,
+        deviceName: null,
+      },
+      limit
+    );
+
+    if (agent.ws.readyState === WebSocket.OPEN) {
+      agent.ws.send(
+        JSON.stringify({
+          command: 'TICKETS_SNAPSHOT',
+          correlation_id: data.correlation_id,
+          success: true,
+          tickets: tickets.map((t: any) => ({
+            id: t.id,
+            ticketNumber: t.ticket_number,
+            title: t.title,
+            status: t.status,
+            priority: t.priority,
+            category: t.category,
+            createdAt: t.created_at,
+            assignedTechName: t.assigned_tech_name || null,
+          })),
+        })
+      );
+    }
   }
 
   /**

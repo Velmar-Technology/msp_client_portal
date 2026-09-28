@@ -2,6 +2,7 @@ mod crypto;
 mod diagnostics;
 mod ipc_server;
 mod pairing;
+mod screenshot;
 mod service;
 mod upgrade;
 
@@ -162,6 +163,7 @@ fn dispatch_command(command: &str, payload: &Option<Value>) -> Value {
         "LIST_PROCESSES" => diagnostics::list_running_processes(payload),
         "EXEC_POWERSHELL" => diagnostics::exec_powershell_script(payload),
         "FLUSH_DNS_RENEW_DHCP" => diagnostics::flush_dns_renew_dhcp(),
+        "CAPTURE_SCREEN" | "CAPTURE_SCREENSHOT" => screenshot::capture_multi_screen(),
         "PING" => serde_json::json!({
             "status": "PONG",
             "agent_version": env!("CARGO_PKG_VERSION"),
@@ -697,6 +699,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if args.contains(&"--version".to_string()) || args.contains(&"-V".to_string()) {
         println!("msp-agent {}", env!("CARGO_PKG_VERSION"));
         return Ok(());
+    }
+
+    // Interactive worker process spawned inside user session (Session 1+)
+    for (i, arg) in args.iter().enumerate() {
+        if arg == "--capture-screens-worker" && i + 1 < args.len() {
+            screenshot::run_capture_worker(&args[i + 1]);
+            return Ok(());
+        }
     }
 
     let gateway_override = extract_gateway_arg(&args);

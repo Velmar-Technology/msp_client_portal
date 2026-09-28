@@ -1,55 +1,52 @@
-# Implementation Plan: Unified L2 Metric Card Primitive (`<MetricCard />`)
+# Implementation Plan: Prevent Rate Limit Re-accumulation (Agent Polling & Gateway Segregation)
 
 ## Overview
-Unify `StatCard`, `SummaryCard`, and `PageDashboardKpi` into a single canonical Level 2 primitive (`<MetricCard />`) located at `client/src/components/shared/MetricCard.tsx`. The primitive provides a hybrid API (direct flat props for standard metrics + optional compound subcomponents for custom slots), single unified density (`min-h-[120px]`, `p-3.5`, `text-xl` font), built-in skeleton states, keyboard accessibility, and standard semantic trend pills. All existing call-sites across the entire codebase will be directly refactored to eliminate duplicate card components.
+Eliminate aggressive HTTP ticket polling from the Rust endpoint agent by adding an exponential backoff circuit breaker for un-paired states, segregating machine-agent traffic from human browser IP buckets in `gatewayRateLimiterMiddleware.ts`, and tunneling ticket queries through the persistent WebSocket connection in `AgentGateway.ts`.
 
 ## Architecture Decisions
-- **L1/L2 Layering Compliance**: Built on top of Radix UI L1 primitive `Card` (`@/components/ui/card`) with zero ad-hoc raw container styles.
-- **Hybrid Ergonomics**: Flat props (`title`, `value`, `trend`, `icon`, `badge`, `subtitle`, `footer`, `isLoading`, `onClick`) cover 95% of use-cases with minimal JSX; compound subcomponents (`MetricCard.Header`, `MetricCard.Value`, etc.) allow embedding custom controls (e.g. progress bars).
-- **Single Unified Density**: Consistent compact height (`min-h-[120px]`), padding (`p-3.5`), title typography (`text-[11px] font-medium uppercase tracking-wider text-muted-foreground`), and metric value typography (`text-xl font-bold tracking-tight text-foreground font-heading`).
-- **Zero Legacy Aliases**: Complete migration of all ~35 call-sites and deletion of `StatCard.tsx`, `SummaryCard.tsx`, and `components/dashboard/summary-card.tsx`.
+- **Circuit Breaker on Agent IPC**: When `slot_id` is missing/un-paired, or when backend returns 401/404, trip an in-memory circuit breaker (`base: 30s`, `max: 15m`, `jitter: ±20%`) in `ipc_server.rs`, immediately serving cached status to local tray clients.
+- **Dedicated Agent Rate Limit Bucket**: Update `gatewayRateLimiterMiddleware.ts` to identify agent requests (`/tickets/agent/*`, `x-agent-instance-id`, or machine auth token) and key them to `ratelimit:agent:<id>` rather than pooling against `ratelimit:gw:<client_ip>`.
+- **WebSocket Ticket Streaming**: Introduce `TICKETS_QUERY` and `TICKETS_SNAPSHOT` frames in `AgentGateway.ts` to retrieve ticket summaries over the existing duplex WS tunnel when online.
+- **Clean Architecture Compliance**: Changes in `server/` preserve Dependency Inversion (controllers -> services -> repositories). No bypass of `@shared/errors`.
 
 ## Task List
 
-### Phase 1: L2 Primitive Foundation & Test Suite
-- [ ] Task 1: Create `MetricCard.tsx` in `client/src/components/shared/` with hybrid props and compound slots
-- [ ] Task 2: Create unit tests in `client/src/components/shared/MetricCard.test.tsx` and export from `components/shared/index.ts`
+### Phase 1: Gateway Rate Limit Segregation
+- [ ] Task 1: Update `gatewayRateLimiterMiddleware.ts` to isolate agent traffic into dedicated rate-limit buckets (`ratelimit:agent:*`)
+- [ ] Task 2: Add unit tests in `gatewayMiddleware.test.ts` verifying agent vs browser rate-limit keying and isolation
 
-### Checkpoint: Foundation
-- [ ] MetricCard unit test suite passes: `npm -w client run test:run client/src/components/shared/MetricCard.test.tsx`
+### Checkpoint: Gateway
+- [ ] Gateway tests pass: `npm -w server run test src/shared/middleware/gatewayMiddleware.test.ts`
+- [ ] Build compiles cleanly: `npm -w server run build`
 
-### Phase 2: Direct Refactor of `StatCard` Call-Sites
-- [ ] Task 3: Migrate `UserStatsBar.tsx`, `CRMPage.tsx`, and `StyleGuidePage.tsx` to `MetricCard`, and remove `StatCard.tsx`
+### Phase 2: Agent IPC Circuit Breaker & Backoff
+- [ ] Task 3: Implement exponential backoff and circuit breaker in `packages/msp-agent/src/ipc_server.rs`
+- [ ] Task 4: Add local caching for un-paired state to prevent outbound HTTP floods to `/api/v1/tickets/agent/*`
 
-### Checkpoint: StatCard Migration
-- [ ] StyleGuide and CRM tests pass
+### Checkpoint: Agent
+- [ ] Cargo compiles cleanly: `cargo check --manifest-path packages/msp-agent/Cargo.toml`
 
-### Phase 3: Direct Refactor of `SummaryCard` Call-Sites
-- [ ] Task 4: Migrate `ApiStatusPage.tsx`, `TechDashboardPage.tsx`, `DashboardSummaryStats.tsx`, `StorageQuota.tsx`, `AdminDashboardView.tsx`, and `RmmKpiGrid.tsx` to `MetricCard`
-- [ ] Task 5: Remove `SummaryCard.tsx`, `SummaryCard.test.tsx`, and `components/dashboard/summary-card.tsx`
+### Phase 3: WebSocket Ticket Tunnel in AgentGateway
+- [ ] Task 5: Add `TICKETS_QUERY` and `TICKETS_SNAPSHOT` message handling in `AgentGateway.ts`
+- [ ] Task 6: Add unit tests in `AgentGateway.test.ts` for ticket snapshot query over WS
 
-### Checkpoint: SummaryCard Migration
-- [ ] Dashboard and System tests pass
+### Checkpoint: WebSocket Tunnel
+- [ ] RMM tests pass: `npm -w server run test src/modules/rmm/services/AgentGateway.test.ts`
 
-### Phase 4: Direct Refactor of `PageDashboardKpi` & Financials
-- [ ] Task 6: Refactor `PageDashboard.tsx` (`PageDashboardKpi`) and `KpiCards.tsx` to use `MetricCard`, updating test assertions
+### Phase 4: Local Host Re-pairing & Verification
+- [ ] Task 7: Bind local `C:\ProgramData\MSP\msp-agent.json` to active tenant slot and verify zero 429 re-accumulation
 
-### Checkpoint: Financials & Page Component
-- [ ] `FinancialPage.test.tsx` and `Page.test.tsx` pass
-
-### Phase 5: Global Verification & DoD Audit
-- [ ] Task 7: Full client test suite and production build verification (`npm -w client run build`, `npm -w client run test:run`)
-
-### Checkpoint: Complete
-- [ ] All acceptance criteria met
-- [ ] Zero TypeScript errors, zero test regressions, clean Git tree
+### Checkpoint: Complete Verification
+- [ ] All unit test suites pass
+- [ ] Local endpoint reports Online in `msp_list_connected_agents`
+- [ ] `ratelimit:gw:<ip>` remains stable
 
 ## Risks and Mitigations
 | Risk | Impact | Mitigation |
 | :--- | :---: | :--- |
-| `FinancialPage` visual downgrade with `text-xl` vs `text-2xl sm:text-3xl` | Low | Unified `text-xl font-bold tracking-tight font-heading` balances perfectly with standard 4-column KPI grids. |
-| Custom children in `StorageQuota` breaking | Medium | Compound layout `<MetricCard>` with subcomponents explicitly supports custom children and progress bars. |
-| Breaking unknown external imports of `SummaryCard` or `StatCard` | Low | Ripgrep confirms all references are strictly internal to `client/src`. All call sites are refactored in this plan. |
+| Tray UI shows stale ticket state | Low | Circuit breaker resets immediately upon user action or pairing event. |
+| High memory footprint in Redis from agent keys | Low | Agent keys use shorter sliding window (`5m`) with strict TTL expiration. |
+| WS frame size exceeds limits | Low | WS ticket snapshots capped at 30 items with lightweight summary projection. |
 
 ## Open Questions
-- None. Design requirements, density, and API style were resolved during `/idea-refine`.
+- None. Requirements and scope were aligned during `/idea-refine`.

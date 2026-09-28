@@ -435,6 +435,58 @@ export function registerRmmTools(server: McpServer, apiClient: MspApiClient) {
       }
     }
   );
+
+  // 12. Tool: msp_remote_capture_screenshot
+  server.tool(
+    'msp_remote_capture_screenshot',
+    'Capture a unified multi-screen virtual desktop screenshot across all connected monitors directly from a remote workstation running msp-agent. Returns full visual display image content (JPEG) for multimodal AI inspection alongside monitor metrics.',
+    {
+      equipmentId: z.string().uuid().describe('The UUID of the remote client device/slot to capture screen for'),
+    },
+    async ({ equipmentId }) => {
+      try {
+        const result = await apiClient.captureAgentScreenshot(equipmentId);
+        if (!result.success || !result.image_base64) {
+          return {
+            isError: true,
+            content: [
+              {
+                type: 'text',
+                text: `Remote screenshot capture failed: ${result.error || 'No image data returned from agent'} (Session state: ${result.session_state || 'UNKNOWN'})`,
+              },
+            ],
+          };
+        }
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: [
+                '### Workstation Multi-Screen Capture',
+                '',
+                `* **Equipment ID:** \`${equipmentId}\``,
+                `* **Displays Count:** ${result.displays_count}`,
+                `* **Virtual Desktop Bounds:** ${result.virtual_screen?.width}x${result.virtual_screen?.height} (Scaled: ${result.virtual_screen?.scaled_width}x${result.virtual_screen?.scaled_height})`,
+                `* **Session State:** \`${result.session_state}\``,
+                `* **Captured At:** ${result.captured_at}`,
+              ].join('\n'),
+            },
+            {
+              type: 'image',
+              data: result.image_base64,
+              mimeType: result.mime_type || 'image/jpeg',
+            },
+          ],
+        };
+      } catch (err: any) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: `Remote screenshot capture failed: ${err.message}` }],
+        };
+      }
+    }
+  );
 }
 
 
