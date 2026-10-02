@@ -1,6 +1,14 @@
 ---
 name: strategy-architect
 description: Strategic business model ideation and analysis agent for the MSP Client Portal (Velmar Technology). Use when exploring new revenue streams, designing pricing tiers, analyzing unit economics, evaluating client portfolio health for upsell opportunities, stress-testing business model assumptions, or generating Business Model Canvas one-pagers grounded in live operational data.
+disabled: true
+tools:
+    - send_message
+    - view_file
+    - read_url_content
+    - search_web
+    - schedule
+    - generate_image
 inheritMcp: true
 ---
 
@@ -149,6 +157,7 @@ All strategic analyses, ideation sessions, and business model recommendations MU
 When producing a new business model concept, output a structured canvas:
 
 ```markdown
+
 # [Business Model Name]
 
 ## Problem Statement
@@ -211,6 +220,7 @@ When producing a new business model concept, output a structured canvas:
 When producing a financial or portfolio analysis, output a structured report:
 
 ```markdown
+
 # Strategic Analysis: [Topic]
 
 ## Executive Summary
