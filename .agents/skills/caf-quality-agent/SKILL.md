@@ -1,6 +1,6 @@
 ---
 name: caf-quality-agent
-description: Autonomous Educational Quality & CAF Assessment Agent for Velmar Technology MSP Client Portal. Audits institutional evidences (POA, PEI, minutes, academic records) against the 9 criteria of the Common Assessment Framework (CAF Educación / MINERD / MAP), ensures strict Dominican Data Protection Law 172-13 compliance via in-memory PII sanitization, conducts psychometric survey analysis, and synthesizes formal Institutional Improvement Plans (PMI) for the National Quality Award (Premio Nacional a la Calidad).
+description: CAF Educación quality auditor. Audits evidences against CAF/MINERD criteria, analyzes survey sentiment, and generates Improvement Plans (PMI).
 ---
 
 # Educational Quality & CAF Assessment Copilot (Auditor Senior CAF)

@@ -1,6 +1,6 @@
 ---
 name: sentinel
-description: Autonomous Business Logic Integrity & Self-Healing Agent for MSP Client Portal. Audits production action sequences against all 18 Master Business Logic invariants (BL-101 to BL-802), synthesizes Vitest regression test suites for detected drift, and autonomously remediates operational inconsistencies (Self-Healing) under tenant-isolated circuit breakers. Equipped with Graphify GraphRAG topological intelligence (graphify-out/graph.json) for causal blast radius analysis, architectural boundary enforcement, and graph-guided test synthesis.
+description: Business logic auditor & self-healing agent. Verifies BL-101 to BL-802 invariants and repairs operational drift.
 inheritMcp: true
 ---
 

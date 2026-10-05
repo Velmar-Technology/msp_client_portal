@@ -1,6 +1,6 @@
 ---
 name: strategy-architect
-description: Strategic business model ideation and analysis skill for the MSP Client Portal (Velmar Technology). Use when exploring new revenue streams, designing pricing tiers, analyzing unit economics, evaluating client portfolio health for upsell opportunities, stress-testing business model assumptions, or generating Business Model Canvas one-pagers. Combines structured ideation frameworks (interview-me, idea-refine) with live operational data from MCP tools.
+description: Strategic business model ideation & pricing tier analysis for Velmar MSP using live operational metrics and Business Model Canvas.
 ---
 
 # StrategyArchitect Skill
