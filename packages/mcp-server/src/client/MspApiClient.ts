@@ -45,7 +45,7 @@ export class MspApiClient {
     
     this.client = axios.create({
       baseURL,
-      timeout: 10000,
+      timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
         ...(config.apiToken ? { Authorization: `Bearer ${config.apiToken}`, 'X-API-Key': config.apiToken } : {}),
@@ -657,11 +657,17 @@ ${recommendationList}
   /**
    * Dispatches an arbitrary command to a remote agent and returns the response.
    */
-  async execAgentCommand(equipmentId: string, command: string, payload?: any): Promise<any> {
+  async execAgentCommand(
+    equipmentId: string,
+    command: string,
+    payload?: any,
+    timeoutMs: number = 60_000
+  ): Promise<any> {
     const res = await this.request<any>({
       method: 'POST',
       url: `/rmm/agent/${equipmentId}/exec`,
-      data: { command, payload },
+      data: { command, payload, timeoutMs },
+      timeout: timeoutMs + 5000,
     });
     const outer = res.data || res;
     return outer.data || outer;
