@@ -920,10 +920,13 @@ async function handleDeviceMove(opts) {
 
 async function handleLeadImport(opts) {
   console.log(`🛡️  [Sentinel] Executing lead:import to VPS production database...`);
-  const tenants = await execSqlJson(`SELECT id, name FROM tenants ORDER BY created_at ASC LIMIT 1`);
-  if (!tenants.length) throw new Error('No tenant found in production database.');
-  const targetTenant = tenants[0];
-  console.log(`   Target Tenant: ${targetTenant.name} (${targetTenant.id})`);
+  // Target Estiven Polanco (1be8d8c9-a969-40bb-b585-e545180979fb), Victor Maldonado (773dc87d-c497-49d0-84c1-060c09930b73), and provider (ef010203-0405-0607-0809-0a0b0c0d0e0f)
+  const targetTenantIds = [
+    '1be8d8c9-a969-40bb-b585-e545180979fb',
+    '773dc87d-c497-49d0-84c1-060c09930b73',
+    'ef010203-0405-0607-0809-0a0b0c0d0e0f'
+  ];
+  console.log(`   Target Workspaces:`, targetTenantIds.join(', '));
 
   const EDUCATORS = [
     { name: 'Huascar Jael Diaz Vicente', phone: '829-743-4135', email: 'huascarjdiaz@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
@@ -955,25 +958,28 @@ async function handleLeadImport(opts) {
 
   const sqlStatements = ['BEGIN;'];
 
-  for (const ed of EDUCATORS) {
-    const escName = ed.name.replace(/'/g, "''");
-    const escCompany = ed.company.replace(/'/g, "''");
-    const notes = 'Prospecto docente identificado para campana preventiva de Salud Digital y Plan PL-005 Education & Faculty Suite.';
-    sqlStatements.push(`
-      INSERT INTO leads (
-        tenant_id, contact_name, contact_email, contact_phone, 
-        company_name, stage, plan_id, priority, expected_revenue, probability, notes
-      ) VALUES (
-        '${targetTenant.id}', '${escName}', '${ed.email}', '${ed.phone}',
-        '${escCompany}', 'NEW', 'PL-005', '${ed.priority}', 35.00, 20, '${notes}'
-      )
-      ON CONFLICT (id) DO NOTHING;
-    `);
+  for (const tenantId of targetTenantIds) {
+    for (const ed of EDUCATORS) {
+      const escName = ed.name.replace(/'/g, "''");
+      const escCompany = ed.company.replace(/'/g, "''");
+      const notes = 'Prospecto docente identificado para campana preventiva de Salud Digital y Plan PL-005 Education & Faculty Suite.';
+      sqlStatements.push(`
+        INSERT INTO leads (
+          tenant_id, contact_name, contact_email, contact_phone, 
+          company_name, stage, plan_id, priority, expected_revenue, probability, notes
+        ) VALUES (
+          '${tenantId}', '${escName}', '${ed.email}', '${ed.phone}',
+          '${escCompany}', 'NEW', 'PL-005', '${ed.priority}', 35.00, 20, '${notes}'
+        )
+        ON CONFLICT (id) DO NOTHING;
+      `);
+    }
   }
 
   sqlStatements.push('COMMIT;');
   await execSql(sqlStatements.join('\n'));
-  console.log(`✅ [SUCCESS] Imported ${EDUCATORS.length} leads into VPS database for tenant ${targetTenant.id}`);
+  await invalidateRedisCache();
+  console.log(`✅ [SUCCESS] Imported ${EDUCATORS.length} leads across ${targetTenantIds.length} target workspace(s) on VPS!`);
 }
 
 async function main() {
