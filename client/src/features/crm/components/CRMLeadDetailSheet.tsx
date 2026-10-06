@@ -13,6 +13,7 @@ import type {
   Lead,
   LeadStage,
   LeadPriority,
+  ClientType,
   LeadActivity,
   Quotation,
   QuotationStatus,
@@ -53,6 +54,7 @@ const editLeadFormSchema = z.object({
   contactEmail: z.string().email("crm.validation.invalidEmail").max(255),
   contactPhone: z.string().max(50).optional(),
   companyName: z.string().max(255).optional(),
+  clientType: z.enum(["CLIENT", "ENTERPRISE", "STUDENT", "OTHER"]).optional(),
   expectedRevenue: z.number().min(0),
   probability: z.number().min(0).max(100),
   priority: z.enum(["LOW", "MEDIUM", "HIGH"]),
@@ -137,6 +139,7 @@ export function CRMLeadDetailSheet({
     contactEmail: lead?.contact_email || "",
     contactPhone: lead?.contact_phone || "",
     companyName: lead?.company_name || "",
+    clientType: (lead?.client_type || "CLIENT") as ClientType,
     expectedRevenue: Number(lead?.expected_revenue ?? 0),
     probability: lead?.probability ?? 10,
     priority: (lead?.priority || "MEDIUM") as LeadPriority,
@@ -156,6 +159,7 @@ export function CRMLeadDetailSheet({
         contactEmail: lead.contact_email || "",
         contactPhone: lead.contact_phone || "",
         companyName: lead.company_name || "",
+        clientType: (lead.client_type || "CLIENT") as ClientType,
         expectedRevenue: Number(lead.expected_revenue ?? 0),
         probability: lead.probability ?? 10,
         priority: (lead.priority || "MEDIUM") as LeadPriority,
@@ -172,6 +176,7 @@ export function CRMLeadDetailSheet({
       contactEmail: lead.contact_email || "",
       contactPhone: lead.contact_phone || "",
       companyName: lead.company_name || "",
+      clientType: (lead.client_type || "CLIENT") as ClientType,
       expectedRevenue: Number(lead.expected_revenue ?? 0),
       probability: lead.probability ?? 10,
       priority: (lead.priority || "MEDIUM") as LeadPriority,
@@ -190,6 +195,7 @@ export function CRMLeadDetailSheet({
       contactEmail: leadForm.contactEmail.trim(),
       contactPhone: leadForm.contactPhone.trim() || undefined,
       companyName: leadForm.companyName.trim() || undefined,
+      clientType: leadForm.clientType,
       expectedRevenue: Number(leadForm.expectedRevenue) || 0,
       probability: Math.min(100, Math.max(0, Number(leadForm.probability) || 0)),
       priority: leadForm.priority,
@@ -216,6 +222,7 @@ export function CRMLeadDetailSheet({
         contactEmail: parsed.data.contactEmail,
         contactPhone: parsed.data.contactPhone,
         companyName: parsed.data.companyName,
+        clientType: parsed.data.clientType,
         expectedRevenue: parsed.data.expectedRevenue,
         probability: parsed.data.probability,
         priority: parsed.data.priority,
@@ -380,7 +387,27 @@ export function CRMLeadDetailSheet({
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 min-h-[14px] truncate">
+                        {t("plans.clientType") || "Client Type"}
+                      </label>
+                      <Select
+                        value={leadForm.clientType || "CLIENT"}
+                        onValueChange={(v) => setLeadForm((prev) => ({ ...prev, clientType: v as ClientType }))}
+                      >
+                        <SelectTrigger size="lg" className="w-full text-xs bg-background text-foreground">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="CLIENT">{t("userManagement.clientTypeCLIENT") || "Standard Client"}</SelectItem>
+                          <SelectItem value="ENTERPRISE">{t("userManagement.clientTypeENTERPRISE") || "Enterprise Client"}</SelectItem>
+                          <SelectItem value="STUDENT">{t("userManagement.clientTypeSTUDENT") || "School Account"}</SelectItem>
+                          <SelectItem value="OTHER">{t("userManagement.clientTypeOTHER") || "Other / Custom"}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     <div>
                       <label className="block text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1 min-h-[14px] truncate">
                         Win Prob (%)
@@ -482,6 +509,12 @@ export function CRMLeadDetailSheet({
                       }`}
                     >
                       {t(`crm.priorities.${(lead.priority || "medium").toLowerCase()}`) || lead.priority}
+                    </Badge>
+                    <Badge
+                      variant="secondary"
+                      className="text-[9px] uppercase font-mono font-bold"
+                    >
+                      {t(`userManagement.clientType${lead.client_type || 'CLIENT'}`) || lead.client_type || 'CLIENT'}
                     </Badge>
                     <span className="text-[10px] text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded border border-border/40">
                       {lead.probability ?? 10}% {t("crm.stats.winRate") || "Prob"}

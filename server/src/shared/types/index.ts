@@ -662,6 +662,7 @@ export interface Lead {
   contact_phone?: string | null;
   company_name?: string | null;
   stage: LeadStage | string;
+  client_type?: string;
   plan_id?: string | null;
   billing_cycle: 'monthly' | 'annual' | string;
   equipment_count: number;

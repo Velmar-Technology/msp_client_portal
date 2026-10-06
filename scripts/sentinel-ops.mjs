@@ -1043,6 +1043,22 @@ async function handleRbacMigrate(opts) {
   console.log(`   User Role assignments:`, userRoles[0]?.count);
 }
 
+async function handleLeadMigrateClientType(opts) {
+  console.log(`🛡️  [Sentinel] Executing 049_add_client_type_to_leads.sql on VPS production database...`);
+  const fs = await import('fs');
+  const path = await import('path');
+  const migrationPath = path.resolve('server/src/shared/db/migrations/049_add_client_type_to_leads.sql');
+  const sql = fs.readFileSync(migrationPath, 'utf8');
+
+  const res = await execSql(sql);
+  console.log('Migration output:\n', res);
+  await invalidateRedisCache();
+  console.log(`✅ [SUCCESS] Migration 049 applied on VPS!`);
+
+  const rawLeads = await execSql(`SELECT count(*), client_type FROM leads GROUP BY client_type;`);
+  console.log('Leads count:\n', rawLeads);
+}
+
 async function main() {
   const { action, options } = parseCliArgs();
 
@@ -1124,6 +1140,12 @@ async function main() {
     case 'rbac:migrate':
     case 'migrate:rbac':
       await handleRbacMigrate(options);
+      break;
+
+    case 'lead:migrate-client-type':
+    case 'migrate:lead-client-type':
+    case 'db:migrate-049':
+      await handleLeadMigrateClientType(options);
       break;
 
     default:

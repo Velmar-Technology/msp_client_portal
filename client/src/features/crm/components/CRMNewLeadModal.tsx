@@ -30,7 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import type { Plan } from "@/features/subscriptions";
 import type { AuthUser } from "@/store/useAuthStore";
-import type { LeadPriority } from "../api/crmService";
+import type { LeadPriority, ClientType } from "../api/crmService";
 
 const createLeadSchema = z.object({
   clientId: z.string().uuid().optional(),
@@ -38,6 +38,7 @@ const createLeadSchema = z.object({
   contactEmail: z.string().email("crm.validation.contactEmailInvalid").max(255),
   contactPhone: z.string().max(50).optional(),
   companyName: z.string().max(255).optional(),
+  clientType: z.enum(["CLIENT", "ENTERPRISE", "STUDENT", "OTHER"]).default("CLIENT"),
   planId: z.string().min(1, "crm.validation.planRequired"),
   equipmentCount: z.coerce.number().int().min(1).max(500),
   billingCycle: z.enum(["monthly", "annual"]),
@@ -69,6 +70,7 @@ export function CRMNewLeadModal({
   const [contactEmail, setContactEmail] = useState<string>("");
   const [contactPhone, setContactPhone] = useState<string>("");
   const [companyName, setCompanyName] = useState<string>("");
+  const [clientType, setClientType] = useState<ClientType>("CLIENT");
   const [planId, setPlanId] = useState<string>("");
   const [equipmentCount, setEquipmentCount] = useState<number>(1);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
@@ -86,7 +88,18 @@ export function CRMNewLeadModal({
       if (client) {
         setContactName(client.name);
         setContactEmail(client.email);
+        if (client.clientType) {
+          setClientType(client.clientType as ClientType);
+        }
       }
+    }
+  };
+
+  const handlePlanChange = (selectedId: string): void => {
+    setPlanId(selectedId);
+    const chosenPlan = plans.find((p) => p.id === selectedId);
+    if (chosenPlan?.client_type) {
+      setClientType(chosenPlan.client_type as ClientType);
     }
   };
 
@@ -96,6 +109,7 @@ export function CRMNewLeadModal({
     setContactEmail("");
     setContactPhone("");
     setCompanyName("");
+    setClientType("CLIENT");
     setNotes("");
     setErrors({});
   };
@@ -109,6 +123,7 @@ export function CRMNewLeadModal({
       contactEmail: contactEmail.trim(),
       contactPhone: contactPhone.trim() || undefined,
       companyName: companyName.trim() || undefined,
+      clientType,
       planId: effectivePlanId,
       equipmentCount,
       billingCycle,
@@ -291,11 +306,11 @@ export function CRMNewLeadModal({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
-                <div className="sm:col-span-4 space-y-1">
+                <div className="sm:col-span-6 space-y-1">
                   <Label htmlFor="crm-plan-select" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                     {t("plans.plan")} *
                   </Label>
-                  <Select value={effectivePlanId} onValueChange={setPlanId}>
+                  <Select value={effectivePlanId} onValueChange={handlePlanChange}>
                     <SelectTrigger id="crm-plan-select" size="lg" className="w-full text-xs font-medium">
                       <SelectValue />
                     </SelectTrigger>
@@ -311,7 +326,24 @@ export function CRMNewLeadModal({
                   </Select>
                 </div>
 
-                <div className="sm:col-span-2 space-y-1">
+                <div className="sm:col-span-6 space-y-1">
+                  <Label htmlFor="crm-client-type-select" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {t("plans.clientType") || "Client Type"}
+                  </Label>
+                  <Select value={clientType} onValueChange={(v) => setClientType(v as ClientType)}>
+                    <SelectTrigger id="crm-client-type-select" size="lg" className="w-full text-xs font-medium">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CLIENT">{t("userManagement.clientTypeCLIENT") || "Standard Client"}</SelectItem>
+                      <SelectItem value="ENTERPRISE">{t("userManagement.clientTypeENTERPRISE") || "Enterprise Client"}</SelectItem>
+                      <SelectItem value="STUDENT">{t("userManagement.clientTypeSTUDENT") || "School Account"}</SelectItem>
+                      <SelectItem value="OTHER">{t("userManagement.clientTypeOTHER") || "Other / Custom"}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="sm:col-span-3 space-y-1">
                   <Label htmlFor="crm-devices-count" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                     {t("crm.devices")}
                   </Label>
@@ -326,7 +358,7 @@ export function CRMNewLeadModal({
                   />
                 </div>
 
-                <div className="sm:col-span-3 space-y-1">
+                <div className="sm:col-span-4 space-y-1">
                   <Label htmlFor="crm-billing-cycle" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                     {t("plans.billingCycle")}
                   </Label>
@@ -341,7 +373,7 @@ export function CRMNewLeadModal({
                   </Select>
                 </div>
 
-                <div className="sm:col-span-3 space-y-1">
+                <div className="sm:col-span-5 space-y-1">
                   <Label htmlFor="crm-priority-select" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                     {t("crm.columns.priority")}
                   </Label>

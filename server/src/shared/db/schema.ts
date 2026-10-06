@@ -544,6 +544,7 @@ export const leads = pgTable(
     contact_phone: varchar('contact_phone', { length: 50 }),
     company_name: varchar('company_name', { length: 255 }),
     stage: leadStageEnum('stage').default('NEW').notNull(),
+    client_type: varchar('client_type', { length: 50 }).default('CLIENT').notNull(),
     plan_id: varchar('plan_id', { length: 50 }).references(() => plans.id, { onDelete: 'set null' }),
     billing_cycle: varchar('billing_cycle', { length: 20 }).default('monthly').notNull(),
     equipment_count: integer('equipment_count').default(1).notNull(),
@@ -559,6 +560,7 @@ export const leads = pgTable(
   (table) => [
     index('idx_leads_tenant').on(table.tenant_id),
     index('idx_leads_stage').on(table.stage),
+    index('idx_leads_client_type').on(table.client_type),
     index('idx_leads_client').on(table.client_id),
     index('idx_leads_assigned').on(table.assigned_user_id),
     index('idx_leads_created').on(table.created_at),
