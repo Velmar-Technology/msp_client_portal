@@ -90,7 +90,7 @@ describe('ensureAdminExists', () => {
     expect(mockClient.query).toHaveBeenNthCalledWith(
       4,
       "INSERT INTO tenants (id, name, subdomain) VALUES ($1, $2, $3)",
-      ['ef010203-0405-0607-0809-0a0b0c0d0e0f', 'MSP Provider', 'admin']
+      ['ef010203-0405-0607-0809-0a0b0c0d0e0f', 'Velmar Technology SRL', 'admin']
     );
 
     // Check bcrypt was called with the environment variable password

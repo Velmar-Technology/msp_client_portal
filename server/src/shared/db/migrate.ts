@@ -68,7 +68,7 @@ export async function ensureAdminExists(client: PoolClient): Promise<void> {
     logger.info('Creating default admin tenant...');
     await client.query(
       "INSERT INTO tenants (id, name, subdomain) VALUES ($1, $2, $3)",
-      [tenantId, 'MSP Provider', 'admin']
+      [tenantId, 'Velmar Technology SRL', 'admin']
     );
   }
 
