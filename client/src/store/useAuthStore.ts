@@ -45,6 +45,7 @@ export interface AuthUser {
   lastLoginIp?: string | null;
   accountStatus?: 'ACTIVE' | 'READ_ONLY' | 'SUSPENDED' | 'PURGED';
   rnc?: string | null;
+  permissions?: string[];
 }
 
 export interface AuthState {

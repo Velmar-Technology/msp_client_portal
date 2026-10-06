@@ -61,9 +61,10 @@ async function execSql(sql) {
 }
 
 async function execSqlJson(query) {
+  const cleanQuery = query.trim().replace(/;+$/, '');
   const raw = await execDocker('postgres_db_prod', [
     'psql', '-U', 'postgres', '-d', 'msp_helpdesk', '-t', '-A', '-c',
-    `SELECT json_agg(t) FROM (${query}) t;`
+    `SELECT json_agg(t) FROM (${cleanQuery}) t;`
   ]);
   try {
     const startIdx = raw.indexOf('[');
@@ -1014,6 +1015,25 @@ async function handleAdminAlign(opts) {
   console.log(`   Redis Cache: Invalidated.`);
 }
 
+async function handleRbacMigrate(opts) {
+  console.log(`🛡️  [Sentinel] Executing rbac:migrate on VPS production database...`);
+  const fs = await import('fs');
+  const path = await import('path');
+  const migrationPath = path.resolve('server/src/shared/db/migrations/048_create_dynamic_rbac_tables.sql');
+  const sql = fs.readFileSync(migrationPath, 'utf8');
+
+  await execSql(sql);
+  await invalidateRedisCache();
+  console.log(`✅ [SUCCESS] Dynamic RBAC tables and baseline permissions migrated on VPS!`);
+
+  const roles = await execSqlJson(`SELECT id, name, is_system FROM roles;`);
+  console.log(`   Roles (${roles.length}):`, roles.map(r => r.name).join(', '));
+  const perms = await execSqlJson(`SELECT count(*) FROM permissions;`);
+  console.log(`   Permissions count:`, perms[0]?.count);
+  const userRoles = await execSqlJson(`SELECT count(*) FROM user_roles;`);
+  console.log(`   User Role assignments:`, userRoles[0]?.count);
+}
+
 async function main() {
   const { action, options } = parseCliArgs();
 
@@ -1090,6 +1110,11 @@ async function main() {
     case 'admin:align':
     case 'align:admin':
       await handleAdminAlign(options);
+      break;
+
+    case 'rbac:migrate':
+    case 'migrate:rbac':
+      await handleRbacMigrate(options);
       break;
 
     default:

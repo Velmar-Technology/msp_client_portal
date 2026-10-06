@@ -1,5 +1,4 @@
 import { pool } from '../index';
-import logger from '../../utils/logger';
 
 interface EducatorLead {
   contact_name: string;

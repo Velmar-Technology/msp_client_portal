@@ -1,9 +1,8 @@
 import { Router } from 'express';
 import { crmController } from '@modules/crm/controllers/CRMController';
 import { authMiddleware } from '@shared/middleware/authMiddleware';
-import { rbacMiddleware } from '@shared/middleware/rbacMiddleware';
+import { requirePermission } from '@shared/middleware/requirePermission';
 import { validate } from '@shared/middleware/validationMiddleware';
-import { UserRole } from '@shared/types';
 import {
   CreateLeadDTO,
   UpdateLeadDTO,
@@ -21,9 +20,9 @@ import {
 
 const router = Router();
 
-// CRM routes require authentication and the ADMIN role (sales pipeline management)
+// CRM routes require authentication and dynamic CRM capability
 router.use(authMiddleware);
-router.use(rbacMiddleware(UserRole.ADMIN));
+router.use(requirePermission('crm:leads:read'));
 
 /** GET /api/v1/crm/stats — Get CRM pipeline summary statistics */
 router.get('/stats', (req, res) => crmController.getStats(req, res));
