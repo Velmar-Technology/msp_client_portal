@@ -56,3 +56,5 @@ target/
 # Knowledge graph
 graphify-out/
 
+# MCP Local Configuration
+.agents/mcp_config.json

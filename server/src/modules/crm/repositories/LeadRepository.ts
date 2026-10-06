@@ -25,7 +25,7 @@ export class LeadRepository extends BaseRepository<Lead> {
    * @returns Object with leads array and total record count
    */
   async findByTenant(tenantId: string, query: GetLeadsQueryInput = {}): Promise<{ leads: Lead[]; total: number }> {
-    const { search, stage, priority, assignedUserId, page = 1, limit = 50 } = query;
+    const { search, stage, priority, clientType, assignedUserId, page = 1, limit = 50 } = query;
     const offset = (page - 1) * limit;
 
     const conditions: string[] = ['l.tenant_id = $1'];
@@ -49,6 +49,12 @@ export class LeadRepository extends BaseRepository<Lead> {
     if (priority) {
       conditions.push(`l.priority = $${paramIndex}`);
       params.push(priority);
+      paramIndex++;
+    }
+
+    if (clientType) {
+      conditions.push(`l.client_type = $${paramIndex}`);
+      params.push(clientType);
       paramIndex++;
     }
 
@@ -100,6 +106,7 @@ export class LeadRepository extends BaseRepository<Lead> {
       contact_phone: row.contact_phone,
       company_name: row.company_name,
       stage: row.stage as LeadStage,
+      client_type: row.client_type || 'CLIENT',
       plan_id: row.plan_id,
       billing_cycle: row.billing_cycle,
       equipment_count: Number(row.equipment_count || 1),
@@ -175,6 +182,7 @@ export class LeadRepository extends BaseRepository<Lead> {
       contact_phone: row.contact_phone,
       company_name: row.company_name,
       stage: row.stage as LeadStage,
+      client_type: row.client_type || 'CLIENT',
       plan_id: row.plan_id,
       billing_cycle: row.billing_cycle,
       equipment_count: Number(row.equipment_count || 1),
@@ -215,6 +223,7 @@ export class LeadRepository extends BaseRepository<Lead> {
         contact_phone: data.contactPhone || null,
         company_name: data.companyName || null,
         stage: data.stage || LeadStage.NEW,
+        client_type: data.clientType || 'CLIENT',
         plan_id: data.planId || null,
         billing_cycle: data.billingCycle || 'monthly',
         equipment_count: data.equipmentCount ?? 1,
@@ -252,6 +261,7 @@ export class LeadRepository extends BaseRepository<Lead> {
     if (data.contactPhone !== undefined) valuesToUpdate.contact_phone = data.contactPhone;
     if (data.companyName !== undefined) valuesToUpdate.company_name = data.companyName;
     if (data.stage !== undefined) valuesToUpdate.stage = data.stage;
+    if (data.clientType !== undefined) valuesToUpdate.client_type = data.clientType;
     if (data.planId !== undefined) valuesToUpdate.plan_id = data.planId;
     if (data.billingCycle !== undefined) valuesToUpdate.billing_cycle = data.billingCycle;
     if (data.equipmentCount !== undefined) valuesToUpdate.equipment_count = data.equipmentCount;

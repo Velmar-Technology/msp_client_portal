@@ -304,6 +304,7 @@ export interface JwtPayload {
   role: UserRole;
   tenantId: string;
   accountStatus?: AccountStatus;
+  permissions?: string[];
 }
 
 /** Authenticated caller identity used to scope every ticket use case. */
@@ -312,6 +313,7 @@ export interface UserContext {
   role: UserRole;
   tenantId: string;
   accountStatus?: AccountStatus;
+  permissions?: string[];
 }
 
 /** Uploaded file metadata produced by the multer upload driver. */
@@ -660,6 +662,7 @@ export interface Lead {
   contact_phone?: string | null;
   company_name?: string | null;
   stage: LeadStage | string;
+  client_type?: string;
   plan_id?: string | null;
   billing_cycle: 'monthly' | 'annual' | string;
   equipment_count: number;
@@ -808,4 +811,31 @@ export interface AgentPayload {
   clientId: string;
   hostname?: string | null;
   deviceName?: string | null;
+}
+
+// ---- Dynamic RBAC Types ----
+
+export interface DynamicPermission {
+  id: string;
+  code: string;
+  module: string;
+  description?: string | null;
+  created_at: Date;
+}
+
+export interface DynamicRole {
+  id: string;
+  tenant_id?: string | null;
+  name: string;
+  description?: string | null;
+  is_system: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface DynamicUserRoleAssignment {
+  user_id: string;
+  role_id: string;
+  tenant_id: string;
+  created_at: Date;
 }

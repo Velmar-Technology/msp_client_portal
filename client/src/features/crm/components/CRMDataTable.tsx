@@ -204,8 +204,13 @@ export function CRMDataTable({
           const lead = row.original;
           return (
             <div className="flex flex-col">
-              <span className="text-xs font-semibold text-foreground font-heading">
+              <span className="text-xs font-semibold text-foreground font-heading flex items-center gap-1.5">
                 {lead.plan_name || lead.plan_id || "—"}
+                {lead.client_type && lead.client_type !== "CLIENT" && (
+                  <span className="text-[9px] font-mono font-bold px-1 rounded bg-muted text-muted-foreground border border-border">
+                    {lead.client_type}
+                  </span>
+                )}
               </span>
               <span className="text-[10px] text-muted-foreground">
                 {t("plans.devicesCount", { count: lead.equipment_count })}

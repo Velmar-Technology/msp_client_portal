@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * SequenceSentinel Unified Operations Engine
+ * Sentinel Unified Operations Engine
  * Executes all platform, subscription, feature, and identity mutations in a single atomic pass.
  * Automatically handles database transactions, tenant isolation, Redis cache invalidation,
  * and invariant verification.
@@ -61,9 +61,10 @@ async function execSql(sql) {
 }
 
 async function execSqlJson(query) {
+  const cleanQuery = query.trim().replace(/;+$/, '');
   const raw = await execDocker('postgres_db_prod', [
     'psql', '-U', 'postgres', '-d', 'msp_helpdesk', '-t', '-A', '-c',
-    `SELECT json_agg(t) FROM (${query}) t;`
+    `SELECT json_agg(t) FROM (${cleanQuery}) t;`
   ]);
   try {
     const startIdx = raw.indexOf('[');
@@ -118,7 +119,7 @@ async function handleFeatureManage(opts) {
     process.exit(1);
   }
 
-  console.log(`🛡️  [SequenceSentinel] Executing feature:manage...`);
+  console.log(`🛡️  [Sentinel] Executing feature:manage...`);
   if (user) console.log(`   Target User:        ${user}`);
   if (plan) console.log(`   Target Plan:        ${plan}`);
   if (addFeatures.length) console.log(`   Adding Features:    [${addFeatures.join(', ')}]`);
@@ -250,7 +251,7 @@ async function handleSubExtend(opts) {
   const isFree = !shouldBill || opts.free === true || opts['no-invoice'] === true;
   const markPaid = opts['mark-paid'] !== false;
 
-  console.log(`🛡️  [SequenceSentinel] Executing sub:extend...`);
+  console.log(`🛡️  [Sentinel] Executing sub:extend...`);
   console.log(`   Target User:     ${user}`);
   console.log(`   Extension:       ${extension}`);
   console.log(`   Pricing:         ${isFree ? 'FREE / COMPLIMENTARY (Zero Invoice Default)' : (markPaid ? 'PAID ($203.90 USD incl. 18% ITBIS)' : 'PENDING')}`);
@@ -326,7 +327,7 @@ async function handleUserRole(opts) {
   const clientType = opts['client-type'] ? opts['client-type'].toUpperCase() : null;
   const isActive = opts.active !== undefined ? String(opts.active) === 'true' : null;
 
-  console.log(`🛡️  [SequenceSentinel] Executing user:role...`);
+  console.log(`🛡️  [Sentinel] Executing user:role...`);
   console.log(`   Target User:     ${user}`);
   if (role) console.log(`   New Role:        ${role}`);
   if (clientType) console.log(`   Client Type:     ${clientType}`);
@@ -360,7 +361,7 @@ async function handlePlanProvision(opts) {
   const cycle = opts.cycle || 'monthly';
   const markPaid = opts['mark-paid'] !== false;
 
-  console.log(`🛡️  [SequenceSentinel] Executing plan:provision...`);
+  console.log(`🛡️  [Sentinel] Executing plan:provision...`);
   console.log(`   Target User:     ${user}`);
   console.log(`   Plan:            ${plan}`);
   console.log(`   Capacity:        ${capacity} slot(s)`);
@@ -422,7 +423,7 @@ async function handleInfraAudit(opts) {
   const endpoint = opts.endpoint || ENDPOINT_ID;
   const stack = opts.stack || STACK_ID;
 
-  console.log(`🛡️  [SequenceSentinel] Executing infra:audit...`);
+  console.log(`🛡️  [Sentinel] Executing infra:audit...`);
   console.log(`   Portainer URL:   ${PORTAINER_URL}`);
   console.log(`   Endpoint:        ${endpoint}`);
   console.log(`   Stack ID:        ${stack}\n`);
@@ -464,7 +465,7 @@ async function handleSubPlan(opts) {
     console.error('Error: --user=<email|uuid> and --plan=<code> are required.');
     process.exit(1);
   }
-  console.log(`🛡️  [SequenceSentinel] Rebinding user subscription plan...`);
+  console.log(`🛡️  [Sentinel] Rebinding user subscription plan...`);
   console.log(`   Target User: ${user}`);
   console.log(`   Target Plan: ${plan}`);
 
@@ -494,7 +495,7 @@ async function handleInvoiceVoid(opts) {
     console.error('Error: Either --invoice=<number> or --user=<email> is required.');
     process.exit(1);
   }
-  console.log(`🛡️  [SequenceSentinel] Voiding / removing invoice...`);
+  console.log(`🛡️  [Sentinel] Voiding / removing invoice...`);
   let sql = '';
   if (invoice) {
     console.log(`   Target Invoice:  ${invoice}`);
@@ -525,7 +526,7 @@ async function handleTicketPurge(opts) {
     process.exit(1);
   }
 
-  console.log(`🛡️  [SequenceSentinel] Purging production tickets...`);
+  console.log(`🛡️  [Sentinel] Purging production tickets...`);
 
   let filter = '';
   if (ticketId) {
@@ -578,7 +579,7 @@ async function handleTicketPurge(opts) {
 
 async function handleInvoiceCreateDiscounted(opts) {
   const user = opts.user || 'e.a.polanco.robles@gmail.com';
-  console.log(`🛡️  [SequenceSentinel] Creating 100% discounted invoice for user '${user}'...`);
+  console.log(`🛡️  [Sentinel] Creating 100% discounted invoice for user '${user}'...`);
 
   const users = await execSqlJson(`SELECT id, email, tenant_id FROM users WHERE email = '${user}' OR id::text = '${user}' OR name ILIKE '%${user}%' LIMIT 1`);
   if (!users.length) throw new Error(`User '${user}' not found`);
@@ -625,7 +626,7 @@ async function handleInvoiceCreateDiscounted(opts) {
 
 async function handleWorkspaceInspect(opts) {
   const q = opts.search || opts.user || '';
-  console.log(`🛡️  [SequenceSentinel] Inspecting workspaces / users matching '${q}'...`);
+  console.log(`🛡️  [Sentinel] Inspecting workspaces / users matching '${q}'...`);
 
   const users = await execSqlJson(`
     SELECT u.id as user_id, u.email, u.name as user_name, u.role, u.tenant_id,
@@ -686,7 +687,7 @@ async function handleDeviceMove(opts) {
   const to = opts.to || opts['to-user'] || opts['to-workspace'] || 'vmaldonado@velmartech.com.do';
   const dryRun = opts['dry-run'] === true;
 
-  console.log(`🛡️  [SequenceSentinel] Executing device:move...`);
+  console.log(`🛡️  [Sentinel] Executing device:move...`);
   console.log(`   Source:          ${from}`);
   console.log(`   Destination:     ${to}`);
   console.log(`   Dry Run:         ${dryRun ? 'YES (No mutations will be made)' : 'NO (Live Execution)'}`);
@@ -918,6 +919,146 @@ async function handleDeviceMove(opts) {
   console.log(`   Redis Cache:           Invalidated\n`);
 }
 
+async function handleLeadImport(opts) {
+  console.log(`🛡️  [Sentinel] Executing lead:import to VPS production database...`);
+  // Target Estiven Polanco (1be8d8c9-a969-40bb-b585-e545180979fb), Victor Maldonado (773dc87d-c497-49d0-84c1-060c09930b73), and provider (ef010203-0405-0607-0809-0a0b0c0d0e0f)
+  const targetTenantIds = [
+    '1be8d8c9-a969-40bb-b585-e545180979fb',
+    '773dc87d-c497-49d0-84c1-060c09930b73',
+    'ef010203-0405-0607-0809-0a0b0c0d0e0f'
+  ];
+  console.log(`   Target Workspaces:`, targetTenantIds.join(', '));
+
+  const EDUCATORS = [
+    { name: 'Huascar Jael Diaz Vicente', phone: '829-743-4135', email: 'huascarjdiaz@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Daneidy Acosta Frías', phone: '829-727-0110', email: 'daneidyacosta@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Xiomara Williams', phone: '829-771-5160', email: 'xiwr23@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Leonor Jacobo', phone: '829-818-7115', email: 'leonor1517@hotmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Yadiris Soriano', phone: '809-983-9177', email: 'yadirissoriano@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'César E. Santana P.', phone: '809-391-0252', email: 'baldor57425@gmail.com', company: 'Docente Matemáticas / Educación', priority: 'MEDIUM' },
+    { name: 'Mariely Avila', phone: '809-696-5493', email: 'marielyavila74@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Milagros De León', phone: '809-484-6746', email: 'milagros10mate@gmail.com', company: 'Docente Matemáticas / Educación', priority: 'MEDIUM' },
+    { name: 'Víctor Joel Luperón Beltrán', phone: '849-212-6285', email: 'licdolup@gmail.com', company: 'Docente / Licenciatura', priority: 'MEDIUM' },
+    { name: 'Israel Javalera', phone: '829-914-4858', email: 'ijpastor01@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Yanira Reyes Salas', phone: '809-516-4772', email: 'yanira.reyes@docente.edu.do', company: 'MINERD / Sector Educativo', priority: 'HIGH' },
+    { name: 'Leysi Medina', phone: '849-271-7280', email: 'leysi.medina@docente.edu.do', company: 'MINERD / Sector Educativo', priority: 'HIGH' },
+    { name: 'Yessica Chanel Santana', phone: '849-882-1149', email: 'drasantana06@hotmail.com', company: 'Docente / Academia', priority: 'MEDIUM' },
+    { name: 'Gloria Arias', phone: '829-301-6887', email: 'gloriaariashernandez@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Helem Elizabeth Alemán León', phone: '809-662-3499', email: 'licda.helem@gmail.com', company: 'Docente / Licenciatura', priority: 'MEDIUM' },
+    { name: 'Sandra Olgalidis Sirett', phone: '809-763-8573', email: 'sandrasirett49@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Angélica de la Rosa', phone: '809-403-1660', email: 'angelux1422@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Ocsagna M. Mena S.', phone: '829-909-4433', email: 'dra.ocsagnamena@gmail.com', company: 'Docente / Área Académica', priority: 'MEDIUM' },
+    { name: 'Odalys Mota', phone: '809-431-9019', email: 'ciencianaturale15@gmail.com', company: 'Docente Ciencias Naturales', priority: 'MEDIUM' },
+    { name: 'Juana Rijo Nieves', phone: '809-717-8091', email: 'giselarijonieves@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Margarita de la Rosa', phone: '809-322-1183', email: 'margaritadelarosa186@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Juana Isabel Pacheco', phone: '829-598-3205', email: '18nievesP@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Cristian Jean', phone: '809-769-0441', email: 'alestilodedios@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Jhonny Linares Coronado', phone: '829-604-4900', email: 'jonlin7777@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Víctor Medina', phone: '829-304-1600', email: 'medinasbackup@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+  ];
+
+  const sqlStatements = ['BEGIN;'];
+
+  for (const tenantId of targetTenantIds) {
+    for (const ed of EDUCATORS) {
+      const escName = ed.name.replace(/'/g, "''");
+      const escCompany = ed.company.replace(/'/g, "''");
+      const notes = 'Prospecto docente identificado para campana preventiva de Salud Digital y Plan PL-005 Education & Faculty Suite.';
+      sqlStatements.push(`
+        INSERT INTO leads (
+          tenant_id, contact_name, contact_email, contact_phone, 
+          company_name, stage, plan_id, priority, expected_revenue, probability, notes
+        ) VALUES (
+          '${tenantId}', '${escName}', '${ed.email}', '${ed.phone}',
+          '${escCompany}', 'NEW', 'PL-005', '${ed.priority}', 35.00, 20, '${notes}'
+        )
+        ON CONFLICT (id) DO NOTHING;
+      `);
+    }
+  }
+
+  sqlStatements.push('COMMIT;');
+  await execSql(sqlStatements.join('\n'));
+  await invalidateRedisCache();
+  console.log(`✅ [SUCCESS] Imported ${EDUCATORS.length} leads across ${targetTenantIds.length} target workspace(s) on VPS!`);
+}
+
+async function handleAdminAlign(opts) {
+  console.log(`🛡️  [Sentinel] Aligning Victor and Estiven to Core MSP Provider tenant (ef010203-0405-0607-0809-0a0b0c0d0e0f)...`);
+  const sql = `
+    BEGIN;
+    UPDATE users 
+    SET tenant_id = 'ef010203-0405-0607-0809-0a0b0c0d0e0f',
+        role = 'ADMIN'
+    WHERE email IN ('epolanco@velmartech.com.do', 'vmaldonado@velmartech.com.do', 'e.a.polanco.robles@gmail.com');
+
+    UPDATE subscriptions
+    SET tenant_id = 'ef010203-0405-0607-0809-0a0b0c0d0e0f'
+    WHERE client_id IN (
+      SELECT id FROM users WHERE email IN ('epolanco@velmartech.com.do', 'vmaldonado@velmartech.com.do', 'e.a.polanco.robles@gmail.com')
+    );
+
+    UPDATE subscription_equipment
+    SET tenant_id = 'ef010203-0405-0607-0809-0a0b0c0d0e0f'
+    WHERE tenant_id IN ('1be8d8c9-a969-40bb-b585-e545180979fb', '773dc87d-c497-49d0-84c1-060c09930b73', 'c8dfea5b-a2c3-4315-95ed-233e83be8ecc');
+
+    -- Assign ADMIN dynamic role in user_roles
+    INSERT INTO user_roles (user_id, role_id, tenant_id)
+    SELECT u.id, r.id, 'ef010203-0405-0607-0809-0a0b0c0d0e0f'
+    FROM users u
+    JOIN roles r ON r.name = 'ADMIN'
+    WHERE u.email IN ('epolanco@velmartech.com.do', 'vmaldonado@velmartech.com.do', 'e.a.polanco.robles@gmail.com')
+    ON CONFLICT (user_id, role_id, tenant_id) DO NOTHING;
+
+    -- Deduplicate leads in ef010203-0405-0607-0809-0a0b0c0d0e0f
+    DELETE FROM leads a USING leads b
+    WHERE a.id > b.id
+      AND a.tenant_id = b.tenant_id
+      AND a.contact_email = b.contact_email;
+
+    COMMIT;
+  `;
+  await execSql(sql);
+  await invalidateRedisCache();
+  console.log(`✅ [SUCCESS] Victor and Estiven successfully reassigned to MSP Provider tenant (ef010203-0405-0607-0809-0a0b0c0d0e0f) with ADMIN role!`);
+  console.log(`   Redis Cache: Invalidated.`);
+}
+
+async function handleRbacMigrate(opts) {
+  console.log(`🛡️  [Sentinel] Executing rbac:migrate on VPS production database...`);
+  const fs = await import('fs');
+  const path = await import('path');
+  const migrationPath = path.resolve('server/src/shared/db/migrations/048_create_dynamic_rbac_tables.sql');
+  const sql = fs.readFileSync(migrationPath, 'utf8');
+
+  await execSql(sql);
+  await invalidateRedisCache();
+  console.log(`✅ [SUCCESS] Dynamic RBAC tables and baseline permissions migrated on VPS!`);
+
+  const roles = await execSqlJson(`SELECT id, name, is_system FROM roles;`);
+  console.log(`   Roles (${roles.length}):`, roles.map(r => r.name).join(', '));
+  const perms = await execSqlJson(`SELECT count(*) FROM permissions;`);
+  console.log(`   Permissions count:`, perms[0]?.count);
+  const userRoles = await execSqlJson(`SELECT count(*) FROM user_roles;`);
+  console.log(`   User Role assignments:`, userRoles[0]?.count);
+}
+
+async function handleLeadMigrateClientType(opts) {
+  console.log(`🛡️  [Sentinel] Executing 049_add_client_type_to_leads.sql on VPS production database...`);
+  const fs = await import('fs');
+  const path = await import('path');
+  const migrationPath = path.resolve('server/src/shared/db/migrations/049_add_client_type_to_leads.sql');
+  const sql = fs.readFileSync(migrationPath, 'utf8');
+
+  const res = await execSql(sql);
+  console.log('Migration output:\n', res);
+  await invalidateRedisCache();
+  console.log(`✅ [SUCCESS] Migration 049 applied on VPS!`);
+
+  const rawLeads = await execSql(`SELECT count(*), client_type FROM leads GROUP BY client_type;`);
+  console.log('Leads count:\n', rawLeads);
+}
+
 async function main() {
   const { action, options } = parseCliArgs();
 
@@ -986,9 +1127,30 @@ async function main() {
       await handleInfraAudit(options);
       break;
 
+    case 'lead:import':
+    case 'leads:import':
+      await handleLeadImport(options);
+      break;
+
+    case 'admin:align':
+    case 'align:admin':
+      await handleAdminAlign(options);
+      break;
+
+    case 'rbac:migrate':
+    case 'migrate:rbac':
+      await handleRbacMigrate(options);
+      break;
+
+    case 'lead:migrate-client-type':
+    case 'migrate:lead-client-type':
+    case 'db:migrate-049':
+      await handleLeadMigrateClientType(options);
+      break;
+
     default:
       console.log(`
-SequenceSentinel Operations CLI
+Sentinel Operations CLI
 Usage:
   node scripts/sentinel-ops.mjs <action> [options]
 
@@ -1009,6 +1171,6 @@ Actions:
 }
 
 main().catch(err => {
-  console.error('\n❌ [SequenceSentinel ERROR]:', err.message);
+  console.error('\n❌ [Sentinel ERROR]:', err.message);
   process.exit(1);
 });

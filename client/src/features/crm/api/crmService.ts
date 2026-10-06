@@ -5,6 +5,7 @@ import type { Plan, PlanFeature } from "@/features/subscriptions";
 export type LeadStage = "NEW" | "QUALIFIED" | "PROPOSITION" | "WON" | "LOST";
 export type LeadPriority = "LOW" | "MEDIUM" | "HIGH";
 export type QuotationStatus = "DRAFT" | "SENT" | "ACCEPTED" | "DECLINED" | "EXPIRED";
+export type ClientType = "CLIENT" | "ENTERPRISE" | "STUDENT" | "OTHER";
 
 export interface ConvertLeadResult {
   lead: Lead;
@@ -22,6 +23,7 @@ export interface Lead {
   contact_phone?: string | null;
   company_name?: string | null;
   stage: LeadStage;
+  client_type?: ClientType | string;
   plan_id?: string | null;
   billing_cycle: "monthly" | "annual";
   equipment_count: number;
@@ -114,6 +116,7 @@ export interface CreateLeadPayload {
   contactPhone?: string | null;
   companyName?: string | null;
   stage?: LeadStage;
+  clientType?: ClientType;
   planId?: string | null;
   billingCycle?: "monthly" | "annual";
   equipmentCount?: number;
@@ -131,6 +134,7 @@ export interface UpdateLeadPayload {
   contactPhone?: string | null;
   companyName?: string | null;
   stage?: LeadStage;
+  clientType?: ClientType;
   planId?: string | null;
   billingCycle?: "monthly" | "annual";
   equipmentCount?: number;
@@ -207,6 +211,7 @@ export interface GetLeadsParams {
   search?: string;
   stage?: LeadStage;
   priority?: LeadPriority;
+  clientType?: ClientType;
   assignedUserId?: string;
   page?: number;
   limit?: number;
@@ -228,6 +233,7 @@ export const crmService = {
     if (params.search) qs.append("search", params.search);
     if (params.stage) qs.append("stage", params.stage);
     if (params.priority) qs.append("priority", params.priority);
+    if (params.clientType) qs.append("clientType", params.clientType);
     if (params.assignedUserId) qs.append("assignedUserId", params.assignedUserId);
     if (params.page) qs.append("page", String(params.page));
     if (params.limit) qs.append("limit", String(params.limit));

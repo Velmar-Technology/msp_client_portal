@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { env } from '@shared/config/env';
 import { JwtPayload } from '@shared/types';
 import { UnauthorizedError } from '@shared/errors';
-import { userRepository } from '@modules/auth';
+import { userRepository, permissionService } from '@modules/auth';
 
 /**
  * Express middleware validating incoming JWT Bearer tokens and populating req.user context.
@@ -35,6 +35,19 @@ export async function authMiddleware(req: Request, _res: Response, next: NextFun
       const user = await userRepository.findById(decoded.userId);
       if (user) {
         decoded.tenantId = user.tenant_id;
+      }
+    }
+
+    // Resolve dynamic capabilities via Redis-cached PermissionService
+    if (decoded.userId && decoded.tenantId) {
+      try {
+        decoded.permissions = await permissionService.getUserPermissions(
+          decoded.userId,
+          decoded.tenantId,
+          decoded.role
+        );
+      } catch {
+        decoded.permissions = [];
       }
     }
 

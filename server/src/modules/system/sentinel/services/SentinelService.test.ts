@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SequenceSentinelService } from './SequenceSentinelService';
+import { SentinelService } from './SentinelService';
 import { SequenceAggregatorService } from './SequenceAggregatorService';
 import { VitestRegressionSynthesizer } from './VitestRegressionSynthesizer';
 import { InvariantChecker } from '../types';
 
-describe('SequenceSentinelService', () => {
+describe('SentinelService', () => {
   let mockAggregator: SequenceAggregatorService;
   let mockSynthesizer: VitestRegressionSynthesizer;
-  let service: SequenceSentinelService;
+  let service: SentinelService;
 
   beforeEach(() => {
     mockAggregator = {
@@ -20,7 +20,7 @@ describe('SequenceSentinelService', () => {
   });
 
   it('should compile an empty clean scorecard when no sequences violate rules', async () => {
-    service = new SequenceSentinelService(mockAggregator, mockSynthesizer);
+    service = new SentinelService(mockAggregator, mockSynthesizer);
 
     const report = await service.runAudit({
       startDate: new Date('2026-09-01T00:00:00Z'),
@@ -58,7 +58,7 @@ describe('SequenceSentinelService', () => {
       }),
     };
 
-    service = new SequenceSentinelService(mockAggregator, mockSynthesizer, undefined, [mockViolatingChecker]);
+    service = new SentinelService(mockAggregator, mockSynthesizer, undefined, [mockViolatingChecker]);
 
     const report = await service.runAudit(
       {
@@ -113,7 +113,7 @@ describe('SequenceSentinelService', () => {
       ]),
     } as any;
 
-    service = new SequenceSentinelService(
+    service = new SentinelService(
       mockAggregator,
       mockSynthesizer,
       mockSelfHealing,

@@ -83,7 +83,7 @@ All knowledge graph files live in `graphify-out/` relative to the workspace root
 & (Get-Content graphify-out\.graphify_python) -m graphify query "Zanzibar PDP" --budget 4000
 
 # Tracing paths between components
-& (Get-Content graphify-out\.graphify_python) -m graphify path "TicketController" "SequenceSentinelService"
+& (Get-Content graphify-out\.graphify_python) -m graphify path "TicketController" "SentinelService"
 
 # Inspecting a single node in depth
 & (Get-Content graphify-out\.graphify_python) -m graphify explain "TechnicianBountyChecker"

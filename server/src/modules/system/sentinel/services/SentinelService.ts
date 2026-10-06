@@ -46,16 +46,16 @@ import { AccountHealthChecker } from '../checkers/crm_health/AccountHealthChecke
 import { SelfHealingService } from './SelfHealingService';
 
 /**
- * Master Orchestration Service for SequenceSentinel.
+ * Master Orchestration Service for Sentinel.
  * Coordinates multi-domain sequence aggregation, executes the 18 Master Business Logic checkers,
  * compiles diagnostic Markdown audit scorecards, triggers Vitest regression test synthesis,
  * and autonomously remediates operational inconsistencies (Self-Healing).
  */
-export class SequenceSentinelService {
+export class SentinelService {
   private readonly checkers: InvariantChecker[];
 
   /**
-   * Initializes SequenceSentinelService with default or custom dependencies.
+   * Initializes SentinelService with default or custom dependencies.
    *
    * @param aggregator - Sequence aggregator service
    * @param synthesizer - Vitest regression test synthesizer
@@ -212,7 +212,7 @@ export class SequenceSentinelService {
   formatMarkdownReport(report: AuditReport): string {
     const lines: string[] = [];
 
-    lines.push(`# SequenceSentinel Integrity Diagnostic Report`);
+    lines.push(`# Sentinel Integrity Diagnostic Report`);
     lines.push(`**Generated:** ${report.generatedAt.toISOString()}`);
     lines.push(`**Audit Window:** ${report.auditWindow.startDate.toISOString()} to ${report.auditWindow.endDate.toISOString()}`);
     lines.push(`**Total Sequences Evaluated:** ${report.totalSequencesEvaluated}`);

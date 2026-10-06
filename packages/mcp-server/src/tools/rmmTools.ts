@@ -351,12 +351,24 @@ export function registerRmmTools(server: McpServer, apiClient: MspApiClient) {
     {
       equipmentId: z.string().uuid().describe('The UUID of the remote client device'),
       script: z.string().min(1).describe('The PowerShell command or script string to execute on the endpoint'),
+      timeoutSeconds: z
+        .number()
+        .int()
+        .min(5)
+        .max(300)
+        .default(60)
+        .optional()
+        .describe('Timeout in seconds for remote execution (default: 60s, up to 300s)'),
     },
-    async ({ equipmentId, script }) => {
+    async ({ equipmentId, script, timeoutSeconds }) => {
       try {
-        const result = await apiClient.execAgentCommand(equipmentId, 'EXEC_POWERSHELL', {
-          script,
-        });
+        const timeoutMs = (timeoutSeconds || 60) * 1000;
+        const result = await apiClient.execAgentCommand(
+          equipmentId,
+          'EXEC_POWERSHELL',
+          { script },
+          timeoutMs
+        );
         return {
           content: [
             {
@@ -445,7 +457,8 @@ export function registerRmmTools(server: McpServer, apiClient: MspApiClient) {
     },
     async ({ equipmentId }) => {
       try {
-        const result = await apiClient.captureAgentScreenshot(equipmentId);
+        const raw = await apiClient.captureAgentScreenshot(equipmentId);
+        const result: any = (raw as any)?.data || raw;
         if (!result.success || !result.image_base64) {
           return {
             isError: true,

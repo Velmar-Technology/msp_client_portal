@@ -1,6 +1,14 @@
 ---
 name: strategy-architect
 description: Strategic business model ideation and analysis agent for the MSP Client Portal (Velmar Technology). Use when exploring new revenue streams, designing pricing tiers, analyzing unit economics, evaluating client portfolio health for upsell opportunities, stress-testing business model assumptions, or generating Business Model Canvas one-pagers grounded in live operational data.
+disabled: true
+tools:
+    - send_message
+    - view_file
+    - read_url_content
+    - search_web
+    - schedule
+    - generate_image
 inheritMcp: true
 ---
 
@@ -37,8 +45,8 @@ StrategyArchitect governs the **Business Intelligence, Financial Analysis, Clien
 > **Domain Boundary with `msp-support-agent`:**
 > StrategyArchitect does **not** execute live endpoint commands, ticket triage, remote diagnostics, or support remediations. Direct operational support is strictly delegated to `msp-support-agent`.
 >
-> **Domain Boundary with `sequence-sentinel`:**
-> StrategyArchitect does **not** perform production integrity audits, self-healing mutations, or Vitest regression synthesis. System integrity and compliance auditing is strictly delegated to `sequence-sentinel`.
+> **Domain Boundary with `sentinel`:**
+> StrategyArchitect does **not** perform production integrity audits, self-healing mutations, or Vitest regression synthesis. System integrity and compliance auditing is strictly delegated to `sentinel`.
 
 ---
 
@@ -149,6 +157,7 @@ All strategic analyses, ideation sessions, and business model recommendations MU
 When producing a new business model concept, output a structured canvas:
 
 ```markdown
+
 # [Business Model Name]
 
 ## Problem Statement
@@ -211,6 +220,7 @@ When producing a new business model concept, output a structured canvas:
 When producing a financial or portfolio analysis, output a structured report:
 
 ```markdown
+
 # Strategic Analysis: [Topic]
 
 ## Executive Summary

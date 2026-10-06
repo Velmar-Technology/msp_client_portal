@@ -11,6 +11,7 @@ import { OAuth2Client } from 'google-auth-library';
 import crypto from 'crypto';
 
 
+import { PermissionService, permissionService } from './PermissionService';
 import { sendOTPWhatsApp } from '@shared/utils/whatsappService';
 import { sendOTPEmail, sendPasswordResetEmail } from '@shared/utils/emailService';
 
@@ -24,10 +25,12 @@ export class AuthService {
    *
    * @param userRepo - Data repository for user operations
    * @param tenantRepo - Data repository for tenant operations
+   * @param permService - Domain service for dynamic permissions
    */
   constructor(
     private userRepo: UserRepository = userRepository,
     private tenantRepo: TenantRepository = tenantRepository,
+    private permService: PermissionService = permissionService,
   ) {}
 
   /**
@@ -142,6 +145,7 @@ export class AuthService {
       phoneNumber: string | null;
       accountStatus?: any;
       rnc?: string | null;
+      permissions?: string[];
     };
     tokens: AuthTokens;
   }> {
@@ -172,16 +176,34 @@ export class AuthService {
 
     logger.info('User logged in', { userId: user.id, email: user.email, tenantId: user.tenant_id });
 
+    const permissions = await this.permService.getUserPermissions(user.id, user.tenant_id, user.role);
+
     const tokens = this.generateTokens({
       userId: user.id,
       email: user.email,
       role: user.role,
       tenantId: user.tenant_id,
       accountStatus: user.account_status,
+      permissions,
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url, lastLoginAt: previousLoginAt, lastLoginIp: previousLoginIp, clientType: user.client_type, phoneNumber: user.phone_number ?? null, accountStatus: user.account_status, rnc: user.rnc ?? null },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        language: user.language,
+        tenantId: user.tenant_id,
+        avatarUrl: user.avatar_url,
+        lastLoginAt: previousLoginAt,
+        lastLoginIp: previousLoginIp,
+        clientType: user.client_type,
+        phoneNumber: user.phone_number ?? null,
+        accountStatus: user.account_status,
+        rnc: user.rnc ?? null,
+        permissions,
+      },
       tokens,
     };
   }
@@ -199,7 +221,7 @@ export class AuthService {
    * @throws {ForbiddenError} When existing user account is deactivated
    */
   async googleAuth(data: GoogleAuthInput & { mockEmail?: string; mockName?: string }, ipAddress: string): Promise<{
-    user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; lastLoginAt: string | null; lastLoginIp: string | null; clientType: string; phoneNumber: string | null; accountStatus?: any; rnc?: string | null };
+    user: { id: string; email: string; name: string; role: UserRole; language: string; tenantId: string; avatarUrl: string | null; lastLoginAt: string | null; lastLoginIp: string | null; clientType: string; phoneNumber: string | null; accountStatus?: any; rnc?: string | null; permissions?: string[] };
     tokens: AuthTokens;
     isNewUser: boolean;
   }> {
@@ -290,16 +312,34 @@ export class AuthService {
     // Update last login timestamp and IP
     await this.userRepo.updateLastLogin(user.id, ipAddress);
 
+    const permissions = await this.permService.getUserPermissions(user.id, user.tenant_id, user.role);
+
     const tokens = this.generateTokens({
       userId: user.id,
       email: user.email,
       role: user.role,
       tenantId: user.tenant_id,
       accountStatus: user.account_status,
+      permissions,
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, language: user.language, tenantId: user.tenant_id, avatarUrl: user.avatar_url, lastLoginAt: previousLoginAt, lastLoginIp: previousLoginIp, clientType: user.client_type, phoneNumber: user.phone_number ?? null, accountStatus: user.account_status, rnc: user.rnc ?? null },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        language: user.language,
+        tenantId: user.tenant_id,
+        avatarUrl: user.avatar_url,
+        lastLoginAt: previousLoginAt,
+        lastLoginIp: previousLoginIp,
+        clientType: user.client_type,
+        phoneNumber: user.phone_number ?? null,
+        accountStatus: user.account_status,
+        rnc: user.rnc ?? null,
+        permissions,
+      },
       tokens,
       isNewUser,
     };

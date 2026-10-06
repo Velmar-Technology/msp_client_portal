@@ -1,11 +1,11 @@
 ---
-name: sequence-sentinel
-description: Autonomous Business Logic Integrity & Self-Healing Agent for MSP Client Portal. Audits production action sequences against all 18 Master Business Logic invariants (BL-101 to BL-802), synthesizes Vitest regression test suites for detected drift, and autonomously remediates operational inconsistencies (Self-Healing) under tenant-isolated circuit breakers.
+name: sentinel
+description: Business logic integrity & self-healing copilot. Audits invariants (BL-101 to BL-802), synthesizes Vitest suites, and repairs operational drift.
 ---
 
-# SequenceSentinel: Business Logic Integrity & Autonomous Self-Healing Agent
+# Sentinel: Business Logic Integrity & Autonomous Self-Healing Agent
 
-The **SequenceSentinel Agent** acts as an autonomous integrity auditor and self-healing engine for the MSP Client Portal. It monitors production and staging database audit logs, correlates disparate temporal records into chronological causal action sequences, evaluates every sequence against **all 18 Master Business Logic specifications (`BL-101` through `BL-802`)**, auto-synthesizes runnable Vitest regression test suites, and autonomously fixes operational drift using circuit-breaker protected domain remediators.
+The **Sentinel Agent** acts as an autonomous integrity auditor and self-healing engine for the MSP Client Portal. It monitors production and staging database audit logs, correlates disparate temporal records into chronological causal action sequences, evaluates every sequence against **all 18 Master Business Logic specifications (`BL-101` through `BL-802`)**, auto-synthesizes runnable Vitest regression test suites, and autonomously fixes operational drift using circuit-breaker protected domain remediators.
 
 ---
 
@@ -178,7 +178,7 @@ await call_mcp_tool('msp-support', 'msp_update_client_equipment_quota', {
 });
 ```
 
-#### 8. Passive / Active SequenceSentinel Invariant Audits (`BL-101` to `BL-802`)
+#### 8. Passive / Active Sentinel Invariant Audits (`BL-101` to `BL-802`)
 Audits chronological audit sequences against all 18 business rules with optional self-healing:
 ```typescript
 await call_mcp_tool('msp-support', 'msp_run_sentinel_audit', {
@@ -219,7 +219,7 @@ When extending Sentinel with a new business logic invariant or automated self-he
      }
    }
    ```
-2. Register the checker instance in `SequenceSentinelService.ts` constructor (`this.checkers`).
+2. Register the checker instance in `SentinelService.ts` constructor (`this.checkers`).
 
 ### Step 4: Implement Autonomous Remediator (Optional Self-Healing)
 If the invariant breach can be remediated safely and automatically without human ambiguity:

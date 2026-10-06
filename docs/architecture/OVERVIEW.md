@@ -92,6 +92,8 @@ To eliminate cross-workspace rework and pass-through boilerplate, new implementa
 - **Server State Delegation:** Asynchronous server state and cache invalidation are handled by **TanStack Query** (`@tanstack/react-query`). Zustand is restricted strictly to client UI state.
 - **Vertical Slice Development:** Standardized in [`docs/architecture/feature-slice-recipe.md`](docs/architecture/feature-slice-recipe.md) (Contract → Express Route & Service → Query Hook → UI Component).
 - **Client Health Scoring & Hardware Telemetry:** Composite health evaluation (BL-601), live socket verification, and ZSP ephemeral access routes ([ADR-007](docs/decisions/ADR-007-client-health-composite-scoring-and-telemetry-reconciliation.md)).
+- **Dynamic Database-Driven RBAC Engine:** Relational roles and granular permissions with Redis-cached capability resolution ([ADR-014](docs/decisions/ADR-014-dynamic-database-driven-rbac-and-redis-cached-resolution.md)).
+- **Lead Client Type Segmentation:** Explicit segmentation (`CLIENT`, `ENTERPRISE`, `STUDENT`, `OTHER`) and automated user lifecycle provisioning ([ADR-015](docs/decisions/ADR-015-lead-client-type-segmentation-and-lifecycle-provisioning.md)).
 
 ---
 
@@ -101,15 +103,17 @@ This portal uses a **Shared Database, Shared Schema** multi-tenant model. All cl
 
 ### User Roles & Isolation Scopes
 
-1. **Tenants (`tenants` table):** Client organizations (e.g., Acme Corp) or the Service Provider (`MSP Provider`).
+1. **Tenants (`tenants` table):** Client organizations (e.g., Acme Corp) or the Service Provider (`Velmar Technology SRL`).
 2. **Client Users (`CLIENT` role):** Restricted strictly to their `tenant_id`. They can only view/manage their own organization's tickets, subscriptions, and invoices.
 3. **Staff Users (`ADMIN` & `TECHNICIAN` roles):** Belong to the MSP provider tenant with cross-tenant administrative access to manage tickets, dispatch technicians, and handle billing globally.
 
 ### Partitioned Tables
 
-All multi-tenant data is logically partitioned via an indexed `tenant_id` foreign key column referencing `tenants(id) ON DELETE CASCADE`. Of the **25** tables in the unified Drizzle schema (`server/src/shared/db/schema.ts`), **23 carry `tenant_id`** and are tenant-isolated:
+All multi-tenant data is logically partitioned via an indexed `tenant_id` foreign key column referencing `tenants(id) ON DELETE CASCADE`. Of the **29** tables in the unified Drizzle schema (`server/src/shared/db/schema.ts`), **25 carry `tenant_id`** and are tenant-isolated:
 
 - `users`
+- `roles` (custom tenant roles, plus system templates where `tenant_id = NULL`)
+- `user_roles`
 - `tickets`
 - `ticket_attachments`
 - `ticket_events`
@@ -133,7 +137,7 @@ All multi-tenant data is logically partitioned via an indexed `tenant_id` foreig
 - `technician_earnings` (bounties ledger)
 - `tenant_byok_credentials` (AES-256-GCM encrypted LLM keys)
 
-The remaining two tables are **not** tenant-partitioned: `tenants` (the root organization table) and `round_robin_state` (the global dispatch pointer).
+The remaining tables are **not** tenant-partitioned: `tenants` (the root organization table), `permissions` & `role_permissions` (global capabilities catalog), and `round_robin_state` (the global dispatch pointer).
 
 ---
 
@@ -180,6 +184,7 @@ The remaining two tables are **not** tenant-partitioned: `tenants` (the root org
   - Multi-tenant RBAC enforces isolation: Clients are limited to `CANCELLED` status changes; Technicians manage assigned tickets; Admins hold global permissions.
 
 - **BL-302: SOTA Hybrid Authorization & Zero Standing Privileges (PoLP / ZSP Engine)** (`HybridPolicyEngine`, `ZanzibarTupleStore`, `EphemeralAccessService`, `WorkloadIdentityService`, `ContinuousAdaptiveTrustService`, `PolicyAsCodeEngine`, `constants.ts`)
+  - **Dynamic Database-Driven RBAC Engine:** Relational schema (`roles`, `permissions`, `role_permissions`, `user_roles`) with Redis caching (`PermissionService`), Express 5 route guards (`requirePermission`, `requireAnyPermission`), and client-side capability hooks (`usePermissions`). Eliminates hardcoded role strings across API controllers and UI guards (@see [ADR-014](docs/decisions/ADR-014-dynamic-database-driven-rbac-and-redis-cached-resolution.md)).
   - **Zero Standing Privileges & JIT Access (`EphemeralAccessService`):** Eliminates 24/7 root access. Standard engineer accounts hold minimal base privileges. Temporary break-glass access packages are requested on-demand (`1` to `480` minutes TTL) with mandatory business justifications, dynamically injected into the Zanzibar relation graph, and auto-purged upon expiration.
   - **Continuous Right-Sizing via AI Role Mining (`ContinuousAdaptiveTrustService.mineRoles`):** Unsupervised clustering analyzing telemetry streams (`EntitlementLog`). Detects entitlement drift ($>40\%$ unused capabilities) and generates automated pull-request pruning diffs (`PruningPatchDiff`) to trim standing permissions down to active operational requirements.
   - **Workload Identity & Machine-to-Machine PoLP (`WorkloadIdentityService`):** Eliminates static API keys and long-lived database credentials for non-human workloads (RMM agents, background workers, AI agents, CI/CD). Issues cryptographically signed (HMAC-SHA256), short-lived (5m default TTL) SPIFFE tokens (`spiffe://msp.portal/tenant/{tenantId}/{type}/{id}`) with strict action and resource-prefix narrowing.
@@ -201,9 +206,10 @@ The remaining two tables are **not** tenant-partitioned: `tenants` (the root org
 
 ### Module 5: CRM Lead Pipeline & Onboarding
 
-- **BL-501: CRM Lead Pipeline Lifecycle** (`CrmService.advanceDealStage`)
+- **BL-501: CRM Lead Pipeline Lifecycle & Client Type Segmentation** (`CrmService.advanceDealStage`, `CRMService.convertLeadToDeal`)
   - Deals progress through standardized stages: `NEW` $\rightarrow$ `QUALIFIED` $\rightarrow$ `PROPOSAL` $\rightarrow$ `NEGOTIATION` $\rightarrow$ `WON`/`LOST`.
   - Closing as `WON` automatically provisions the client tenant and queues account onboarding.
+  - **Lead Client Type Segmentation:** Explicit `client_type` categorization (`CLIENT`, `ENTERPRISE`, `STUDENT`, `OTHER`) on `leads` table with indexed querying. Form inputs auto-default to target customer segment upon selecting catalog plans (e.g. `PL-005` $\rightarrow$ `STUDENT`). Upon deal conversion (`convertLeadToDeal`), newly created user accounts automatically inherit the lead's segmented `client_type` (@see [ADR-015](docs/decisions/ADR-015-lead-client-type-segmentation-and-lifecycle-provisioning.md)).
 
 ### Module 6: Account Health & QBR Logic
 
@@ -472,14 +478,14 @@ The platform implements a distributed background job orchestration pattern desig
 
 ---
 
-## SequenceSentinel: Business Logic Integrity Auditor & Autonomous Remediation (@see ADR-009)
+## Sentinel: Business Logic Integrity Auditor & Autonomous Remediation (@see ADR-009)
 
-SequenceSentinel is a dual-mode subsystem ([`server/src/modules/system/sentinel/`](server/src/modules/system/sentinel/)) that passively audits production action sequences against all Master Business Logic invariants (BL-101 to BL-802) and autonomously remediates actionable drift under tenant-isolated circuit breakers.
+Sentinel is a dual-mode subsystem ([`server/src/modules/system/sentinel/`](server/src/modules/system/sentinel/)) that passively audits production action sequences against all Master Business Logic invariants (BL-101 to BL-802) and autonomously remediates actionable drift under tenant-isolated circuit breakers.
 
 **Pipeline:**
 - **Aggregation:** [`SequenceAggregatorService.ts`](server/src/modules/system/sentinel/services/SequenceAggregatorService.ts) reconstructs chronological `ActionSequence` graphs from ticket, invoice, alert, and lead event streams.
 - **Invariant Checking:** Co-located `InvariantChecker` implementations under `sentinel/checkers/{ticketing,billing,subscriptions,financial,security,crm_health}/` — e.g. `SlaCancellationChecker`, `RoundRobinDispatchChecker`, `TierEscalationChecker`, `AlertNoiseFlappingChecker`, `NonPaymentEnforcementChecker`, `SubscriptionReactivationChecker`, `TaxAndNcfChecker`, `TechnicianBountyChecker`, `ProfitSplitChecker`, `FeatureGatingChecker`, `StateMachineChecker`, `AuthorizationAndJitChecker`.
-- **Orchestration & Remediation:** [`SequenceSentinelService.ts`](server/src/modules/system/sentinel/services/SequenceSentinelService.ts) runs the audit window; [`SelfHealingService.ts`](server/src/modules/system/sentinel/services/SelfHealingService.ts) dispatches autonomous remediations (`sentinel/remediators/`, e.g. `FlappingAlertRemediator`, `TierEscalationRemediator`, `TechnicianBountyRemediator`, `SubscriptionReactivationRemediator`, `DeviceVaultSessionRemediator`).
+- **Orchestration & Remediation:** [`SentinelService.ts`](server/src/modules/system/sentinel/services/SentinelService.ts) runs the audit window; [`SelfHealingService.ts`](server/src/modules/system/sentinel/services/SelfHealingService.ts) dispatches autonomous remediations (`sentinel/remediators/`, e.g. `FlappingAlertRemediator`, `TierEscalationRemediator`, `TechnicianBountyRemediator`, `SubscriptionReactivationRemediator`, `DeviceVaultSessionRemediator`).
 - **Regression Synthesis:** [`VitestRegressionSynthesizer.ts`](server/src/modules/system/sentinel/services/VitestRegressionSynthesizer.ts) generates co-located Vitest regression specs from detected invariant drift.
 - **Typing:** Core contracts (`ActionSequence`, `InvariantCheckResult`, `AuditReport`) are declared in `sentinel/types.ts`.
 

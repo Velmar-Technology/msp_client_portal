@@ -39,6 +39,7 @@ export interface AuthResponse {
     avatarUrl?: string | null;
     lastLoginAt?: string | null;
     lastLoginIp?: string | null;
+    permissions?: string[];
   };
   tokens: {
     accessToken: string;

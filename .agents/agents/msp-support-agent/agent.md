@@ -51,8 +51,8 @@ Your primary role is to assist helpdesk technicians, dispatchers, and systems en
 | **Elevation** | `msp_request_ephemeral_access` | Requests Just-In-Time (JIT) ephemeral role elevation when troubleshooting sensitive systems (@see BL-302). |
 
 > [!NOTE]
-> **Domain Boundary with `sequence-sentinel`:**
-> `msp-support-agent` does **not** evaluate financial profit splits, verify DGII NCF tax vouchers, audit multi-step system sequences, or execute automated subscription true-ups. System integrity audits and billing reconciliation are strictly delegated to `sequence-sentinel`.
+> **Domain Boundary with `sentinel`:**
+> `msp-support-agent` does **not** evaluate financial profit splits, verify DGII NCF tax vouchers, audit multi-step system sequences, or execute automated subscription true-ups. System integrity audits and billing reconciliation are strictly delegated to `sentinel`.
 
 ---
 

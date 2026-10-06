@@ -3,7 +3,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { MspApiClient } from '../client/MspApiClient.js';
 
 /**
- * Registers SequenceSentinel business logic integrity auditing tools on the MCP server.
+ * Registers Sentinel business logic integrity auditing tools on the MCP server.
  * Allows autonomous agents and support technicians to audit live/production event sequences
  * against Master Business Logic specifications (BL-101 through BL-802).
  *
@@ -13,7 +13,7 @@ import type { MspApiClient } from '../client/MspApiClient.js';
 export function registerSentinelTools(server: McpServer, apiClient: MspApiClient) {
   server.tool(
     'msp_run_sentinel_audit',
-    'Execute a passive SequenceSentinel integrity audit verifying multi-step action sequences against Master Business Logic rules (BL-101 to BL-802)',
+    'Execute a passive Sentinel integrity audit verifying multi-step action sequences against Master Business Logic rules (BL-101 to BL-802)',
     {
       hours: z
         .number()
@@ -58,7 +58,7 @@ export function registerSentinelTools(server: McpServer, apiClient: MspApiClient
           content: [
             {
               type: 'text',
-              text: `SequenceSentinel audit failed: ${err.message}`,
+              text: `Sentinel audit failed: ${err.message}`,
             },
           ],
         };
@@ -68,7 +68,7 @@ export function registerSentinelTools(server: McpServer, apiClient: MspApiClient
 
   server.tool(
     'msp_provision_subscription_plan',
-    'Seamlessly provision, configure, and verify a subscription plan for a client tenant or user in a single atomic pass, including equipment slots, 18% ITBIS tax invoice, and SequenceSentinel audit verification',
+    'Seamlessly provision, configure, and verify a subscription plan for a client tenant or user in a single atomic pass, including equipment slots, 18% ITBIS tax invoice, and Sentinel audit verification',
     {
       user: z
         .string()

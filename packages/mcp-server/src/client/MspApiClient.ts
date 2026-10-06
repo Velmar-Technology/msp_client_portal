@@ -45,7 +45,7 @@ export class MspApiClient {
     
     this.client = axios.create({
       baseURL,
-      timeout: 10000,
+      timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
         ...(config.apiToken ? { Authorization: `Bearer ${config.apiToken}`, 'X-API-Key': config.apiToken } : {}),
@@ -212,7 +212,8 @@ export class MspApiClient {
       url: '/equipment/my-devices',
       params: tenantId ? { tenantId } : undefined,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   // --- RMM Telemetry & Diagnostics ---
@@ -237,7 +238,8 @@ export class MspApiClient {
       url: '/maintenance',
       params: equipmentId ? { equipmentId } : undefined,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -629,7 +631,8 @@ ${recommendationList}
       method: 'GET',
       url: `/rmm/agent/${equipmentId}/status`,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -647,19 +650,27 @@ ${recommendationList}
       method: 'GET',
       url: '/rmm/agent/connected',
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
    * Dispatches an arbitrary command to a remote agent and returns the response.
    */
-  async execAgentCommand(equipmentId: string, command: string, payload?: any): Promise<any> {
+  async execAgentCommand(
+    equipmentId: string,
+    command: string,
+    payload?: any,
+    timeoutMs: number = 60_000
+  ): Promise<any> {
     const res = await this.request<any>({
       method: 'POST',
       url: `/rmm/agent/${equipmentId}/exec`,
-      data: { command, payload },
+      data: { command, payload, timeoutMs },
+      timeout: timeoutMs + 5000,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -670,7 +681,8 @@ ${recommendationList}
       method: 'POST',
       url: `/rmm/agent/${equipmentId}/diagnostics`,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -683,7 +695,8 @@ ${recommendationList}
         method: 'POST',
         url: `/rmm/agent/${equipmentId}/hardware`,
       });
-      return res.data || res;
+      const outer = res.data || res;
+    return outer.data || outer;
     } catch (err: any) {
       // Graceful fallback to generic exec endpoint if running against a gateway route without /hardware
       if (err?.response?.status === 404) {
@@ -703,7 +716,8 @@ ${recommendationList}
         method: 'POST',
         url: `/rmm/agent/${equipmentId}/battery-report`,
       });
-      return res.data || res;
+      const outer = res.data || res;
+    return outer.data || outer;
     } catch (err: any) {
       // Graceful fallback to generic exec endpoint if running against older gateway route
       if (err?.response?.status === 404) {
@@ -767,7 +781,8 @@ if (Test-Path $temp) {
         max_events: maxEvents || 5,
       },
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -778,7 +793,8 @@ if (Test-Path $temp) {
       method: 'POST',
       url: `/rmm/agent/${equipmentId}/security-audit`,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -801,7 +817,8 @@ if (Test-Path $temp) {
         rollbackTimeoutSecs,
       },
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -815,7 +832,8 @@ if (Test-Path $temp) {
       method: 'POST',
       url: `/rmm/agent/${equipmentId}/screenshot`,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   // --- AuthZ, JIT Ephemeral Access & Trust Scoring (BL-302) ---
@@ -834,7 +852,8 @@ if (Test-Path $temp) {
       url: '/authz/ephemeral/request',
       data: params,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -845,7 +864,8 @@ if (Test-Path $temp) {
       method: 'GET',
       url: '/authz/ephemeral/grants',
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -857,7 +877,8 @@ if (Test-Path $temp) {
       url: `/authz/ephemeral/grants/${grantId}/revoke`,
       data: { reason },
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -873,7 +894,8 @@ if (Test-Path $temp) {
       url: '/authz/decision',
       data: params,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -885,7 +907,8 @@ if (Test-Path $temp) {
       url: '/authz/trust-score',
       params: userId ? { userId } : undefined,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   // --- User & Identity Endpoints ---
@@ -915,7 +938,8 @@ if (Test-Path $temp) {
       url: '/users',
       params: queryParams,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -926,7 +950,8 @@ if (Test-Path $temp) {
       method: 'GET',
       url: '/users/me',
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -937,7 +962,8 @@ if (Test-Path $temp) {
       method: 'GET',
       url: '/users/stats',
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   // --- Billing & Invoices ---
@@ -976,7 +1002,8 @@ if (Test-Path $temp) {
       method: 'GET',
       url: `/invoices/${invoiceId}`,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -991,7 +1018,8 @@ if (Test-Path $temp) {
       url: '/invoices/financial-stats',
       params: { range },
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -1004,7 +1032,8 @@ if (Test-Path $temp) {
       method: 'GET',
       url: '/expenses',
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -1019,7 +1048,8 @@ if (Test-Path $temp) {
       url: '/plans',
       params,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -1033,7 +1063,8 @@ if (Test-Path $temp) {
       method: 'GET',
       url: '/system/api-status',
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -1047,11 +1078,12 @@ if (Test-Path $temp) {
       method: 'GET',
       url: '/notifications',
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
-   * Executes a passive SequenceSentinel integrity audit verifying BL-101 to BL-802 business rules.
+   * Executes a passive Sentinel integrity audit verifying BL-101 to BL-802 business rules.
    *
    * @param params - Audit temporal hours, optional tenant filter, and whether to synthesize tests
    * @returns Comprehensive AuditReport payload
@@ -1068,7 +1100,8 @@ if (Test-Path $temp) {
       url: '/system/sentinel/audit',
       data: params,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -1083,7 +1116,8 @@ if (Test-Path $temp) {
       url: '/system/vault/reset-user-access',
       data: params,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -1098,7 +1132,8 @@ if (Test-Path $temp) {
       url: '/subscriptions',
       params: params?.tenantId ? { tenantId: params.tenantId } : undefined,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -1126,7 +1161,8 @@ if (Test-Path $temp) {
       url: `/subscriptions/${subscriptionId}`,
       data,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -1195,7 +1231,8 @@ if (Test-Path $temp) {
       url: '/subscriptions',
       data,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -1203,7 +1240,7 @@ if (Test-Path $temp) {
    * 1. Resolves target client user and tenant organization by email, name, or UUID.
    * 2. Resolves target plan catalog ID (e.g. "PL-001" or "Basic").
    * 3. Calls /subscriptions to initialize contract, device slots (PENDING_ACTIVATION), and 18% ITBIS invoice.
-   * 4. Auto-verifies post-condition via SequenceSentinel audit to guarantee zero invariant drift.
+   * 4. Auto-verifies post-condition via Sentinel audit to guarantee zero invariant drift.
    *
    * @param params - User/tenant identifier, plan code, equipment count, billing cycle, and options
    * @returns ProvisionSubscriptionResult summary
@@ -1279,7 +1316,7 @@ if (Test-Path $temp) {
       .map((f: any) => (typeof f === 'string' ? f : f.code))
       .filter(Boolean);
 
-    // 6. Advisory SequenceSentinel integrity verification
+    // 6. Advisory Sentinel integrity verification
     let sentinelVerification: { passed: boolean; violationsCount: number } | undefined;
     try {
       const audit = await this.runSentinelAudit({ hours: 1, tenantId });
@@ -1333,7 +1370,8 @@ if (Test-Path $temp) {
       method: 'PATCH',
       url: `/invoices/${invoiceId}/mark-paid`,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -1460,7 +1498,8 @@ if (Test-Path $temp) {
       url: `/users/${userId}/role`,
       data: { role },
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -1475,7 +1514,8 @@ if (Test-Path $temp) {
       url: `/users/${userId}/client-type`,
       data: { clientType },
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -1487,7 +1527,8 @@ if (Test-Path $temp) {
       url: `/users/${userId}/status`,
       data: { is_active: isActive },
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -1704,7 +1745,8 @@ if (Test-Path $temp) {
       method: 'GET',
       url: `/plans/${planId}`,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -1725,7 +1767,8 @@ if (Test-Path $temp) {
       url: '/plans',
       data,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**
@@ -1748,7 +1791,8 @@ if (Test-Path $temp) {
       url: `/plans/${planId}`,
       data,
     });
-    return res.data || res;
+    const outer = res.data || res;
+    return outer.data || outer;
   }
 
   /**

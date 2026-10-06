@@ -496,7 +496,7 @@ export class CRMService {
           password_hash,
           role: UserRole.CLIENT,
           tenant_id: tenantId,
-          client_type: 'CLIENT',
+          client_type: lead.client_type || 'CLIENT',
           phone_number: lead.contact_phone || undefined,
         });
 

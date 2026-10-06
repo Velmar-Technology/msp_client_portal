@@ -19,7 +19,7 @@ While unit and integration test suites enforce these constraints at build time i
 
 ## Decision
 
-We implement **SequenceSentinel** (`server/src/modules/system/sentinel/`), a dual-mode integrity auditing and autonomous self-healing subsystem pairing non-invasive temporal causal reconstruction with modular invariant checking, automatic TDD regression test synthesis, and circuit-breaker protected remediation:
+We implement **Sentinel** (`server/src/modules/system/sentinel/`), a dual-mode integrity auditing and autonomous self-healing subsystem pairing non-invasive temporal causal reconstruction with modular invariant checking, automatic TDD regression test synthesis, and circuit-breaker protected remediation:
 
 ```
 [ PostgreSQL Audit Tables (ticketEvents, expenses, invoices, subscriptions, rmmAlerts, leads) ]
@@ -37,7 +37,7 @@ We implement **SequenceSentinel** (`server/src/modules/system/sentinel/`), a dua
             │                                             │
             ▼                                             ▼
  ┌─────────────────────────────────────────────────────────────┐
- │ SequenceSentinelService (Orchestrator & Diagnostic Reports) │
+ │ SentinelService (Orchestrator & Diagnostic Reports)         │
  └─────────────────────────────────────────────────────────────┘
                                    │
                                    ▼ (If --auto-heal enabled)

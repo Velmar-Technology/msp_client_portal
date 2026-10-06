@@ -119,17 +119,24 @@ export function CRMKanbanBoard({ leads, stats, onSelectLead, onUpdateStage }: CR
                           <span className="font-semibold text-xs text-foreground font-heading group-hover:text-primary transition-colors line-clamp-1">
                             {lead.contact_name}
                           </span>
-                          <span
-                            className={`text-[9px] uppercase font-mono px-1 rounded border ${
-                              lead.priority === "HIGH"
-                                ? "bg-red-500/10 text-red-600 border-red-500/20"
-                                : lead.priority === "MEDIUM"
-                                  ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                                  : "bg-muted text-muted-foreground border-border"
-                            }`}
-                          >
-                            {t(`crm.priorities.${lead.priority.toLowerCase()}`)}
-                          </span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {lead.client_type && lead.client_type !== "CLIENT" && (
+                              <span className="text-[8px] uppercase font-mono px-1 rounded bg-secondary text-secondary-foreground border border-border">
+                                {lead.client_type === "STUDENT" ? "EDU" : lead.client_type}
+                              </span>
+                            )}
+                            <span
+                              className={`text-[9px] uppercase font-mono px-1 rounded border ${
+                                lead.priority === "HIGH"
+                                  ? "bg-red-500/10 text-red-600 border-red-500/20"
+                                  : lead.priority === "MEDIUM"
+                                    ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                                    : "bg-muted text-muted-foreground border-border"
+                              }`}
+                            >
+                              {t(`crm.priorities.${lead.priority.toLowerCase()}`)}
+                            </span>
+                          </div>
                         </div>
 
                         {/* Company / Contact */}
