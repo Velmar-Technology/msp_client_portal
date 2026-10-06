@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.13.0](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.12.4...v1.13.0) (2026-10-06)
+
+
+### Features
+
+* **agents:** register caf-quality agent so Antigravity can discover it ([6d4b930](https://github.com/Velmar-Technology/msp_client_portal/commit/6d4b930db3b30cb1078f7c1342250147368d40fb))
+* **auth:** implement dynamic database-driven rbac engine ([31e578c](https://github.com/Velmar-Technology/msp_client_portal/commit/31e578cb3109ccd96b9bce6005a2a64546432719))
+* **crm:** add explicit client_type segmentation for leads ([4c2cce9](https://github.com/Velmar-Technology/msp_client_portal/commit/4c2cce9c3feebae9b65f697259ea8b7793aab8b4))
+* **crm:** import educator leads and register outreach strategy via sentinel-ops ([5b926ca](https://github.com/Velmar-Technology/msp_client_portal/commit/5b926ca0dca0bf585256ab989ee5cd656566c08a))
+* **subscriptions:** adapt PL-005 for Education & Faculty Suite, device lending and AI agent support ([7baf3a2](https://github.com/Velmar-Technology/msp_client_portal/commit/7baf3a272ccc7259c648530bcca632b7b9d5264a))
+
+
+### Bug Fixes
+
+* **mcp:** extend remote execution timeout and support dynamic duration ([5be8b2b](https://github.com/Velmar-Technology/msp_client_portal/commit/5be8b2b16ee8140aee4d3928021b38a7cb164e51))
+* **rmm:** resolve session 0 screenshot capture permissions and unwrap response envelopes ([650ddc5](https://github.com/Velmar-Technology/msp_client_portal/commit/650ddc50eecdc9649a24e423e453fd92c27c62aa))
+* **sentinel:** include e.a.polanco.robles@gmail.com and assign ADMIN dynamic role in admin:align ([58ecaa2](https://github.com/Velmar-Technology/msp_client_portal/commit/58ecaa2455a5057763d41ffa38ac5dabb3ec53e4))
+* **sentinel:** populate leads across all admin workspaces on VPS ([b452fdb](https://github.com/Velmar-Technology/msp_client_portal/commit/b452fdb63ca2fea1a29ced646155f78da5cfd84d))
+* **tenant:** align victor and estiven to provider tenant ef010203-0405-0607-0809-0a0b0c0d0e0f ([dce44da](https://github.com/Velmar-Technology/msp_client_portal/commit/dce44dac8e0fe749c527f1799e291b06df081b89))
+
 ## [1.12.4](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.12.3...v1.12.4) (2026-09-28)
 
 
