@@ -1,5 +1,9 @@
 # Architecture Blueprint: Dynamic DB-Driven RBAC & Permissions Engine
 
+> **Status:** Implemented & Accepted  
+> **ADR:** [ADR-014: Dynamic Database-Driven RBAC and Redis-Cached Permission Resolution](../decisions/ADR-014-dynamic-database-driven-rbac-and-redis-cached-resolution.md)  
+> **Migration:** `server/src/shared/db/migrations/048_create_dynamic_rbac_tables.sql`
+
 ## 1. Problem Statement & Motivation
 Currently, user roles and types are hardcoded in:
 - Database Enums & Columns: `userRoleEnum('role')` (`'CLIENT'`, `'TECHNICIAN'`, `'ADMIN'`), `client_type` (`'CLIENT'`, `'ENTERPRISE'`, `'STUDENT'`).

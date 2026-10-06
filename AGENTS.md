@@ -48,10 +48,10 @@ Dependencies point strictly **INWARD**: Frameworks/Drivers $\rightarrow$ Interfa
 * **BL-204 (Feature Gating):** Enforce `FEATURE_CODES` via `requireSubscriptionFeature` and client `FeatureRouteGuard`/`useEntitlements`. Expand bundles (`expandFeatureBundles`); non-entitled receive 403 or `<FeatureLockedPreview>`.
 * **BL-205 (Device Passwords):** Workstation credentials bound to physical slots (`device_<slotId>@tenant.local`) with `hidePasswords: true`. Emergency lock/revocation terminates Bitwarden sessions.
 * **BL-301 (RBAC & Transitions):** Enforce `STATUS_TRANSITIONS` matrix. Clients: tenant-isolated, cancel only. Techs: assigned tickets. Admins: global.
-* **BL-302 (Hybrid AuthZ & ZSP):** Unified PDP: RBAC, Zanzibar ReBAC, Policy-as-Code ABAC, JIT Ephemeral Access (`EphemeralAccessService`), SPIFFE Identity, Role Mining Pruning, Step-Up MFA.
+* **BL-302 (Hybrid AuthZ & Dynamic RBAC):** Unified PDP: Dynamic DB RBAC (`roles`, `permissions`, `user_roles`) via `PermissionService` & `requirePermission` (@see ADR-014), Zanzibar ReBAC, Policy-as-Code ABAC, JIT Ephemeral Access (`EphemeralAccessService`), SPIFFE Identity, Role Mining Pruning, Step-Up MFA.
 * **BL-401 (Reactivation):** PayPal capture / admin `markAsPaid` transitions linked `EXPIRED` subscription to `ACTIVE`.
 * **BL-402 (Renewal Scheduler):** Cron calculates hardware multiplier ($M_{\text{equip}}$), creates invoices, dispatches billing emails.
-* **BL-501 (CRM Pipeline):** `NEW` $\rightarrow$ `QUALIFIED` $\rightarrow$ `PROPOSAL` $\rightarrow$ `NEGOTIATION` $\rightarrow$ `WON`/`LOST`. `WON` provisions client tenant.
+* **BL-501 (CRM Pipeline & Segmentation):** `NEW` $\rightarrow$ `QUALIFIED` $\rightarrow$ `PROPOSAL` $\rightarrow$ `NEGOTIATION` $\rightarrow$ `WON`/`LOST`. Explicit lead `client_type` auto-defaults from plan and propagates to user on `WON` conversion (@see ADR-015).
 * **BL-601 (Health Score):** $H = 0.40 S_{\text{ticket}} + 0.30 S_{\text{hardware}} + 0.30 S_{\text{security}}$. Score $< 70\%$ flags QBR review.
 * **BL-701 (NCF & 18% ITBIS):** USD/DOP rates apply 18% ITBIS. Auto-generate Series B01 sequential NCF when valid RNC/Cédula provided.
 * **BL-702 (4-Tier Non-Payment):** Overdue invoice: Day 1 (Notice), Day 5 (`READ_ONLY`), Day 15 (`SUSPENDED`), Day 30 (`PURGED` storage & device credentials). Settling payment restores `ACTIVE`.
