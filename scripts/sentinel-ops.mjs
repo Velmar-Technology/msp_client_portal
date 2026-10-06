@@ -918,6 +918,64 @@ async function handleDeviceMove(opts) {
   console.log(`   Redis Cache:           Invalidated\n`);
 }
 
+async function handleLeadImport(opts) {
+  console.log(`🛡️  [Sentinel] Executing lead:import to VPS production database...`);
+  const tenants = await execSqlJson(`SELECT id, name FROM tenants ORDER BY created_at ASC LIMIT 1`);
+  if (!tenants.length) throw new Error('No tenant found in production database.');
+  const targetTenant = tenants[0];
+  console.log(`   Target Tenant: ${targetTenant.name} (${targetTenant.id})`);
+
+  const EDUCATORS = [
+    { name: 'Huascar Jael Diaz Vicente', phone: '829-743-4135', email: 'huascarjdiaz@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Daneidy Acosta Frías', phone: '829-727-0110', email: 'daneidyacosta@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Xiomara Williams', phone: '829-771-5160', email: 'xiwr23@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Leonor Jacobo', phone: '829-818-7115', email: 'leonor1517@hotmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Yadiris Soriano', phone: '809-983-9177', email: 'yadirissoriano@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'César E. Santana P.', phone: '809-391-0252', email: 'baldor57425@gmail.com', company: 'Docente Matemáticas / Educación', priority: 'MEDIUM' },
+    { name: 'Mariely Avila', phone: '809-696-5493', email: 'marielyavila74@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Milagros De León', phone: '809-484-6746', email: 'milagros10mate@gmail.com', company: 'Docente Matemáticas / Educación', priority: 'MEDIUM' },
+    { name: 'Víctor Joel Luperón Beltrán', phone: '849-212-6285', email: 'licdolup@gmail.com', company: 'Docente / Licenciatura', priority: 'MEDIUM' },
+    { name: 'Israel Javalera', phone: '829-914-4858', email: 'ijpastor01@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Yanira Reyes Salas', phone: '809-516-4772', email: 'yanira.reyes@docente.edu.do', company: 'MINERD / Sector Educativo', priority: 'HIGH' },
+    { name: 'Leysi Medina', phone: '849-271-7280', email: 'leysi.medina@docente.edu.do', company: 'MINERD / Sector Educativo', priority: 'HIGH' },
+    { name: 'Yessica Chanel Santana', phone: '849-882-1149', email: 'drasantana06@hotmail.com', company: 'Docente / Academia', priority: 'MEDIUM' },
+    { name: 'Gloria Arias', phone: '829-301-6887', email: 'gloriaariashernandez@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Helem Elizabeth Alemán León', phone: '809-662-3499', email: 'licda.helem@gmail.com', company: 'Docente / Licenciatura', priority: 'MEDIUM' },
+    { name: 'Sandra Olgalidis Sirett', phone: '809-763-8573', email: 'sandrasirett49@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Angélica de la Rosa', phone: '809-403-1660', email: 'angelux1422@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Ocsagna M. Mena S.', phone: '829-909-4433', email: 'dra.ocsagnamena@gmail.com', company: 'Docente / Área Académica', priority: 'MEDIUM' },
+    { name: 'Odalys Mota', phone: '809-431-9019', email: 'ciencianaturale15@gmail.com', company: 'Docente Ciencias Naturales', priority: 'MEDIUM' },
+    { name: 'Juana Rijo Nieves', phone: '809-717-8091', email: 'giselarijonieves@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Margarita de la Rosa', phone: '809-322-1183', email: 'margaritadelarosa186@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Juana Isabel Pacheco', phone: '829-598-3205', email: '18nievesP@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Cristian Jean', phone: '809-769-0441', email: 'alestilodedios@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Jhonny Linares Coronado', phone: '829-604-4900', email: 'jonlin7777@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+    { name: 'Víctor Medina', phone: '829-304-1600', email: 'medinasbackup@gmail.com', company: 'Sector Educativo / Docencia', priority: 'MEDIUM' },
+  ];
+
+  const sqlStatements = ['BEGIN;'];
+
+  for (const ed of EDUCATORS) {
+    const escName = ed.name.replace(/'/g, "''");
+    const escCompany = ed.company.replace(/'/g, "''");
+    const notes = 'Prospecto docente identificado para campana preventiva de Salud Digital y Plan PL-005 Education & Faculty Suite.';
+    sqlStatements.push(`
+      INSERT INTO leads (
+        tenant_id, contact_name, contact_email, contact_phone, 
+        company_name, stage, plan_id, priority, expected_revenue, probability, notes
+      ) VALUES (
+        '${targetTenant.id}', '${escName}', '${ed.email}', '${ed.phone}',
+        '${escCompany}', 'NEW', 'PL-005', '${ed.priority}', 35.00, 20, '${notes}'
+      )
+      ON CONFLICT (id) DO NOTHING;
+    `);
+  }
+
+  sqlStatements.push('COMMIT;');
+  await execSql(sqlStatements.join('\n'));
+  console.log(`✅ [SUCCESS] Imported ${EDUCATORS.length} leads into VPS database for tenant ${targetTenant.id}`);
+}
+
 async function main() {
   const { action, options } = parseCliArgs();
 
@@ -984,6 +1042,11 @@ async function main() {
     case 'infra:audit':
     case 'infra':
       await handleInfraAudit(options);
+      break;
+
+    case 'lead:import':
+    case 'leads:import':
+      await handleLeadImport(options);
       break;
 
     default:
