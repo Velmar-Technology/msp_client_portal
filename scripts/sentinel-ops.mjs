@@ -982,6 +982,38 @@ async function handleLeadImport(opts) {
   console.log(`✅ [SUCCESS] Imported ${EDUCATORS.length} leads across ${targetTenantIds.length} target workspace(s) on VPS!`);
 }
 
+async function handleAdminAlign(opts) {
+  console.log(`🛡️  [Sentinel] Aligning Victor and Estiven to Core MSP Provider tenant (ef010203-0405-0607-0809-0a0b0c0d0e0f)...`);
+  const sql = `
+    BEGIN;
+    UPDATE users 
+    SET tenant_id = 'ef010203-0405-0607-0809-0a0b0c0d0e0f'
+    WHERE email IN ('epolanco@velmartech.com.do', 'vmaldonado@velmartech.com.do');
+
+    UPDATE subscriptions
+    SET tenant_id = 'ef010203-0405-0607-0809-0a0b0c0d0e0f'
+    WHERE client_id IN (
+      SELECT id FROM users WHERE email IN ('epolanco@velmartech.com.do', 'vmaldonado@velmartech.com.do')
+    );
+
+    UPDATE subscription_equipment
+    SET tenant_id = 'ef010203-0405-0607-0809-0a0b0c0d0e0f'
+    WHERE tenant_id IN ('1be8d8c9-a969-40bb-b585-e545180979fb', '773dc87d-c497-49d0-84c1-060c09930b73');
+
+    -- Deduplicate leads in ef010203-0405-0607-0809-0a0b0c0d0e0f
+    DELETE FROM leads a USING leads b
+    WHERE a.id > b.id
+      AND a.tenant_id = b.tenant_id
+      AND a.contact_email = b.contact_email;
+
+    COMMIT;
+  `;
+  await execSql(sql);
+  await invalidateRedisCache();
+  console.log(`✅ [SUCCESS] Victor and Estiven successfully reassigned to MSP Provider tenant (ef010203-0405-0607-0809-0a0b0c0d0e0f)!`);
+  console.log(`   Redis Cache: Invalidated.`);
+}
+
 async function main() {
   const { action, options } = parseCliArgs();
 
@@ -1053,6 +1085,11 @@ async function main() {
     case 'lead:import':
     case 'leads:import':
       await handleLeadImport(options);
+      break;
+
+    case 'admin:align':
+    case 'align:admin':
+      await handleAdminAlign(options);
       break;
 
     default:
