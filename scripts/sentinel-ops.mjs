@@ -988,18 +988,27 @@ async function handleAdminAlign(opts) {
   const sql = `
     BEGIN;
     UPDATE users 
-    SET tenant_id = 'ef010203-0405-0607-0809-0a0b0c0d0e0f'
-    WHERE email IN ('epolanco@velmartech.com.do', 'vmaldonado@velmartech.com.do');
+    SET tenant_id = 'ef010203-0405-0607-0809-0a0b0c0d0e0f',
+        role = 'ADMIN'
+    WHERE email IN ('epolanco@velmartech.com.do', 'vmaldonado@velmartech.com.do', 'e.a.polanco.robles@gmail.com');
 
     UPDATE subscriptions
     SET tenant_id = 'ef010203-0405-0607-0809-0a0b0c0d0e0f'
     WHERE client_id IN (
-      SELECT id FROM users WHERE email IN ('epolanco@velmartech.com.do', 'vmaldonado@velmartech.com.do')
+      SELECT id FROM users WHERE email IN ('epolanco@velmartech.com.do', 'vmaldonado@velmartech.com.do', 'e.a.polanco.robles@gmail.com')
     );
 
     UPDATE subscription_equipment
     SET tenant_id = 'ef010203-0405-0607-0809-0a0b0c0d0e0f'
-    WHERE tenant_id IN ('1be8d8c9-a969-40bb-b585-e545180979fb', '773dc87d-c497-49d0-84c1-060c09930b73');
+    WHERE tenant_id IN ('1be8d8c9-a969-40bb-b585-e545180979fb', '773dc87d-c497-49d0-84c1-060c09930b73', 'c8dfea5b-a2c3-4315-95ed-233e83be8ecc');
+
+    -- Assign ADMIN dynamic role in user_roles
+    INSERT INTO user_roles (user_id, role_id, tenant_id)
+    SELECT u.id, r.id, 'ef010203-0405-0607-0809-0a0b0c0d0e0f'
+    FROM users u
+    JOIN roles r ON r.name = 'ADMIN'
+    WHERE u.email IN ('epolanco@velmartech.com.do', 'vmaldonado@velmartech.com.do', 'e.a.polanco.robles@gmail.com')
+    ON CONFLICT (user_id, role_id, tenant_id) DO NOTHING;
 
     -- Deduplicate leads in ef010203-0405-0607-0809-0a0b0c0d0e0f
     DELETE FROM leads a USING leads b
@@ -1011,7 +1020,7 @@ async function handleAdminAlign(opts) {
   `;
   await execSql(sql);
   await invalidateRedisCache();
-  console.log(`✅ [SUCCESS] Victor and Estiven successfully reassigned to MSP Provider tenant (ef010203-0405-0607-0809-0a0b0c0d0e0f)!`);
+  console.log(`✅ [SUCCESS] Victor and Estiven successfully reassigned to MSP Provider tenant (ef010203-0405-0607-0809-0a0b0c0d0e0f) with ADMIN role!`);
   console.log(`   Redis Cache: Invalidated.`);
 }
 
