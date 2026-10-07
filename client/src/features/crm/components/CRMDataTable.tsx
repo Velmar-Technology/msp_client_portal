@@ -4,6 +4,12 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable, type DataTableFilter, type DataTableBulkAction } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import type { Lead, LeadStage, LeadPriority } from "../api/crmService";
+import type { Plan } from "@/features/subscriptions";
+import {
+  getClientTypeBadgeClass,
+  getClientTypeBadgeLabel,
+  getPlanDisplayName,
+} from "../utils/leadFormatters";
 import {
   Calendar,
   Phone,
@@ -37,6 +43,7 @@ import {
 
 interface CRMDataTableProps {
   leads: Lead[];
+  plans?: Plan[];
   total: number;
   loading: boolean;
   onSelectLead: (lead: Lead) => void;
@@ -57,6 +64,7 @@ interface CRMDataTableProps {
 
 export function CRMDataTable({
   leads,
+  plans,
   total,
   loading,
   onSelectLead,
@@ -202,13 +210,17 @@ export function CRMDataTable({
         header: t("crm.columns.plan"),
         cell: ({ row }) => {
           const lead = row.original;
+          const planDisplayName = getPlanDisplayName(lead, plans, isSpanish);
+          const badgeClass = getClientTypeBadgeClass(lead.client_type);
+          const badgeLabel = getClientTypeBadgeLabel(lead.client_type, t);
+
           return (
             <div className="flex flex-col">
               <span className="text-xs font-semibold text-foreground font-heading flex items-center gap-1.5">
-                {lead.plan_name || lead.plan_id || "—"}
+                <span>{planDisplayName}</span>
                 {lead.client_type && lead.client_type !== "CLIENT" && (
-                  <span className="text-[9px] font-mono font-bold px-1 rounded bg-muted text-muted-foreground border border-border">
-                    {lead.client_type}
+                  <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border ${badgeClass}`}>
+                    {badgeLabel}
                   </span>
                 )}
               </span>
@@ -336,7 +348,7 @@ export function CRMDataTable({
         },
       },
     ],
-    [t, isSpanish, onSelectLead, onUpdateStage, onDeleteLead, now],
+    [t, isSpanish, plans, onSelectLead, onUpdateStage, onDeleteLead, now],
   );
 
   const filters: DataTableFilter[] = useMemo(

@@ -2002,6 +2002,13 @@
       "nextFollowUp": "Próximo Seguimiento",
       "assignedTo": "Representante"
     },
+    "clientTypeBadges": {
+      "CLIENT": "CLIENTE",
+      "ENTERPRISE": "EMPRESA",
+      "STUDENT": "ESTUDIANTE",
+      "EDUCATOR": "DOCENTE",
+      "OTHER": "OTRO"
+    },
     "stats": {
       "pipelineValue": "Pipeline Activo",
       "wonRevenue": "Ingresos Ganados",

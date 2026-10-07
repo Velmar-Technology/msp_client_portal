@@ -2007,6 +2007,13 @@
       "nextFollowUp": "Next Follow-up",
       "assignedTo": "Sales Rep"
     },
+    "clientTypeBadges": {
+      "CLIENT": "CLIENT",
+      "ENTERPRISE": "ENTERPRISE",
+      "STUDENT": "STUDENT",
+      "EDUCATOR": "EDUCATOR",
+      "OTHER": "OTHER"
+    },
     "stats": {
       "pipelineValue": "Active Pipeline",
       "wonRevenue": "Won Revenue",

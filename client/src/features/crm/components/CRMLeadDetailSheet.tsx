@@ -22,6 +22,10 @@ import type {
   UpdateActivityPayload,
 } from "../api/crmService";
 import type { Plan, Subscription } from "@/features/subscriptions";
+import {
+  getClientTypeBadgeClass,
+  getClientTypeBadgeLabel,
+} from "../utils/leadFormatters";
 import { toast } from "sonner";
 import {
   FileText,
@@ -512,10 +516,10 @@ export function CRMLeadDetailSheet({
                       {t(`crm.priorities.${(lead.priority || "medium").toLowerCase()}`) || lead.priority}
                     </Badge>
                     <Badge
-                      variant="secondary"
-                      className="text-[9px] uppercase font-mono font-bold"
+                      variant="outline"
+                      className={`text-[9px] uppercase font-mono font-bold ${getClientTypeBadgeClass(lead.client_type)}`}
                     >
-                      {t(`userManagement.clientType${lead.client_type || 'CLIENT'}`) || lead.client_type || 'CLIENT'}
+                      {getClientTypeBadgeLabel(lead.client_type, t) || t(`userManagement.clientType${lead.client_type || 'CLIENT'}`) || lead.client_type || 'CLIENT'}
                     </Badge>
                     <span className="text-[10px] text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded border border-border/40">
                       {lead.probability ?? 10}% {t("crm.stats.winRate") || "Prob"}

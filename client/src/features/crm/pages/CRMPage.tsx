@@ -439,6 +439,7 @@ export function CRMPage() {
           <section aria-label="CRM Lead List">
             <CRMDataTable
               leads={leads}
+              plans={plans}
               total={totalLeads}
               loading={loading}
               onSelectLead={openLeadSheet}
@@ -464,6 +465,7 @@ export function CRMPage() {
           <section aria-label="CRM Kanban Pipeline">
             <CRMKanbanBoard
               leads={leads}
+              plans={plans}
               stats={stats}
               onSelectLead={openLeadSheet}
               onUpdateStage={handleQuickUpdateStage}
