@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.13.1](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.13.0...v1.13.1) (2026-10-07)
+
+
+### Features
+
+* **crm:** add EDUCATOR client type segment across architecture and sync PL-005 leads ([6fcd324](https://github.com/Velmar-Technology/msp_client_portal/commit/6fcd32456043a2cf02f015b996a8fc6d7218ecc1))
+
+
+### Bug Fixes
+
+* **crm:** align sentinel pipeline checker with drizzle schema and sync PL-005 pricing ([f1f4997](https://github.com/Velmar-Technology/msp_client_portal/commit/f1f4997bd5ebde863e659bea7239297a5355f070))
+
 ## [1.13.0](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.12.4...v1.13.0) (2026-10-06)
 
 
