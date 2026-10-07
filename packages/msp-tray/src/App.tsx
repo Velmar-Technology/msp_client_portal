@@ -208,7 +208,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-velmar-bg bg-velmar-mesh text-slate-100 font-sans select-none overflow-hidden">
+    <div className="flex flex-col h-screen bg-velmar-bg bg-velmar-mesh text-velmar-text font-sans select-none overflow-hidden">
       {/* Top Bar Header */}
       <Header
         hostname={vitals?.hostname || "Endpoint"}
@@ -268,7 +268,7 @@ export const App: React.FC = () => {
           <>
             {/* Navigation Tabs (Quick Support vs Workstation Tickets) */}
             {!activeChatTicket && (
-          <div className="flex bg-[#0a101d] p-1 rounded-xl border border-[#1b263b] shrink-0 gap-1">
+          <div className="flex bg-slate-200/80 dark:bg-[#0a101d] p-1 rounded-xl border border-slate-300 dark:border-[#1b263b] shrink-0 gap-1">
             <button
               onClick={() => {
                 setActiveTab('SUPPORT');
@@ -277,7 +277,7 @@ export const App: React.FC = () => {
               className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                 activeTab === 'SUPPORT'
                   ? 'bg-gradient-to-r from-[#0070db] to-[#0084ff] text-white shadow-md shadow-[#0084ff]/25'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#121b2d]'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-300/60 dark:hover:bg-[#121b2d]'
               }`}
             >
               <Zap className="w-3.5 h-3.5" />
@@ -295,7 +295,7 @@ export const App: React.FC = () => {
               className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                 activeTab === 'TICKETS'
                   ? 'bg-gradient-to-r from-[#0070db] to-[#0084ff] text-white shadow-md shadow-[#0084ff]/25'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#121b2d]'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-300/60 dark:hover:bg-[#121b2d]'
               }`}
             >
               <FolderOpen className="w-3.5 h-3.5" />
@@ -304,7 +304,7 @@ export const App: React.FC = () => {
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
                   activeTab === 'TICKETS'
                     ? 'bg-white/20 text-white'
-                    : 'bg-[#1a263d] text-slate-300'
+                    : 'bg-slate-300 dark:bg-[#1a263d] text-slate-700 dark:text-slate-300'
                 }`}>
                   {ticketList.length}
                 </span>
@@ -337,17 +337,17 @@ export const App: React.FC = () => {
           <div className="space-y-3">
             {/* Active Ticket Banner in Quick Support view */}
             {activeTicket && activeTicket.status !== 'RESOLVED' && (
-              <div className="bg-[#0b1322] border border-[#0084ff]/40 rounded-xl p-3 shadow-lg shadow-[#0084ff]/10 flex items-center justify-between gap-2">
+              <div className="bg-white dark:bg-[#0b1322] border border-blue-300 dark:border-[#0084ff]/40 rounded-xl p-3 shadow-md dark:shadow-lg dark:shadow-[#0084ff]/10 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5 overflow-hidden">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
                   <div className="truncate">
                     <div className="flex items-center gap-1.5">
                       <CopyableTicketId id={activeTicket.id} className="text-xs" />
-                      <span className="text-[9px] px-1 py-0.2 rounded font-bold uppercase bg-[#0084ff]/20 text-[#38bdf8] border border-[#0084ff]/30">
+                      <span className="text-[9px] px-1 py-0.2 rounded font-bold uppercase bg-[#0084ff]/15 text-[#0066cc] dark:text-[#38bdf8] border border-[#0084ff]/30">
                         {activeTicket.status}
                       </span>
                     </div>
-                    <p className="text-xs font-medium text-slate-200 truncate">
+                    <p className="text-xs font-medium text-slate-900 dark:text-slate-200 truncate">
                       {activeTicket.title}
                     </p>
                   </div>
@@ -361,16 +361,16 @@ export const App: React.FC = () => {
               </div>
             )}
             {/* Primary 1-Click Ticket Trigger */}
-            <div className="bg-linear-to-br from-[#0c1626] via-[#0d1525] to-[#1a1320] border border-velmar-blue/30 rounded-xl p-3.5 shadow-xl shadow-black/40 relative overflow-hidden">
+            <div className="bg-white dark:bg-linear-to-br dark:from-[#0c1626] dark:via-[#0d1525] dark:to-[#1a1320] border border-slate-300 dark:border-velmar-blue/30 rounded-xl p-3.5 shadow-sm dark:shadow-xl dark:shadow-black/40 relative overflow-hidden">
               {/* Dual-color brand chevron top accent line */}
               <div className="absolute top-0 left-0 right-0 h-0.5 bg-linear-to-r from-velmar-blue via-velmar-blue-light to-velmar-orange" />
 
               <div className="relative z-10 pt-0.5">
                 <div className="flex items-center gap-2 mb-1.5">
                   <Sparkles className="w-4 h-4 text-velmar-blue" />
-                  <h3 className="text-xs font-bold text-slate-100">{t('support.heroTitle')}</h3>
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100">{t('support.heroTitle')}</h3>
                 </div>
-                <p className="text-[11px] text-slate-300 mb-3 leading-relaxed">
+                <p className="text-[11px] text-slate-600 dark:text-slate-300 mb-3 leading-relaxed">
                   {t('support.heroSubtitle')}
                 </p>
 
@@ -386,38 +386,38 @@ export const App: React.FC = () => {
 
             {/* Quick Diagnostic Shortcuts */}
             <div>
-              <span className="text-[11px] font-medium text-slate-400 block mb-2">{t('support.commonIssues')}</span>
+              <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-2">{t('support.commonIssues')}</span>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => openNewTicketModal({ title: t('support.shortcutPrinterTitle'), category: 'REPAIR', priority: 'MEDIUM' })}
-                  className="p-2 rounded-lg bg-[#0c1220]/90 hover:bg-[#121b2d] border border-[#1b263b] hover:border-[#0084ff]/40 text-left transition-all flex items-center gap-2 group shadow-sm"
+                  className="p-2 rounded-lg bg-white/80 dark:bg-[#0c1220]/90 hover:bg-slate-100 dark:hover:bg-[#121b2d] border border-slate-300 dark:border-[#1b263b] hover:border-[#0084ff]/40 text-left transition-all flex items-center gap-2 group shadow-xs"
                 >
                   <Printer className="w-3.5 h-3.5 text-[#0084ff] group-hover:scale-110 transition-transform" />
-                  <span className="text-[11px] text-slate-200">{t('support.shortcutPrinter')}</span>
+                  <span className="text-[11px] text-slate-800 dark:text-slate-200">{t('support.shortcutPrinter')}</span>
                 </button>
 
                 <button
                   onClick={() => openNewTicketModal({ title: t('support.shortcutVpnTitle'), category: 'SERVICE_OUTAGE', priority: 'HIGH' })}
-                  className="p-2 rounded-lg bg-[#0c1220]/90 hover:bg-[#121b2d] border border-[#1b263b] hover:border-[#38bdf8]/40 text-left transition-all flex items-center gap-2 group shadow-sm"
+                  className="p-2 rounded-lg bg-white/80 dark:bg-[#0c1220]/90 hover:bg-slate-100 dark:hover:bg-[#121b2d] border border-slate-300 dark:border-[#1b263b] hover:border-[#38bdf8]/40 text-left transition-all flex items-center gap-2 group shadow-xs"
                 >
-                  <Wifi className="w-3.5 h-3.5 text-[#38bdf8] group-hover:scale-110 transition-transform" />
-                  <span className="text-[11px] text-slate-200">{t('support.shortcutVpn')}</span>
+                  <Wifi className="w-3.5 h-3.5 text-[#0284c7] dark:text-[#38bdf8] group-hover:scale-110 transition-transform" />
+                  <span className="text-[11px] text-slate-800 dark:text-slate-200">{t('support.shortcutVpn')}</span>
                 </button>
 
                 <button
                   onClick={() => openNewTicketModal({ title: t('support.shortcutErpTitle'), category: 'HELPDESK', priority: 'HIGH' })}
-                  className="p-2 rounded-lg bg-[#0c1220]/90 hover:bg-[#121b2d] border border-[#1b263b] hover:border-[#ff5e00]/40 text-left transition-all flex items-center gap-2 group shadow-sm"
+                  className="p-2 rounded-lg bg-white/80 dark:bg-[#0c1220]/90 hover:bg-slate-100 dark:hover:bg-[#121b2d] border border-slate-300 dark:border-[#1b263b] hover:border-[#ff5e00]/40 text-left transition-all flex items-center gap-2 group shadow-xs"
                 >
-                  <FileWarning className="w-3.5 h-3.5 text-[#ff5e00] group-hover:scale-110 transition-transform" />
-                  <span className="text-[11px] text-slate-200">{t('support.shortcutErp')}</span>
+                  <FileWarning className="w-3.5 h-3.5 text-[#ea580c] dark:text-[#ff5e00] group-hover:scale-110 transition-transform" />
+                  <span className="text-[11px] text-slate-800 dark:text-slate-200">{t('support.shortcutErp')}</span>
                 </button>
 
                 <button
                   onClick={() => openNewTicketModal({ title: t('support.shortcutSlowTitle'), category: 'PREVENTATIVE_MAINTENANCE', priority: 'MEDIUM' })}
-                  className="p-2 rounded-lg bg-[#0c1220]/90 hover:bg-[#121b2d] border border-[#1b263b] hover:border-[#ff8533]/40 text-left transition-all flex items-center gap-2 group shadow-sm"
+                  className="p-2 rounded-lg bg-white/80 dark:bg-[#0c1220]/90 hover:bg-slate-100 dark:hover:bg-[#121b2d] border border-slate-300 dark:border-[#1b263b] hover:border-[#ff8533]/40 text-left transition-all flex items-center gap-2 group shadow-xs"
                 >
-                  <Zap className="w-3.5 h-3.5 text-[#ff8533] group-hover:scale-110 transition-transform" />
-                  <span className="text-[11px] text-slate-200">{t('support.shortcutSlow')}</span>
+                  <Zap className="w-3.5 h-3.5 text-[#ea580c] dark:text-[#ff8533] group-hover:scale-110 transition-transform" />
+                  <span className="text-[11px] text-slate-800 dark:text-slate-200">{t('support.shortcutSlow')}</span>
                 </button>
               </div>
             </div>

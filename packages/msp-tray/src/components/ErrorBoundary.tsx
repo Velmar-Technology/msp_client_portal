@@ -45,20 +45,20 @@ export class ErrorBoundary extends Component<Props, State> {
   public render(): ReactNode {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-[400px] p-6 bg-[#070b14] text-slate-200 text-center select-none font-sans">
-          <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mb-4 text-rose-400 shadow-lg shadow-rose-500/10">
+        <div className="flex flex-col items-center justify-center min-h-[400px] p-6 bg-slate-100 dark:bg-[#070b14] text-slate-800 dark:text-slate-200 text-center select-none font-sans">
+          <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mb-4 text-rose-500 dark:text-rose-400 shadow-lg shadow-rose-500/10">
             <AlertTriangle className="w-6 h-6 animate-pulse" />
           </div>
 
-          <h2 className="text-base font-bold text-slate-100 mb-1 tracking-tight">
+          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1 tracking-tight">
             Support Assistant Encountered an Error
           </h2>
-          <p className="text-xs text-slate-400 max-w-[300px] mb-4 leading-relaxed">
+          <p className="text-xs text-slate-600 dark:text-slate-400 max-w-[300px] mb-4 leading-relaxed">
             An unexpected error occurred in the desktop drawer. Diagnostic details have been recorded to the endpoint log.
           </p>
 
-          <div className="w-full max-w-[340px] bg-[#0d1527] border border-[#1e2c4a] rounded-lg p-3 text-left mb-5">
-            <div className="text-[11px] font-mono text-rose-300 break-words line-clamp-3">
+          <div className="w-full max-w-[340px] bg-white dark:bg-[#0d1527] border border-slate-300 dark:border-[#1e2c4a] rounded-lg p-3 text-left mb-5">
+            <div className="text-[11px] font-mono text-rose-600 dark:text-rose-300 break-words line-clamp-3">
               {this.state.error?.message || 'Unknown render exception'}
             </div>
           </div>
@@ -73,9 +73,9 @@ export class ErrorBoundary extends Component<Props, State> {
             </button>
             <button
               onClick={this.handleOpenLogs}
-              className="px-3 py-1.5 rounded-lg bg-[#141f36] hover:bg-[#1a2948] border border-[#233558] text-xs font-medium text-slate-300 flex items-center gap-1.5 transition-all"
+              className="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-[#141f36] dark:hover:bg-[#1a2948] border border-slate-300 dark:border-[#233554] text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-all"
             >
-              <FolderOpen className="w-3.5 h-3.5 text-slate-400" />
+              <FolderOpen className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
               Open Logs
             </button>
           </div>

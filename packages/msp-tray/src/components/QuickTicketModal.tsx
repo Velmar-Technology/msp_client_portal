@@ -78,21 +78,21 @@ export const QuickTicketModal: React.FC<QuickTicketModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-[#04070d]/85 backdrop-blur-sm z-50 flex items-center justify-center p-3">
-      <div className="bg-[#0b101c] border border-[#1c2940] rounded-xl w-full max-w-sm p-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 dark:bg-[#04070d]/85 backdrop-blur-sm z-50 flex items-center justify-center p-3">
+      <div className="bg-white dark:bg-[#0b101c] border border-slate-300 dark:border-[#1c2940] rounded-xl w-full max-w-sm p-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-[#0084ff]/15 border border-[#0084ff]/30 flex items-center justify-center text-[#0084ff] shadow-sm shadow-[#0084ff]/20">
               <LifeBuoy className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-xs font-semibold text-slate-100">{t('quickTicket.modalTitle')}</h3>
-              <p className="text-[10px] text-slate-400">{t('quickTicket.modalSubtitle')}</p>
+              <h3 className="text-xs font-semibold text-slate-900 dark:text-slate-100">{t('quickTicket.modalTitle')}</h3>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">{t('quickTicket.modalSubtitle')}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-slate-200"
+            className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -108,13 +108,13 @@ export const QuickTicketModal: React.FC<QuickTicketModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-2.5">
           {/* Title */}
           <div>
-            <label className="block text-[11px] font-medium text-slate-300 mb-1">{t('quickTicket.titleLabel')}</label>
+            <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">{t('quickTicket.titleLabel')}</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={t('quickTicket.titlePlaceholder')}
-              className="w-full bg-[#060912] border border-[#1a263d] focus:border-[#0084ff] rounded-lg px-2.5 py-1.5 text-xs text-slate-100 placeholder:text-slate-600 outline-none transition-colors"
+              className="w-full bg-white dark:bg-[#060912] border border-slate-300 dark:border-[#1a263d] focus:border-[#0084ff] rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 outline-none transition-colors"
               autoFocus
             />
           </div>
@@ -122,11 +122,11 @@ export const QuickTicketModal: React.FC<QuickTicketModalProps> = ({
           {/* Category & Priority grid */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-[11px] font-medium text-slate-300 mb-1">{t('quickTicket.categoryLabel')}</label>
+              <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">{t('quickTicket.categoryLabel')}</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full bg-[#060912] border border-[#1a263d] focus:border-[#0084ff] rounded-lg px-2 py-1.5 text-xs text-slate-200 outline-none"
+                className="w-full bg-white dark:bg-[#060912] border border-slate-300 dark:border-[#1a263d] focus:border-[#0084ff] rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-slate-200 outline-none"
               >
                 <option value="HELPDESK">{t('common.category.helpdesk')}</option>
                 <option value="REPAIR">{t('common.category.repair')}</option>
@@ -138,11 +138,11 @@ export const QuickTicketModal: React.FC<QuickTicketModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-slate-300 mb-1">{t('quickTicket.priorityLabel')}</label>
+              <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">{t('quickTicket.priorityLabel')}</label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
-                className="w-full bg-[#060912] border border-[#1a263d] focus:border-[#0084ff] rounded-lg px-2 py-1.5 text-xs text-slate-200 outline-none"
+                className="w-full bg-white dark:bg-[#060912] border border-slate-300 dark:border-[#1a263d] focus:border-[#0084ff] rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-slate-200 outline-none"
               >
                 <option value="LOW">{t('common.priority.low')}</option>
                 <option value="MEDIUM">{t('common.priority.medium')}</option>
@@ -154,22 +154,22 @@ export const QuickTicketModal: React.FC<QuickTicketModalProps> = ({
 
           {/* Description */}
           <div>
-            <label className="block text-[11px] font-medium text-slate-300 mb-1">{t('quickTicket.descriptionLabel')}</label>
+            <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">{t('quickTicket.descriptionLabel')}</label>
             <textarea
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder={t('quickTicket.descriptionPlaceholder')}
-              className="w-full bg-[#060912] border border-[#1a263d] focus:border-[#0084ff] rounded-lg p-2.5 text-xs text-slate-100 placeholder:text-slate-600 outline-none resize-none transition-colors"
+              className="w-full bg-white dark:bg-[#060912] border border-slate-300 dark:border-[#1a263d] focus:border-[#0084ff] rounded-lg p-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 outline-none resize-none transition-colors"
             />
           </div>
 
           {/* Flight Recorder Telemetry Notice */}
-          <div className="p-2.5 rounded-lg bg-gradient-to-r from-[#0c192e]/80 to-[#141221]/80 border border-[#0084ff]/30 text-[#38bdf8] text-[11px] flex items-start gap-2 shadow-sm">
+          <div className="p-2.5 rounded-lg bg-gradient-to-r from-blue-50/90 to-indigo-50/90 dark:from-[#0c192e]/80 dark:to-[#141221]/80 border border-blue-200 dark:border-[#0084ff]/30 text-blue-900 dark:text-[#38bdf8] text-[11px] flex items-start gap-2 shadow-xs">
             <Activity className="w-4 h-4 text-[#0084ff] shrink-0 mt-0.5" />
             <div>
-              <span className="font-semibold block text-slate-200">{t('quickTicket.flightRecorderTitle')}</span>
-              <p className="text-[10px] text-slate-400 leading-tight">
+              <span className="font-semibold block text-slate-900 dark:text-slate-200">{t('quickTicket.flightRecorderTitle')}</span>
+              <p className="text-[10px] text-slate-600 dark:text-slate-400 leading-tight">
                 {t('quickTicket.flightRecorderSubtitle')}
               </p>
             </div>
@@ -180,7 +180,7 @@ export const QuickTicketModal: React.FC<QuickTicketModalProps> = ({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
               {t('common.cancel')}
             </button>

@@ -4,7 +4,7 @@ import { FEATURE_CATALOG } from "./featureCatalog";
  * Subscription & Plan Constants
  */
 
-export const PLAN_CLIENT_TYPES = ["CLIENT", "ENTERPRISE", "STUDENT", "OTHER"] as const;
+export const PLAN_CLIENT_TYPES = ["CLIENT", "ENTERPRISE", "STUDENT", "EDUCATOR", "OTHER"] as const;
 export type PlanClientType = (typeof PLAN_CLIENT_TYPES)[number];
 
 export const SUBSCRIPTION_STATUS_COLORS: Record<string, string> = {

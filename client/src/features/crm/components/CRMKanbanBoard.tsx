@@ -1,11 +1,18 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Lead, LeadStage, CrmPipelineStats } from "../api/crmService";
+import type { Plan } from "@/features/subscriptions";
+import {
+  getClientTypeBadgeClass,
+  getClientTypeBadgeLabel,
+  getPlanDisplayName,
+} from "../utils/leadFormatters";
 import { Button } from "@/components/ui/button";
 import { Calendar, Mail, Building2, ChevronRight, CheckCircle2, XCircle } from "lucide-react";
 
 interface CRMKanbanBoardProps {
   leads: Lead[];
+  plans?: Plan[];
   stats: CrmPipelineStats | null;
   onSelectLead: (lead: Lead) => void;
   onUpdateStage: (id: string, stage: LeadStage) => void;
@@ -14,7 +21,7 @@ interface CRMKanbanBoardProps {
 import { CRM_STAGES as STAGES, CRM_NEXT_STAGE as NEXT_STAGE } from "@/constants/crm";
 
 
-export function CRMKanbanBoard({ leads, stats, onSelectLead, onUpdateStage }: CRMKanbanBoardProps) {
+export function CRMKanbanBoard({ leads, plans, stats, onSelectLead, onUpdateStage }: CRMKanbanBoardProps) {
   const { t, i18n } = useTranslation();
   const isSpanish = i18n.language.startsWith("es");
   const [draggingLeadId, setDraggingLeadId] = useState<string | null>(null);
@@ -121,8 +128,12 @@ export function CRMKanbanBoard({ leads, stats, onSelectLead, onUpdateStage }: CR
                           </span>
                           <div className="flex items-center gap-1 shrink-0">
                             {lead.client_type && lead.client_type !== "CLIENT" && (
-                              <span className="text-[8px] uppercase font-mono px-1 rounded bg-secondary text-secondary-foreground border border-border">
-                                {lead.client_type === "STUDENT" || lead.client_type === "EDUCATOR" ? "EDU" : lead.client_type}
+                              <span
+                                className={`text-[8px] uppercase font-mono px-1.5 py-0.5 rounded border font-bold ${getClientTypeBadgeClass(
+                                  lead.client_type
+                                )}`}
+                              >
+                                {getClientTypeBadgeLabel(lead.client_type, t)}
                               </span>
                             )}
                             <span
@@ -155,7 +166,7 @@ export function CRMKanbanBoard({ leads, stats, onSelectLead, onUpdateStage }: CR
                         {/* Target Plan & Expected Revenue */}
                         <div className="pt-2 border-t border-border flex items-center justify-between">
                           <span className="text-[10px] font-semibold text-muted-foreground truncate">
-                            {lead.plan_name || lead.plan_id || t("crm.noPlan")}
+                            {getPlanDisplayName(lead, plans, isSpanish) || t("crm.noPlan")}
                           </span>
                           <span className="text-xs font-bold font-mono text-foreground">
                             ${Number(lead?.expected_revenue ?? 0).toFixed(2)}

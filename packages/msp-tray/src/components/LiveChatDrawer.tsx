@@ -250,7 +250,7 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
           {onBack && (
             <button
               onClick={onBack}
-              className="p-1 -ml-1 rounded-md hover:bg-[#1b2840] text-slate-400 hover:text-white transition-colors shrink-0"
+              className="p-1 -ml-1 rounded-md hover:bg-slate-200 dark:hover:bg-[#1b2840] text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0"
               title="Back to ticket list"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
@@ -268,13 +268,13 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
               <CopyableTicketId id={activeTicket.id} className="text-[11px]" />
               <span className={`text-[9px] px-1 py-0.2 rounded font-bold tracking-wider uppercase ${
                 isTicketActive
-                  ? 'bg-[#0084ff]/15 text-[#38bdf8] border border-[#0084ff]/30'
-                  : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                  ? 'bg-[#0084ff]/15 text-[#0066cc] dark:text-[#38bdf8] border border-[#0084ff]/30'
+                  : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
               }`}>
                 {activeTicket.status}
               </span>
             </div>
-            <p className="text-xs font-medium text-slate-200 truncate">
+            <p className="text-xs font-medium text-slate-900 dark:text-slate-200 truncate">
               {activeTicket.title}
             </p>
           </div>
@@ -284,10 +284,10 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
           <button
             onClick={handleResolve}
             disabled={isResolving}
-            className="px-2 py-1 rounded bg-[#131d30] hover:bg-emerald-600/20 hover:text-emerald-400 border border-[#22324e] hover:border-emerald-500/40 text-[10px] font-medium text-slate-300 transition-colors flex items-center gap-1 shrink-0"
+            className="px-2 py-1 rounded bg-slate-200/80 dark:bg-[#131d30] hover:bg-emerald-600/20 hover:text-emerald-700 dark:hover:text-emerald-400 border border-slate-300 dark:border-[#22324e] hover:border-emerald-500/40 text-[10px] font-medium text-slate-700 dark:text-slate-300 transition-colors flex items-center gap-1 shrink-0"
             title={t('chat.markResolvedTooltip')}
           >
-            <CheckCircle className="w-3 h-3 text-emerald-400" />
+            <CheckCircle className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
             {t('chat.markResolved')}
           </button>
         )}
@@ -308,10 +308,10 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
                 ) : (
                   <UserCheck className="w-3 h-3 text-[#ff5e00]" />
                 )}
-                <span className="text-[10px] text-slate-400 font-medium">
+                <span className="text-[10px] text-slate-600 dark:text-slate-400 font-medium">
                   {isTech ? m.authorName : (m.authorName ? `${m.authorName} (${t('common.you')})` : t('common.you'))}
                 </span>
-                <span className="text-[9px] text-slate-500 font-mono">
+                <span className="text-[9px] text-slate-500 dark:text-slate-400 font-mono">
                   {new Date(m.createdAt).toLocaleTimeString([], {
                     hour: '2-digit',
                     minute: '2-digit',
@@ -321,8 +321,8 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
               <div
                 className={`max-w-[85%] rounded-xl px-3 py-1.5 text-xs leading-relaxed ${
                   isTech
-                    ? 'bg-[#0d1a30] border border-[#0084ff]/35 text-slate-100 rounded-tl-sm shadow-sm shadow-[#0084ff]/10'
-                    : 'bg-[#181d28] border border-[#ff5e00]/25 text-slate-100 rounded-tr-sm shadow-sm shadow-[#ff5e00]/5'
+                    ? 'bg-blue-50/90 dark:bg-[#0d1a30] border border-blue-200 dark:border-[#0084ff]/35 text-slate-900 dark:text-slate-100 rounded-tl-sm shadow-xs shadow-blue-500/10 dark:shadow-[#0084ff]/10'
+                    : 'bg-orange-50/90 dark:bg-[#181d28] border border-orange-200 dark:border-[#ff5e00]/25 text-slate-900 dark:text-slate-100 rounded-tr-sm shadow-xs shadow-orange-500/5 dark:shadow-[#ff5e00]/5'
                 }`}
               >
                 {m.message}
@@ -343,7 +343,7 @@ export const LiveChatDrawer: React.FC<LiveChatDrawerProps> = ({
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
           placeholder={t('chat.replyPlaceholder')}
-          className="flex-1 bg-[#060a12] border border-[#1a263d] focus:border-[#0084ff] rounded-lg px-2.5 py-1.5 text-xs text-slate-100 placeholder:text-slate-500 outline-none transition-colors"
+          className="flex-1 bg-white dark:bg-[#060a12] border border-slate-300 dark:border-[#1a263d] focus:border-[#0084ff] rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-colors"
         />
         <button
           type="submit"
