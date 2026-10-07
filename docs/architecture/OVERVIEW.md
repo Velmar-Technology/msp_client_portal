@@ -93,7 +93,7 @@ To eliminate cross-workspace rework and pass-through boilerplate, new implementa
 - **Vertical Slice Development:** Standardized in [`docs/architecture/feature-slice-recipe.md`](docs/architecture/feature-slice-recipe.md) (Contract → Express Route & Service → Query Hook → UI Component).
 - **Client Health Scoring & Hardware Telemetry:** Composite health evaluation (BL-601), live socket verification, and ZSP ephemeral access routes ([ADR-007](docs/decisions/ADR-007-client-health-composite-scoring-and-telemetry-reconciliation.md)).
 - **Dynamic Database-Driven RBAC Engine:** Relational roles and granular permissions with Redis-cached capability resolution ([ADR-014](docs/decisions/ADR-014-dynamic-database-driven-rbac-and-redis-cached-resolution.md)).
-- **Lead Client Type Segmentation:** Explicit segmentation (`CLIENT`, `ENTERPRISE`, `STUDENT`, `OTHER`) and automated user lifecycle provisioning ([ADR-015](docs/decisions/ADR-015-lead-client-type-segmentation-and-lifecycle-provisioning.md)).
+- **Lead Client Type Segmentation:** Explicit segmentation (`CLIENT`, `ENTERPRISE`, `STUDENT`, `EDUCATOR`, `OTHER`) and automated user lifecycle provisioning ([ADR-015](docs/decisions/ADR-015-lead-client-type-segmentation-and-lifecycle-provisioning.md)).
 
 ---
 
@@ -209,7 +209,7 @@ The remaining tables are **not** tenant-partitioned: `tenants` (the root organiz
 - **BL-501: CRM Lead Pipeline Lifecycle & Client Type Segmentation** (`CrmService.advanceDealStage`, `CRMService.convertLeadToDeal`)
   - Deals progress through standardized stages: `NEW` $\rightarrow$ `QUALIFIED` $\rightarrow$ `PROPOSAL` $\rightarrow$ `NEGOTIATION` $\rightarrow$ `WON`/`LOST`.
   - Closing as `WON` automatically provisions the client tenant and queues account onboarding.
-  - **Lead Client Type Segmentation:** Explicit `client_type` categorization (`CLIENT`, `ENTERPRISE`, `STUDENT`, `OTHER`) on `leads` table with indexed querying. Form inputs auto-default to target customer segment upon selecting catalog plans (e.g. `PL-005` $\rightarrow$ `STUDENT`). Upon deal conversion (`convertLeadToDeal`), newly created user accounts automatically inherit the lead's segmented `client_type` (@see [ADR-015](docs/decisions/ADR-015-lead-client-type-segmentation-and-lifecycle-provisioning.md)).
+  - **Lead Client Type Segmentation:** Explicit `client_type` categorization (`CLIENT`, `ENTERPRISE`, `STUDENT`, `EDUCATOR`, `OTHER`) on `leads` table with indexed querying. Form inputs auto-default to target customer segment upon selecting catalog plans (e.g. `PL-005` $\rightarrow$ `EDUCATOR`). Upon deal conversion (`convertLeadToDeal`), newly created user accounts automatically inherit the lead's segmented `client_type` (@see [ADR-015](docs/decisions/ADR-015-lead-client-type-segmentation-and-lifecycle-provisioning.md)).
 
 ### Module 6: Account Health & QBR Logic
 

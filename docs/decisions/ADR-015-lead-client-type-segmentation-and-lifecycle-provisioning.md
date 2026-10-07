@@ -9,13 +9,13 @@ Accepted
 ## Context
 
 In the MSP CRM module, leads progress through deal stages (`NEW` $\rightarrow$ `QUALIFIED` $\rightarrow$ `PROPOSAL` $\rightarrow$ `NEGOTIATION` $\rightarrow$ `WON`/`LOST`). However:
-1. **Lack of Early Segmentation**: The `leads` table only tracked contact information, deal value, and status, with no categorization of the customer segment (`client_type`: `CLIENT`, `ENTERPRISE`, `STUDENT`, `OTHER`).
+1. **Lack of Early Segmentation**: The `leads` table only tracked contact information, deal value, and status, with no categorization of the customer segment (`client_type`: `CLIENT`, `ENTERPRISE`, `STUDENT`, `EDUCATOR`, `OTHER`).
 2. **Disconnected Deal Conversion**: When a sales opportunity was won and converted into a customer subscription via `CRMService.convertLeadToDeal`, the newly created user account defaulted to a generic client type, requiring manual administrative remediation to classify the account.
 3. **Specialized Academic & Educational Outreach**: With the launch of the **Education & Faculty Suite** (`PL-005`), dozens of educator prospects were imported into the CRM. Without an explicit `client_type` attribute, pipeline views could not filter or visually distinguish academic leads from enterprise or standard clients.
 
 ### Requirements
-- **First-Class Lead Classification**: Explicit `client_type` attribute on `leads` with enum constraints (`'CLIENT'`, `'ENTERPRISE'`, `'STUDENT'`, `'OTHER'`) and database indexing for fast filtering.
-- **Intelligent Pre-Selection**: The CRM creation modal should auto-default `client_type` when an administrator or sales engineer selects a plan (e.g., selecting `PL-005 Education & Faculty Suite` sets `client_type = 'STUDENT'`).
+- **First-Class Lead Classification**: Explicit `client_type` attribute on `leads` with enum constraints (`'CLIENT'`, `'ENTERPRISE'`, `'STUDENT'`, `'EDUCATOR'`, `'OTHER'`) and database indexing for fast filtering.
+- **Intelligent Pre-Selection**: The CRM creation modal should auto-default `client_type` when an administrator or sales engineer selects a plan (e.g., selecting `PL-005 Education & Faculty Suite` sets `client_type = 'EDUCATOR'`).
 - **Editable in Pipeline Sheets**: Sales staff must be able to inspect and reclassify lead types throughout the sales cycle directly from the lead detail sheet.
 - **Zero-Friction Conversion**: When converting a lead to a deal, the newly provisioned user account must automatically inherit the lead's segmented `client_type`.
 - **Automatic Backfill**: Existing leads bound to plans with specified client types must inherit their classification with zero manual data re-entry.
@@ -43,7 +43,7 @@ CREATE INDEX IF NOT EXISTS idx_leads_client_type ON leads(client_type);
 
 * **Default Value**: Defaults to `'CLIENT'` to preserve full backwards compatibility for unclassified leads.
 * **Indexed Filter**: The `idx_leads_client_type` index enables sub-millisecond query filtering across large prospect lists.
-* **Plan Backfill**: In production, all 74 educator leads associated with `PL-005` were automatically populated with `client_type = 'STUDENT'`.
+* **Plan Backfill**: In production, all educator leads associated with `PL-005` were populated with `client_type = 'EDUCATOR'`.
 
 ### 2. Contract & DTO Enforcement (`crm.dto.ts`)
 
@@ -52,7 +52,7 @@ All CRM input schemas enforce valid segmentation:
 export const CreateLeadDTO = z.object({
   contactName: z.string().min(1),
   contactEmail: z.string().email(),
-  clientType: z.enum(['CLIENT', 'ENTERPRISE', 'STUDENT', 'OTHER']).default('CLIENT'),
+  clientType: z.enum(['CLIENT', 'ENTERPRISE', 'STUDENT', 'EDUCATOR', 'OTHER']).default('CLIENT'),
   planId: z.string().optional(),
   // ...
 });
@@ -60,8 +60,8 @@ export const CreateLeadDTO = z.object({
 export const UpdateLeadDTO = CreateLeadDTO.partial();
 
 export const GetLeadsQueryDTO = z.object({
-  status: z.enum(LeadStatusValues).optional(),
-  clientType: z.enum(['CLIENT', 'ENTERPRISE', 'STUDENT', 'OTHER']).optional(),
+  status: z.enum(LeadStageValues).optional(),
+  clientType: z.enum(['CLIENT', 'ENTERPRISE', 'STUDENT', 'EDUCATOR', 'OTHER']).optional(),
   search: z.string().optional(),
 });
 ```

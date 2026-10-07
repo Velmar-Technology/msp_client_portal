@@ -1507,7 +1507,7 @@ if (Test-Path $temp) {
    */
   async updateUserClientType(
     userId: string,
-    clientType: 'CLIENT' | 'ENTERPRISE' | 'STUDENT' | 'OTHER'
+    clientType: 'CLIENT' | 'ENTERPRISE' | 'STUDENT' | 'EDUCATOR' | 'OTHER'
   ): Promise<UserSummary> {
     const res = await this.request<any>({
       method: 'PATCH',
@@ -1541,7 +1541,7 @@ if (Test-Path $temp) {
   async manageUserAccount(params: {
     user: string;
     role?: 'ADMIN' | 'TECHNICIAN' | 'CLIENT';
-    clientType?: 'CLIENT' | 'ENTERPRISE' | 'STUDENT' | 'OTHER';
+    clientType?: 'CLIENT' | 'ENTERPRISE' | 'STUDENT' | 'EDUCATOR' | 'OTHER';
     isActive?: boolean;
     reason?: string;
   }): Promise<UserAccountUpdateResult> {

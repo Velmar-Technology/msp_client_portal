@@ -110,7 +110,7 @@ INSERT INTO plans (id, name, description, price, features, recommended, client_t
      {"code": "PASSWORD_MANAGER", "text": {"en_US": "Password Manager Service", "es_DO": "Servicio de Administrador de Contraseñas"}, "included": true}
    ]'::jsonb, 
    false, 
-   'STUDENT',
+   'EDUCATOR',
    true),
 
   ('PL-006', 

@@ -54,7 +54,7 @@ const editLeadFormSchema = z.object({
   contactEmail: z.string().email("crm.validation.invalidEmail").max(255),
   contactPhone: z.string().max(50).optional(),
   companyName: z.string().max(255).optional(),
-  clientType: z.enum(["CLIENT", "ENTERPRISE", "STUDENT", "OTHER"]).optional(),
+  clientType: z.enum(["CLIENT", "ENTERPRISE", "STUDENT", "EDUCATOR", "OTHER"]).optional(),
   expectedRevenue: z.number().min(0),
   probability: z.number().min(0).max(100),
   priority: z.enum(["LOW", "MEDIUM", "HIGH"]),
@@ -403,6 +403,7 @@ export function CRMLeadDetailSheet({
                           <SelectItem value="CLIENT">{t("userManagement.clientTypeCLIENT") || "Standard Client"}</SelectItem>
                           <SelectItem value="ENTERPRISE">{t("userManagement.clientTypeENTERPRISE") || "Enterprise Client"}</SelectItem>
                           <SelectItem value="STUDENT">{t("userManagement.clientTypeSTUDENT") || "School Account"}</SelectItem>
+                          <SelectItem value="EDUCATOR">{t("userManagement.clientTypeEDUCATOR") || "Educator / Faculty"}</SelectItem>
                           <SelectItem value="OTHER">{t("userManagement.clientTypeOTHER") || "Other / Custom"}</SelectItem>
                         </SelectContent>
                       </Select>

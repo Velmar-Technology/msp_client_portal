@@ -38,7 +38,7 @@ const createLeadSchema = z.object({
   contactEmail: z.string().email("crm.validation.contactEmailInvalid").max(255),
   contactPhone: z.string().max(50).optional(),
   companyName: z.string().max(255).optional(),
-  clientType: z.enum(["CLIENT", "ENTERPRISE", "STUDENT", "OTHER"]).default("CLIENT"),
+  clientType: z.enum(["CLIENT", "ENTERPRISE", "STUDENT", "EDUCATOR", "OTHER"]).default("CLIENT"),
   planId: z.string().min(1, "crm.validation.planRequired"),
   equipmentCount: z.coerce.number().int().min(1).max(500),
   billingCycle: z.enum(["monthly", "annual"]),
@@ -338,6 +338,7 @@ export function CRMNewLeadModal({
                       <SelectItem value="CLIENT">{t("userManagement.clientTypeCLIENT") || "Standard Client"}</SelectItem>
                       <SelectItem value="ENTERPRISE">{t("userManagement.clientTypeENTERPRISE") || "Enterprise Client"}</SelectItem>
                       <SelectItem value="STUDENT">{t("userManagement.clientTypeSTUDENT") || "School Account"}</SelectItem>
+                      <SelectItem value="EDUCATOR">{t("userManagement.clientTypeEDUCATOR") || "Educator / Faculty"}</SelectItem>
                       <SelectItem value="OTHER">{t("userManagement.clientTypeOTHER") || "Other / Custom"}</SelectItem>
                     </SelectContent>
                   </Select>

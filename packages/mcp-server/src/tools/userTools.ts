@@ -135,7 +135,7 @@ export function registerUserTools(server: McpServer, apiClient: MspApiClient): v
     {
       user: z.string().describe('Target user email (e.g. e.a.polanco.robles@gmail.com), UUID, or full name'),
       role: z.enum(['ADMIN', 'TECHNICIAN', 'CLIENT']).optional().describe('New platform role (ADMIN, TECHNICIAN, CLIENT)'),
-      clientType: z.enum(['CLIENT', 'ENTERPRISE', 'STUDENT', 'OTHER']).optional().describe('Customer client type / classification'),
+      clientType: z.enum(['CLIENT', 'ENTERPRISE', 'STUDENT', 'EDUCATOR', 'OTHER']).optional().describe('Customer client type / classification'),
       isActive: z.boolean().optional().describe('User account active state'),
       reason: z.string().optional().describe('Administrative reason for modification'),
     },

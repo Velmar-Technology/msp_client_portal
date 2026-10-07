@@ -139,6 +139,7 @@ export class CRMService {
   async createLead(data: CreateLeadInput, tenantId: string, creatorUserId?: string): Promise<Lead> {
     let validPlanId: string | null = null;
     let expectedRev = data.expectedRevenue;
+    let targetClientType = data.clientType;
 
     if (data.planId) {
       const plan = await this.planRepo.findById(data.planId);
@@ -149,12 +150,16 @@ export class CRMService {
           const effectiveTaxRate = plan.tax_exempt ? 0 : TAX_RATE;
           expectedRev = Math.round(plan.price * mult * (data.equipmentCount || 1) * (1 + effectiveTaxRate) * 100) / 100;
         }
+        if ((!targetClientType || targetClientType === 'CLIENT') && plan.client_type && plan.client_type !== 'CLIENT') {
+          targetClientType = plan.client_type as any;
+        }
       }
     }
 
     const lead = await this.leadRepo.createLead(
       {
         ...data,
+        clientType: targetClientType,
         planId: validPlanId,
         expectedRevenue: expectedRev ?? 0,
         probability: data.probability ?? (data.stage ? STAGE_PROBABILITIES[data.stage] : 10),

@@ -67,9 +67,10 @@ async function importEducatorLeads() {
         await client.query(
           `UPDATE leads 
            SET contact_name = $1, contact_phone = $2, company_name = $3, 
-               plan_id = $4, priority = $5, expected_revenue = $6, notes = $7, updated_at = NOW()
-           WHERE id = $8`,
-          [lead.contact_name, lead.contact_phone, lead.company_name, lead.plan_id, lead.priority, lead.expected_revenue, lead.notes, existing.rows[0].id]
+               plan_id = $4, priority = $5, expected_revenue = $6, notes = $7, 
+               client_type = $8, stage = $9, probability = $10, updated_at = NOW()
+           WHERE id = $11`,
+          [lead.contact_name, lead.contact_phone, lead.company_name, lead.plan_id, lead.priority, lead.expected_revenue, lead.notes, 'EDUCATOR', lead.stage, lead.probability, existing.rows[0].id]
         );
         updated++;
       } else {
@@ -80,7 +81,7 @@ async function importEducatorLeads() {
            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
           [
             tenantId, lead.contact_name, lead.contact_email, lead.contact_phone,
-            lead.company_name, lead.stage, 'STUDENT', lead.plan_id, lead.priority,
+            lead.company_name, lead.stage, 'EDUCATOR', lead.plan_id, lead.priority,
             lead.expected_revenue, lead.probability, lead.notes
           ]
         );

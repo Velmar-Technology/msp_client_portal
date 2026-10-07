@@ -465,6 +465,7 @@
     "clientTypeCLIENT": "Standard Client",
     "clientTypeENTERPRISE": "Enterprise Client",
     "clientTypeSTUDENT": "School Account",
+    "clientTypeEDUCATOR": "Educator / Faculty",
     "clientTypeOTHER": "Other / Custom",
     "confirmPassword": "Confirm Password",
     "passwordPlaceholder": "Min. 8 characters",
@@ -963,6 +964,7 @@
       "standard": "Standard Client",
       "enterprise": "Enterprise Client",
       "student": "Student Starter",
+      "educator": "Educator / Faculty",
       "other": "Other / Custom"
     },
     "audience": "Audience",
@@ -1514,6 +1516,7 @@
     "clientTypeCLIENT": "Standard Client",
     "clientTypeENTERPRISE": "Enterprise Client",
     "clientTypeSTUDENT": "School Account",
+    "clientTypeEDUCATOR": "Educator / Faculty",
     "clientTypeOTHER": "Other / Custom",
     "current": "current",
     "deactivate": "Deactivate User",
