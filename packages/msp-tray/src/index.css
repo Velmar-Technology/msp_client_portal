@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-velmar-blue: #0084ff;
   --color-velmar-blue-dark: #0060c2;
@@ -32,6 +34,8 @@
     --velmar-text-muted: #94a3b8;
     --velmar-btn-bg: #131c30;
     --velmar-btn-border: #233554;
+    --velmar-input-bg: #060912;
+    --velmar-input-border: #1a263d;
     --velmar-radial-glow: rgba(0, 132, 255, 0.12);
     --velmar-radial-fade: rgba(7, 10, 16, 0.98);
   }
@@ -42,12 +46,14 @@
     --velmar-card: #E6E7ED;
     --velmar-card-hover: #dcdde3;
     --velmar-border: #C1C2C7;
-    --velmar-subtle: #e6e7ed;
+    --velmar-subtle: #dbdce2;
     --velmar-header: rgba(214, 216, 223, 0.95);
-    --velmar-text: #343b58;
-    --velmar-text-muted: #70728C;
-    --velmar-btn-bg: #e6e7ed;
-    --velmar-btn-border: #C1C2C7;
+    --velmar-text: #1e2538;
+    --velmar-text-muted: #5a5f78;
+    --velmar-btn-bg: #dcdde3;
+    --velmar-btn-border: #B5B6BC;
+    --velmar-input-bg: #ffffff;
+    --velmar-input-border: #C1C2C7;
     --velmar-radial-glow: rgba(41, 89, 170, 0.08);
     --velmar-radial-fade: rgba(214, 216, 223, 0.98);
   }
@@ -59,12 +65,14 @@
       --velmar-card: #E6E7ED;
       --velmar-card-hover: #dcdde3;
       --velmar-border: #C1C2C7;
-      --velmar-subtle: #e6e7ed;
+      --velmar-subtle: #dbdce2;
       --velmar-header: rgba(214, 216, 223, 0.95);
-      --velmar-text: #343b58;
-      --velmar-text-muted: #70728C;
-      --velmar-btn-bg: #e6e7ed;
-      --velmar-btn-border: #C1C2C7;
+      --velmar-text: #1e2538;
+      --velmar-text-muted: #5a5f78;
+      --velmar-btn-bg: #dcdde3;
+      --velmar-btn-border: #B5B6BC;
+      --velmar-input-bg: #ffffff;
+      --velmar-input-border: #C1C2C7;
       --velmar-radial-glow: rgba(41, 89, 170, 0.08);
       --velmar-radial-fade: rgba(214, 216, 223, 0.98);
     }
@@ -103,42 +111,110 @@
   }
 }
 
-/* Light mode dynamic surface adaptation */
+/* =========================================================
+   Light mode dynamic surface adaptation & contrast fixes
+   ========================================================= */
+
 :root.light .bg-velmar-bg {
   background-color: var(--velmar-bg);
 }
 
+/* Card surfaces */
 :root.light [class*="bg-[#0b101c]"],
 :root.light [class*="bg-[#0d131f]"],
 :root.light [class*="bg-[#0c1220]"],
 :root.light [class*="bg-[#0a0e17]"],
-:root.light [class*="bg-[#060a12]"] {
+:root.light [class*="bg-[#090e1a]"],
+:root.light [class*="bg-[#0d1526]"],
+:root.light [class*="bg-[#0b1322]"],
+:root.light [class*="bg-[#101b30]"] {
   background-color: var(--velmar-card) !important;
 }
 
-:root.light [class*="bg-[#0a101d]"] {
+/* Subtle panels & nested containers */
+:root.light [class*="bg-[#0a101d]"],
+:root.light [class*="bg-[#0c1322]"],
+:root.light [class*="bg-[#0c1424]"],
+:root.light [class*="bg-[#060a12]"],
+:root.light [class*="bg-[#060912]"] {
   background-color: var(--velmar-subtle) !important;
 }
 
-:root.light [class*="bg-[#131c30]"] {
+/* Button & pill backgrounds */
+:root.light [class*="bg-[#131c30]"],
+:root.light [class*="bg-[#131d30]"],
+:root.light [class*="bg-[#101b2e]"],
+:root.light [class*="bg-[#162238]"],
+:root.light [class*="bg-[#1a263d]"] {
   background-color: var(--velmar-btn-bg) !important;
 }
 
+/* Hover surfaces (avoid dark patches on hover in light mode) */
+:root.light [class*="hover:bg-[#1a2640]"]:hover,
+:root.light [class*="hover:bg-[#121b2d]"]:hover,
+:root.light [class*="hover:bg-[#152540]"]:hover,
+:root.light [class*="hover:bg-slate-800"]:hover {
+  background-color: var(--velmar-card-hover) !important;
+}
+
+/* Borders */
 :root.light [class*="border-[#1b263b]"],
 :root.light [class*="border-[#1c2942]"],
 :root.light [class*="border-[#1c2940]"],
-:root.light [class*="border-[#233554]"] {
+:root.light [class*="border-[#233554]"],
+:root.light [class*="border-[#1b2840]"],
+:root.light [class*="border-[#172238]"],
+:root.light [class*="border-[#1a263d]"],
+:root.light [class*="border-[#18263d]"],
+:root.light [class*="border-[#1e2f4f]"],
+:root.light [class*="border-[#1e3052]"],
+:root.light [class*="border-[#243552]"] {
   border-color: var(--velmar-border) !important;
 }
 
+/* High-contrast typography in light mode */
 :root.light [class*="text-slate-100"],
-:root.light [class*="text-slate-200"] {
+:root.light [class*="text-slate-200"],
+:root.light [class*="text-slate-300"] {
   color: var(--velmar-text) !important;
 }
 
-:root.light [class*="text-slate-300"],
-:root.light [class*="text-slate-400"] {
+:root.light [class*="text-slate-400"],
+:root.light [class*="text-slate-500"] {
   color: var(--velmar-text-muted) !important;
+}
+
+/* Form inputs, textareas, selects */
+:root.light input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+:root.light textarea,
+:root.light select {
+  background-color: var(--velmar-input-bg) !important;
+  border-color: var(--velmar-input-border) !important;
+  color: var(--velmar-text) !important;
+}
+
+:root.light select option {
+  background-color: #ffffff !important;
+  color: #1e2538 !important;
+}
+
+/* Hero card linear gradient adaptation */
+:root.light [class*="from-[#0c1626]"] {
+  background-image: linear-gradient(135deg, var(--velmar-card), var(--velmar-subtle)) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Live chat technician & client message bubbles */
+:root.light [class*="bg-[#0d1a30]"] {
+  background-color: rgba(0, 132, 255, 0.12) !important;
+  border-color: rgba(0, 132, 255, 0.28) !important;
+  color: var(--velmar-text) !important;
+}
+
+:root.light [class*="bg-[#181d28]"] {
+  background-color: rgba(255, 94, 0, 0.10) !important;
+  border-color: rgba(255, 94, 0, 0.25) !important;
+  color: var(--velmar-text) !important;
 }
 
 @media (prefers-color-scheme: light) {
@@ -150,32 +226,88 @@
   :root:not(.dark) [class*="bg-[#0d131f]"],
   :root:not(.dark) [class*="bg-[#0c1220]"],
   :root:not(.dark) [class*="bg-[#0a0e17]"],
-  :root:not(.dark) [class*="bg-[#060a12]"] {
+  :root:not(.dark) [class*="bg-[#090e1a]"],
+  :root:not(.dark) [class*="bg-[#0d1526]"],
+  :root:not(.dark) [class*="bg-[#0b1322]"],
+  :root:not(.dark) [class*="bg-[#101b30]"] {
     background-color: var(--velmar-card) !important;
   }
 
-  :root:not(.dark) [class*="bg-[#0a101d]"] {
+  :root:not(.dark) [class*="bg-[#0a101d]"],
+  :root:not(.dark) [class*="bg-[#0c1322]"],
+  :root:not(.dark) [class*="bg-[#0c1424]"],
+  :root:not(.dark) [class*="bg-[#060a12]"],
+  :root:not(.dark) [class*="bg-[#060912]"] {
     background-color: var(--velmar-subtle) !important;
   }
 
-  :root:not(.dark) [class*="bg-[#131c30]"] {
+  :root:not(.dark) [class*="bg-[#131c30]"],
+  :root:not(.dark) [class*="bg-[#131d30]"],
+  :root:not(.dark) [class*="bg-[#101b2e]"],
+  :root:not(.dark) [class*="bg-[#162238]"],
+  :root:not(.dark) [class*="bg-[#1a263d]"] {
     background-color: var(--velmar-btn-bg) !important;
+  }
+
+  :root:not(.dark) [class*="hover:bg-[#1a2640]"]:hover,
+  :root:not(.dark) [class*="hover:bg-[#121b2d]"]:hover,
+  :root:not(.dark) [class*="hover:bg-[#152540]"]:hover,
+  :root:not(.dark) [class*="hover:bg-slate-800"]:hover {
+    background-color: var(--velmar-card-hover) !important;
   }
 
   :root:not(.dark) [class*="border-[#1b263b]"],
   :root:not(.dark) [class*="border-[#1c2942]"],
   :root:not(.dark) [class*="border-[#1c2940]"],
-  :root:not(.dark) [class*="border-[#233554]"] {
+  :root:not(.dark) [class*="border-[#233554]"],
+  :root:not(.dark) [class*="border-[#1b2840]"],
+  :root:not(.dark) [class*="border-[#172238]"],
+  :root:not(.dark) [class*="border-[#1a263d]"],
+  :root:not(.dark) [class*="border-[#18263d]"],
+  :root:not(.dark) [class*="border-[#1e2f4f]"],
+  :root:not(.dark) [class*="border-[#1e3052]"],
+  :root:not(.dark) [class*="border-[#243552]"] {
     border-color: var(--velmar-border) !important;
   }
 
   :root:not(.dark) [class*="text-slate-100"],
-  :root:not(.dark) [class*="text-slate-200"] {
+  :root:not(.dark) [class*="text-slate-200"],
+  :root:not(.dark) [class*="text-slate-300"] {
     color: var(--velmar-text) !important;
   }
 
-  :root:not(.dark) [class*="text-slate-300"],
-  :root:not(.dark) [class*="text-slate-400"] {
+  :root:not(.dark) [class*="text-slate-400"],
+  :root:not(.dark) [class*="text-slate-500"] {
     color: var(--velmar-text-muted) !important;
+  }
+
+  :root:not(.dark) input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+  :root:not(.dark) textarea,
+  :root:not(.dark) select {
+    background-color: var(--velmar-input-bg) !important;
+    border-color: var(--velmar-input-border) !important;
+    color: var(--velmar-text) !important;
+  }
+
+  :root:not(.dark) select option {
+    background-color: #ffffff !important;
+    color: #1e2538 !important;
+  }
+
+  :root:not(.dark) [class*="from-[#0c1626]"] {
+    background-image: linear-gradient(135deg, var(--velmar-card), var(--velmar-subtle)) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06) !important;
+  }
+
+  :root:not(.dark) [class*="bg-[#0d1a30]"] {
+    background-color: rgba(0, 132, 255, 0.12) !important;
+    border-color: rgba(0, 132, 255, 0.28) !important;
+    color: var(--velmar-text) !important;
+  }
+
+  :root:not(.dark) [class*="bg-[#181d28]"] {
+    background-color: rgba(255, 94, 0, 0.10) !important;
+    border-color: rgba(255, 94, 0, 0.25) !important;
+    color: var(--velmar-text) !important;
   }
 }

@@ -116,7 +116,27 @@ if ($NoAutoStart) {
     $installerArgs += "--no-autostart"
 }
 
-# 4. Execute Service Registration & Relocation
+# 4. Check & Install Microsoft Visual C++ Runtime Prerequisite if Needed
+$vcDll = Join-Path $env:SystemRoot "System32\vcruntime140_1.dll"
+if (-not (Test-Path $vcDll)) {
+    Log-Message "Microsoft Visual C++ 2015-2022 Redistributable not detected. Downloading prerequisite..." "Yellow"
+    try {
+        $tempVc = Join-Path $env:TEMP "vc_redist.x64.exe"
+        $vcUrl = "https://aka.ms/vs/17/release/vc_redist.x64.exe"
+        Invoke-WebRequest -Uri $vcUrl -OutFile $tempVc -UseBasicParsing
+        $vcProcess = Start-Process -FilePath $tempVc -ArgumentList "/install", "/quiet", "/norestart" -Wait -PassThru
+        if ($vcProcess.ExitCode -eq 0 -or $vcProcess.ExitCode -eq 3010) {
+            Log-Message "Microsoft Visual C++ Redistributable installed successfully." "Green"
+        } else {
+            Log-Message "Visual C++ installer completed with code $($vcProcess.ExitCode)." "Yellow"
+        }
+        Remove-Item $tempVc -Force -ErrorAction SilentlyContinue
+    } catch {
+        Log-Message "Warning: Automatic Visual C++ Redistributable installation failed: $_" "Yellow"
+    }
+}
+
+# 5. Execute Service Registration & Relocation
 Log-Message "Executing internal Windows Service registration..." "Yellow"
 $process = Start-Process -FilePath $resolvedExe -ArgumentList $installerArgs -Wait -PassThru -NoNewWindow
 
