@@ -497,6 +497,7 @@ export function UserManagementPage() {
                 <SelectItem value="CLIENT">{t("userManagement.clientTypeCLIENT") || "Standard Client"}</SelectItem>
                 <SelectItem value="ENTERPRISE">{t("userManagement.clientTypeENTERPRISE") || "Enterprise Client"}</SelectItem>
                 <SelectItem value="STUDENT">{t("userManagement.clientTypeSTUDENT") || "Student Starter"}</SelectItem>
+                <SelectItem value="EDUCATOR">{t("userManagement.clientTypeEDUCATOR") || "Educator / Faculty"}</SelectItem>
                 <SelectItem value="OTHER">{t("userManagement.clientTypeOTHER") || "Other / Custom"}</SelectItem>
               </SelectContent>
             </Select>

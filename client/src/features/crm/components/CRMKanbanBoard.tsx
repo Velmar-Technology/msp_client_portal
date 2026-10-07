@@ -122,7 +122,7 @@ export function CRMKanbanBoard({ leads, stats, onSelectLead, onUpdateStage }: CR
                           <div className="flex items-center gap-1 shrink-0">
                             {lead.client_type && lead.client_type !== "CLIENT" && (
                               <span className="text-[8px] uppercase font-mono px-1 rounded bg-secondary text-secondary-foreground border border-border">
-                                {lead.client_type === "STUDENT" ? "EDU" : lead.client_type}
+                                {lead.client_type === "STUDENT" || lead.client_type === "EDUCATOR" ? "EDU" : lead.client_type}
                               </span>
                             )}
                             <span

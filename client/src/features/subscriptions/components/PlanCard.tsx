@@ -50,6 +50,7 @@ export function PlanCard({
     CLIENT: "plans.clientTypes.standard",
     ENTERPRISE: "plans.clientTypes.enterprise",
     STUDENT: "plans.clientTypes.student",
+    EDUCATOR: "plans.clientTypes.educator",
     OTHER: "plans.clientTypes.other",
   };
   const clientTypeLabelKey =

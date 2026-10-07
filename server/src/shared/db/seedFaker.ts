@@ -174,7 +174,7 @@ export async function seedWithFaker(): Promise<void> {
         is_active: true,
         email_verified: true,
         language: faker.helpers.arrayElement(['en_US', 'es_DO']),
-        client_type: faker.helpers.arrayElement(['ENTERPRISE', 'CLIENT', 'STUDENT', 'OTHER']),
+        client_type: faker.helpers.arrayElement(['ENTERPRISE', 'CLIENT', 'STUDENT', 'EDUCATOR', 'OTHER']),
         phone_number: faker.phone.number({ style: 'international' }),
         tenant_id: targetTenant.id,
       });

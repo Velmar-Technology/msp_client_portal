@@ -5,7 +5,7 @@ import type { Plan, PlanFeature } from "@/features/subscriptions";
 export type LeadStage = "NEW" | "QUALIFIED" | "PROPOSITION" | "WON" | "LOST";
 export type LeadPriority = "LOW" | "MEDIUM" | "HIGH";
 export type QuotationStatus = "DRAFT" | "SENT" | "ACCEPTED" | "DECLINED" | "EXPIRED";
-export type ClientType = "CLIENT" | "ENTERPRISE" | "STUDENT" | "OTHER";
+export type ClientType = "CLIENT" | "ENTERPRISE" | "STUDENT" | "EDUCATOR" | "OTHER";
 
 export interface ConvertLeadResult {
   lead: Lead;

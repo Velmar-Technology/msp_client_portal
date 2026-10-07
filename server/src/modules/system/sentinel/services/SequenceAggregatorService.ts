@@ -537,8 +537,24 @@ export class SequenceAggregatorService {
         },
         newState: {
           status: 'NEW',
+          stage: 'NEW',
         },
       });
+
+      if (lead.stage && lead.stage !== 'NEW') {
+        steps.push({
+          id: `lead-stage-${lead.id}-${lead.stage}`,
+          entityId: lead.id,
+          entityType: 'LEAD',
+          action: `STATUS_CHANGED_${lead.stage}`,
+          timestamp: lead.updated_at || lead.created_at || new Date(),
+          tenantId: lead.tenant_id,
+          newState: {
+            status: lead.stage,
+            stage: lead.stage,
+          },
+        });
+      }
 
       for (const act of activities) {
         const rawAct = act as any;

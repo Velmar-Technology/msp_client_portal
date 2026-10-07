@@ -10,7 +10,7 @@ export interface ChangePasswordPayload {
 // ---- Admin User Management Types ----
 
 export type UserRole = 'CLIENT' | 'TECHNICIAN' | 'ADMIN';
-export type ClientType = 'CLIENT' | 'ENTERPRISE' | 'STUDENT' | 'OTHER';
+export type ClientType = 'CLIENT' | 'ENTERPRISE' | 'STUDENT' | 'EDUCATOR' | 'OTHER';
 
 export interface TechnicianUser {
   id: string;

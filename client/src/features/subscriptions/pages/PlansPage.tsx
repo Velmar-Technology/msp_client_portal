@@ -445,6 +445,7 @@ export function PlansPage() {
                     <SelectItem value="CLIENT">{t("plans.clientTypes.standard") || "Standard Client"}</SelectItem>
                     <SelectItem value="ENTERPRISE">{t("plans.clientTypes.enterprise") || "Enterprise Client"}</SelectItem>
                     <SelectItem value="STUDENT">{t("plans.clientTypes.student") || "Student Starter"}</SelectItem>
+                    <SelectItem value="EDUCATOR">{t("plans.clientTypes.educator") || "Educator / Faculty"}</SelectItem>
                     <SelectItem value="OTHER">{t("plans.clientTypes.other") || "Other / Custom"}</SelectItem>
                   </SelectContent>
                 </Select>

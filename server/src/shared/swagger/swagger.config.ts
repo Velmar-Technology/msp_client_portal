@@ -128,7 +128,7 @@ const options: swaggerJsdoc.Options = {
                     email: { type: 'string', format: 'email' },
                     name: { type: 'string', minLength: 2 },
                     tenantName: { type: 'string', minLength: 2 },
-                    clientType: { type: 'string', enum: ['CLIENT', 'ENTERPRISE', 'STUDENT', 'OTHER'] },
+                    clientType: { type: 'string', enum: ['CLIENT', 'ENTERPRISE', 'STUDENT', 'EDUCATOR', 'OTHER'] },
                     password: { type: 'string', minLength: 8 },
                     confirmPassword: { type: 'string' },
                   },

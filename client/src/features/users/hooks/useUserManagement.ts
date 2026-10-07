@@ -410,6 +410,7 @@ export function useUserManagement() {
         CLIENT: t("userManagement.clientTypeCLIENT") || t("register.clientTypeCLIENT") || "Standard Client",
         ENTERPRISE: t("userManagement.clientTypeENTERPRISE") || t("register.clientTypeENTERPRISE") || "Enterprise Client",
         STUDENT: t("userManagement.clientTypeSTUDENT") || t("register.clientTypeSTUDENT") || "Student Starter",
+        EDUCATOR: t("userManagement.clientTypeEDUCATOR") || t("register.clientTypeEDUCATOR") || "Educator / Faculty",
         OTHER: t("userManagement.clientTypeOTHER") || t("register.clientTypeOTHER") || "Other / Custom",
       };
       return labels[clientType] || clientType;

@@ -1,5 +1,5 @@
 import type React from "react";
-import { ShieldCheck, Wrench, User, Building2, GraduationCap, Tag } from "lucide-react";
+import { ShieldCheck, Wrench, User, Building2, GraduationCap, BookOpen, Tag } from "lucide-react";
 import type { UserRole, ClientType } from "@/features/users";
 
 export const USER_ROLE_CONFIG: Record<UserRole, { badge: string; dot: string }> = {
@@ -39,5 +39,6 @@ export const CLIENT_TYPE_OPTIONS: ClientTypeOption[] = [
   { value: "CLIENT", icon: User, labelKey: "register.clientTypeCLIENT" },
   { value: "ENTERPRISE", icon: Building2, labelKey: "register.clientTypeENTERPRISE" },
   { value: "STUDENT", icon: GraduationCap, labelKey: "register.clientTypeSTUDENT" },
+  { value: "EDUCATOR", icon: BookOpen, labelKey: "register.clientTypeEDUCATOR" },
   { value: "OTHER", icon: Tag, labelKey: "register.clientTypeOTHER" },
 ];

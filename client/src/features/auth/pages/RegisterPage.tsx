@@ -68,7 +68,7 @@ export function RegisterPage() {
             .string()
             .min(2, t("register.tenantMin") || "Company name must be at least 2 characters")
             .max(255, t("register.tenantMax") || "Company name must not exceed 255 characters"),
-          clientType: z.enum(["CLIENT", "ENTERPRISE", "STUDENT", "OTHER"], {
+          clientType: z.enum(["CLIENT", "ENTERPRISE", "STUDENT", "EDUCATOR", "OTHER"], {
             message: "Client type is required",
           }),
           email: z.string().email(t("register.emailInvalid") || "Invalid email address"),
@@ -469,6 +469,8 @@ return (
                                 <SelectItem value="CLIENT">{t("register.clientTypeCLIENT")}</SelectItem>
                                 <SelectItem value="ENTERPRISE">{t("register.clientTypeENTERPRISE")}</SelectItem>
                                 <SelectItem value="STUDENT">{t("register.clientTypeSTUDENT")}</SelectItem>
+                                <SelectItem value="EDUCATOR">{t("register.clientTypeEDUCATOR")}</SelectItem>
+                                <SelectItem value="OTHER">{t("register.clientTypeOTHER")}</SelectItem>
                               </SelectContent>
                             </Select>
                             {fieldState.invalid && <FieldError id="reg-clientType-error" errors={[fieldState.error]} />}

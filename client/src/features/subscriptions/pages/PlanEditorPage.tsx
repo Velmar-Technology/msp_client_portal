@@ -1117,6 +1117,9 @@ export function PlanEditorPage() {
                         <SelectItem value="STUDENT" className="text-xs">
                           {t("plans.clientTypes.student")}
                         </SelectItem>
+                        <SelectItem value="EDUCATOR" className="text-xs">
+                          {t("plans.clientTypes.educator")}
+                        </SelectItem>
                         <SelectItem value="OTHER" className="text-xs">
                           {t("plans.clientTypes.other")}
                         </SelectItem>

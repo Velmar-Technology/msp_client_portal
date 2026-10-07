@@ -967,10 +967,10 @@ async function handleLeadImport(opts) {
       sqlStatements.push(`
         INSERT INTO leads (
           tenant_id, contact_name, contact_email, contact_phone, 
-          company_name, stage, plan_id, priority, expected_revenue, probability, notes
+          company_name, stage, client_type, plan_id, priority, expected_revenue, probability, notes
         ) VALUES (
           '${tenantId}', '${escName}', '${ed.email}', '${ed.phone}',
-          '${escCompany}', 'NEW', 'PL-005', '${ed.priority}', 35.00, 20, '${notes}'
+          '${escCompany}', 'NEW', 'EDUCATOR', 'PL-005', '${ed.priority}', 35.40, 20, '${notes}'
         )
         ON CONFLICT (id) DO NOTHING;
       `);

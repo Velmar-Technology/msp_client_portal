@@ -406,6 +406,7 @@ export enum PlanClientType {
   CLIENT = 'CLIENT',
   ENTERPRISE = 'ENTERPRISE',
   STUDENT = 'STUDENT',
+  EDUCATOR = 'EDUCATOR',
   OTHER = 'OTHER',
 }
 

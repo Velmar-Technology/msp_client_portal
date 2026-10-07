@@ -121,7 +121,7 @@ export function registerBillingTools(server: McpServer, apiClient: MspApiClient)
     'msp_list_plans',
     'Export the full subscription plans pricing catalog, tiers, billing terms, feature codes, and limits',
     {
-      clientType: z.enum(['CLIENT', 'ENTERPRISE', 'STUDENT', 'OTHER']).optional().describe('Filter by target client segment'),
+      clientType: z.enum(['CLIENT', 'ENTERPRISE', 'STUDENT', 'EDUCATOR', 'OTHER']).optional().describe('Filter by target client segment'),
       format: z.enum(['markdown_table', 'json']).default('markdown_table').describe('Output format (default: markdown_table)'),
     },
     async ({ clientType, format }) => {
