@@ -39,18 +39,24 @@ export class CrmPipelineChecker implements InvariantChecker {
 
     for (const seq of leadSequences) {
       const rawLead = seq.rootContext?.lead as
-        | { id?: string; status?: string; converted_client_id?: string | null }
+        | { id?: string; stage?: string; status?: string; client_id?: string | null; converted_client_id?: string | null }
         | undefined;
 
+      const leadStage = rawLead?.stage || rawLead?.status;
       const isWon =
-        rawLead?.status === 'WON' ||
+        leadStage === 'WON' ||
         seq.steps.some(
-          (s) => s.action === 'STATUS_CHANGED_WON' || s.newState?.status === 'WON'
+          (s) =>
+            s.action === 'STATUS_CHANGED_WON' ||
+            s.newState?.status === 'WON' ||
+            s.newState?.stage === 'WON'
         );
 
       if (isWon) {
         const hasProvisionedTenant =
-          Boolean(rawLead?.converted_client_id) || Boolean(seq.rootContext?.provisionedTenant);
+          Boolean(rawLead?.client_id) ||
+          Boolean(rawLead?.converted_client_id) ||
+          Boolean(seq.rootContext?.provisionedTenant);
 
         if (!hasProvisionedTenant) {
           const lastStep = seq.steps[seq.steps.length - 1];
@@ -61,12 +67,12 @@ export class CrmPipelineChecker implements InvariantChecker {
             entityId: seq.entityId,
             entityType: 'LEAD',
             tenantId: seq.tenantId,
-            violatedAt: lastStep.timestamp,
+            violatedAt: lastStep?.timestamp || new Date(),
             rationale: `Deal '${seq.entityId}' progressed to 'WON' but did not auto-provision a client tenant (BL-501).`,
             evidence: {
               leadId: seq.entityId,
-              status: 'WON',
-              convertedClientId: rawLead?.converted_client_id,
+              status: leadStage || 'WON',
+              convertedClientId: rawLead?.client_id || rawLead?.converted_client_id || null,
             },
             actionSequence: seq,
           });

@@ -61,7 +61,8 @@ export function QuotationTab({
   const priceMultiplier = billingCycle === "annual" ? 12 * 0.8 : 1;
   const unitPrice = currentPlan ? (billingCycle === "annual" ? currentPlan.price * 0.8 : currentPlan.price) : 0;
   const subtotal = currentPlan ? Math.round(currentPlan.price * priceMultiplier * equipmentCount * 100) / 100 : 0;
-  const tax = Math.round(subtotal * CRM_TAX_RATE * 100) / 100;
+  const effectiveTaxRate = currentPlan?.tax_exempt ? 0 : CRM_TAX_RATE;
+  const tax = Math.round(subtotal * effectiveTaxRate * 100) / 100;
   const total = Math.round((subtotal + tax) * 100) / 100;
 
   const handleSendQuoteClick = async () => {

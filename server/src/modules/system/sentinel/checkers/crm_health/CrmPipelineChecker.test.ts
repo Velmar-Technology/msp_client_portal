@@ -64,4 +64,66 @@ describe('CrmPipelineChecker (BL-501)', () => {
     expect(result.violations[0].ruleCode).toBe('BL-501');
     expect(result.violations[0].severity).toBe('CRITICAL');
   });
+
+  it('should pass when a WON lead has client_id in Drizzle schema format', async () => {
+    const sequence: ActionSequence = {
+      entityId: 'lead-won-drizzle',
+      entityType: 'LEAD',
+      tenantId: 'msp-master',
+      steps: [
+        {
+          id: 's1',
+          entityId: 'lead-won-drizzle',
+          entityType: 'LEAD',
+          action: 'LEAD_CREATED',
+          timestamp: new Date(),
+          tenantId: 'msp-master',
+          newState: { stage: 'NEW' },
+        },
+        {
+          id: 's2',
+          entityId: 'lead-won-drizzle',
+          entityType: 'LEAD',
+          action: 'STATUS_CHANGED_WON',
+          timestamp: new Date(),
+          tenantId: 'msp-master',
+          newState: { stage: 'WON' },
+        },
+      ],
+      rootContext: {
+        lead: { id: 'lead-won-drizzle', stage: 'WON', client_id: 'usr-client-uuid-123' },
+      },
+    };
+
+    const result = await checker.evaluate([sequence]);
+    expect(result.violations).toHaveLength(0);
+  });
+
+  it('should flag a CRITICAL violation when a WON lead in Drizzle schema format lacks client_id', async () => {
+    const sequence: ActionSequence = {
+      entityId: 'lead-won-drizzle-unprov',
+      entityType: 'LEAD',
+      tenantId: 'msp-master',
+      steps: [
+        {
+          id: 's1',
+          entityId: 'lead-won-drizzle-unprov',
+          entityType: 'LEAD',
+          action: 'STATUS_CHANGED_WON',
+          timestamp: new Date(),
+          tenantId: 'msp-master',
+          newState: { stage: 'WON' },
+        },
+      ],
+      rootContext: {
+        lead: { id: 'lead-won-drizzle-unprov', stage: 'WON', client_id: null },
+      },
+    };
+
+    const result = await checker.evaluate([sequence]);
+    expect(result.violations).toHaveLength(1);
+    expect(result.violations[0].ruleCode).toBe('BL-501');
+    expect(result.violations[0].severity).toBe('CRITICAL');
+    expect(result.violations[0].evidence.status).toBe('WON');
+  });
 });

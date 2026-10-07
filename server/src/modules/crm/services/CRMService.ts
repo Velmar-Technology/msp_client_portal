@@ -146,7 +146,8 @@ export class CRMService {
         validPlanId = plan.id;
         if (!expectedRev || expectedRev === 0) {
           const mult = data.billingCycle === 'annual' ? 12 * 0.8 : 1;
-          expectedRev = Math.round(plan.price * mult * (data.equipmentCount || 1) * (1 + TAX_RATE) * 100) / 100;
+          const effectiveTaxRate = plan.tax_exempt ? 0 : TAX_RATE;
+          expectedRev = Math.round(plan.price * mult * (data.equipmentCount || 1) * (1 + effectiveTaxRate) * 100) / 100;
         }
       }
     }
@@ -291,7 +292,8 @@ export class CRMService {
     const equipmentCount = data.equipmentCount || 1;
     const priceMultiplier = billingCycle === 'annual' ? 12 * 0.8 : 1;
     const subtotal = Math.round(plan.price * priceMultiplier * equipmentCount * 100) / 100;
-    const tax = Math.round(subtotal * TAX_RATE * 100) / 100;
+    const effectiveTaxRate = plan.tax_exempt ? 0 : TAX_RATE;
+    const tax = Math.round(subtotal * effectiveTaxRate * 100) / 100;
     const total = Math.round((subtotal + tax) * 100) / 100;
 
     const validUntil = new Date(Date.now() + (data.validDays || 30) * 24 * 60 * 60 * 1000);
