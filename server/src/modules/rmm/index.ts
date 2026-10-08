@@ -4,6 +4,8 @@ export * from './services/AgentClusterBroker';
 export * from './services/AgentGateway';
 export * from './services/AlertService';
 export * from './services/MaintenanceService';
+export * from './services/OsintAdvisoryService';
+export * from './services/PatchCorrelationService';
 export * from './services/RmmPatchService';
 export * from './services/TelemetryBufferService';
 export * from './services/ZabbixService';

@@ -257,7 +257,10 @@ export function DeviceRmmModal({ isOpen, onClose, equip }: DeviceRmmModalProps) 
                     variant="outline"
                     className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-mono"
                   >
-                    {pendingPatches.length} {t("rmm.tablePendingPatchesBadge_other", "Pending Patches")}
+                    {t("rmm.tablePendingPatchesBadge", {
+                      count: pendingPatches.length,
+                      defaultValue: `${pendingPatches.length} Pending Patches`,
+                    })}
                   </Badge>
                 ) : (
                   <Badge
