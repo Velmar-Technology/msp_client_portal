@@ -59,6 +59,27 @@ describe('SubscriptionController', () => {
         data: mockSubs,
       });
     });
+
+    it('should return client subscriptions for target tenantId if admin passes query tenantId', async () => {
+      const mockSubs = [{ id: 'sub-2', tenant_id: 'target-tenant' }];
+      mocks.getClientSubscriptions.mockResolvedValue(mockSubs);
+
+      const req = {
+        user: { role: 'ADMIN', tenantId: 'admin-tenant' },
+        query: { tenantId: 'target-tenant' },
+      } as unknown as Request;
+      const res = {
+        json: vi.fn(),
+      } as unknown as Response;
+
+      await subscriptionController.getAll(req, res);
+
+      expect(mocks.getClientSubscriptions).toHaveBeenCalledWith('target-tenant');
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        data: mockSubs,
+      });
+    });
   });
 
   describe('getById', () => {

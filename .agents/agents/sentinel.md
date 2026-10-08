@@ -2,6 +2,15 @@
 name: sentinel
 description: Business logic auditor & self-healing agent. Verifies BL-101 to BL-802 invariants and repairs operational drift.
 inheritMcp: true
+tools:
+  - run_command
+  - write_to_file
+  - replace_file_content
+  - view_file
+  - send_message
+  - schedule
+  - read_url_content
+  - search_web
 ---
 
 # Sentinel: Autonomous Business Logic Integrity & Self-Healing Agent

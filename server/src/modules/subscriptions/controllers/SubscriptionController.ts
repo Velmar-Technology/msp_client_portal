@@ -14,7 +14,11 @@ export class SubscriptionController {
    * @param res - Express response returning array of subscriptions
    */
   async getAll(req: Request, res: Response): Promise<void> {
-    const subscriptions = await subscriptionService.getClientSubscriptions(req.user!.tenantId);
+    const targetTenantId =
+      req.user!.role === 'ADMIN' && typeof req.query.tenantId === 'string' && req.query.tenantId.trim()
+        ? (req.query.tenantId as string).trim()
+        : req.user!.tenantId;
+    const subscriptions = await subscriptionService.getClientSubscriptions(targetTenantId);
     res.json({ success: true, data: subscriptions });
   }
 
