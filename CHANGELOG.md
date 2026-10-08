@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.13.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.13.1...v1.13.2) (2026-10-08)
+
+
+### Features
+
+* **crm:** color-code client type badges and localize plan names across leads table and board ([e61d376](https://github.com/Velmar-Technology/msp_client_portal/commit/e61d3765e411ea6cfaa0f06771ede3401291e756))
+
+
+### Bug Fixes
+
+* **rmm:** bridge live agent diagnostics and enable dual slot lookup ([4c2ce70](https://github.com/Velmar-Technology/msp_client_portal/commit/4c2ce70a7605d7bf893a0ab8a7b01e8984b37514))
+* **subscriptions:** allow admin query by tenantId and grant write/exec tools to sentinel agent ([84e3837](https://github.com/Velmar-Technology/msp_client_portal/commit/84e3837f924a31d76069fac8b9cdad420afe8298))
+* **tray:** static-link CRT and resolve light/dark theme contrast ([710b9d0](https://github.com/Velmar-Technology/msp_client_portal/commit/710b9d0fa19afe9f16a4b1a5642cd9cbcf0fe8aa)), closes [#d6d8](https://github.com/Velmar-Technology/msp_client_portal/issues/d6d8)
+
 ## [1.13.1](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.13.0...v1.13.1) (2026-10-07)
 
 
