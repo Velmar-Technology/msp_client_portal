@@ -10,6 +10,7 @@ describe('RmmPatchService', () => {
   let mockSubRepo: any;
   let mockZabbixSvc: any;
   let mockAlertSvc: any;
+  let mockGateway: any;
 
   const tenantId = 'tenant-123';
   const equipmentId = 'equip-456';
@@ -63,13 +64,19 @@ describe('RmmPatchService', () => {
       calculateFirstContactResolutionAutomation: vi.fn().mockReturnValue(0.45),
     };
 
+    mockGateway = {
+      isAgentConnected: vi.fn().mockReturnValue(false),
+      sendCommand: vi.fn(),
+    };
+
     service = new RmmPatchService(
       mockPatchRepo,
       mockTelemetryRepo,
       mockEquipRepo,
       mockSubRepo,
       mockZabbixSvc,
-      mockAlertSvc
+      mockAlertSvc,
+      mockGateway
     );
   });
 
@@ -81,11 +88,56 @@ describe('RmmPatchService', () => {
     expect(patches.length).toBe(3);
   });
 
-  it('triggers Zabbix telemetry scan and upserts device telemetry', async () => {
+  it('triggers Zabbix telemetry scan and upserts device telemetry when agent is offline', async () => {
     const telemetry = await service.triggerPatchScan(equipmentId, tenantId);
 
     expect(mockZabbixSvc.syncHost).toHaveBeenCalled();
     expect(mockTelemetryRepo.upsertTelemetry).toHaveBeenCalled();
+    expect(telemetry.agent_status).toBe('ONLINE');
+  });
+
+  it('captures live Rust endpoint agent diagnostics and skips Zabbix when agent is online', async () => {
+    mockGateway.isAgentConnected.mockReturnValue(true);
+    mockGateway.sendCommand.mockResolvedValue({
+      equipmentId,
+      command: 'DIAGNOSE_PC',
+      data: {
+        hostname: 'DEV-PC-1',
+        cpu: { global_usage_pct: 51.9 },
+        memory: { usage_pct: 48.9 },
+        disks: [
+          {
+            mount_point: 'C:\\',
+            usage_pct: 97.6,
+            used_bytes: 267954159616, // ~249.55 GB
+            total_bytes: 274426560512, // ~255.58 GB
+          },
+        ],
+      },
+      durationMs: 120,
+    });
+
+    const telemetry = await service.triggerPatchScan(equipmentId, tenantId);
+
+    expect(mockGateway.isAgentConnected).toHaveBeenCalledWith(equipmentId);
+    expect(mockGateway.sendCommand).toHaveBeenCalledWith(equipmentId, 'DIAGNOSE_PC', undefined, 10000);
+    expect(mockZabbixSvc.syncHost).not.toHaveBeenCalled();
+    expect(mockTelemetryRepo.upsertTelemetry).toHaveBeenCalledWith(
+      expect.objectContaining({
+        equipment_id: equipmentId,
+        tenant_id: tenantId,
+        agent_status: 'ONLINE',
+        cpu_usage: 51.9,
+        memory_usage: 48.9,
+        disk_usage: 97.6,
+        disk_used_gb: 249.55,
+        disk_total_gb: 255.58,
+      })
+    );
+    expect(mockEquipRepo.update).toHaveBeenCalledWith(
+      equipmentId,
+      expect.objectContaining({ agent_last_seen_at: expect.any(Date) })
+    );
     expect(telemetry.agent_status).toBe('ONLINE');
   });
 
