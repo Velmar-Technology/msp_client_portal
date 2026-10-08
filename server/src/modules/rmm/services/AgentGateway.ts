@@ -278,10 +278,12 @@ export class AgentGateway {
         // Handle TELEMETRY_PING / HEARTBEAT with metrics
         if ((data.command === 'TELEMETRY_PING' || data.command === 'HEARTBEAT') && data.payload) {
           agent.lastHeartbeat = new Date();
+          const targetEquipmentId = agent.slotId || equipmentId;
+          const targetTenantId = data.payload.tenant_id || agent.tenantId || agent.token || 'unknown';
           this.telemetryBuffer
             .bufferPing({
-              equipment_id: equipmentId,
-              tenant_id: data.payload.tenant_id || agent.token || 'unknown',
+              equipment_id: targetEquipmentId,
+              tenant_id: targetTenantId,
               agent_status: 'ONLINE',
               cpu_usage: data.payload.cpu_usage,
               memory_usage: data.payload.memory_usage,
@@ -464,10 +466,25 @@ export class AgentGateway {
     payload?: any,
     timeoutMs: number = AgentGateway.DEFAULT_TIMEOUT_MS
   ): Promise<AgentCommandResult> {
-    const localAgent = this.activeSockets.get(equipmentId);
+    let localAgent = this.activeSockets.get(equipmentId);
+    let targetKey = equipmentId;
+
+    if (!localAgent) {
+      for (const [key, agent] of this.activeSockets.entries()) {
+        if (
+          (agent.equipmentId === equipmentId || agent.slotId === equipmentId) &&
+          agent.ws.readyState === WebSocket.OPEN
+        ) {
+          localAgent = agent;
+          targetKey = key;
+          break;
+        }
+      }
+    }
+
     if (localAgent && localAgent.ws.readyState === WebSocket.OPEN) {
       const result = await this.dispatchLocalCommand(
-        equipmentId,
+        targetKey,
         command,
         payload,
         undefined,
@@ -616,7 +633,18 @@ export class AgentGateway {
    * @returns boolean indicating whether the message was dispatched (true if agent is online)
    */
   pushTicketChatMessage(equipmentId: string, payload: TicketChatPushPayload): boolean {
-    const agent = this.activeSockets.get(equipmentId);
+    let agent = this.activeSockets.get(equipmentId);
+    if (!agent || agent.ws.readyState !== WebSocket.OPEN) {
+      for (const a of this.activeSockets.values()) {
+        if (
+          (a.equipmentId === equipmentId || a.slotId === equipmentId) &&
+          a.ws.readyState === WebSocket.OPEN
+        ) {
+          agent = a;
+          break;
+        }
+      }
+    }
     if (!agent || agent.ws.readyState !== WebSocket.OPEN) {
       logger.debug(`[AgentGateway] Agent ${equipmentId} is offline. Chat push deferred.`);
       return false;

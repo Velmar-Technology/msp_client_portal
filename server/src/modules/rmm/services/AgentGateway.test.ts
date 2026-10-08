@@ -108,6 +108,30 @@ describe('AgentGateway', () => {
     expect(result.durationMs).toBeGreaterThanOrEqual(0);
   });
 
+  it('should send a command when resolved via slotId', async () => {
+    const ws = new MockWebSocket();
+    wss.emit('connection', ws, createMockReq('agent-instance-999'));
+    gateway.setAgentSlotId('agent-instance-999', 'slot-uuid-888');
+
+    ws.send = vi.fn((data: string, cb?: (err?: Error) => void) => {
+      if (cb) cb();
+      const envelope = JSON.parse(data);
+      setTimeout(() => {
+        ws.emit('message', JSON.stringify({
+          correlation_id: envelope.correlation_id,
+          command: 'RESPONSE',
+          payload: { hostname: 'SLOT-RESOLVED-PC', cpu_usage: 42 },
+        }));
+      }, 10);
+    });
+
+    const result = await gateway.sendCommand('slot-uuid-888', 'DIAGNOSE_PC');
+
+    expect(result.equipmentId).toBe('agent-instance-999');
+    expect(result.command).toBe('DIAGNOSE_PC');
+    expect(result.data).toEqual({ hostname: 'SLOT-RESOLVED-PC', cpu_usage: 42 });
+  });
+
   it('should reject with timeout if agent does not respond', async () => {
     const ws = new MockWebSocket();
     wss.emit('connection', ws, createMockReq('eq-005'));

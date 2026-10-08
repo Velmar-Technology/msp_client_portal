@@ -129,6 +129,44 @@ fn build_hello_payload(state: &AgentState) -> Value {
     payload
 }
 
+/// Builds the TELEMETRY_PING payload containing live CPU, memory, and primary disk metrics.
+fn build_telemetry_payload() -> Value {
+    let diag = diagnostics::gather_system_metrics();
+    let cpu_usage = diag.get("cpu").and_then(|c| c.get("global_usage_pct")).and_then(|v| v.as_f64()).unwrap_or(0.0);
+    let memory_usage = diag.get("memory").and_then(|m| m.get("usage_pct")).and_then(|v| v.as_f64()).unwrap_or(0.0);
+    let uptime_hours = diag.get("uptime_hours").and_then(|v| v.as_f64()).unwrap_or(0.0);
+
+    let mut disk_usage = 0.0;
+    let mut disk_used_gb = 0.0;
+    let mut disk_total_gb = 0.0;
+
+    if let Some(disks) = diag.get("disks").and_then(|d| d.as_array()) {
+        let primary_disk = disks.iter().find(|d| {
+            let mp = d.get("mount_point").and_then(|m| m.as_str()).unwrap_or("");
+            mp.starts_with("C:") || mp == "/"
+        }).or_else(|| disks.first());
+
+        if let Some(d) = primary_disk {
+            disk_usage = d.get("usage_pct").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            if let Some(used) = d.get("used_bytes").and_then(|v| v.as_u64()) {
+                disk_used_gb = (used as f64 / 1024_f64.powi(3) * 100.0).round() / 100.0;
+            }
+            if let Some(total) = d.get("total_bytes").and_then(|v| v.as_u64()) {
+                disk_total_gb = (total as f64 / 1024_f64.powi(3) * 100.0).round() / 100.0;
+            }
+        }
+    }
+
+    serde_json::json!({
+        "cpu_usage": (cpu_usage * 10.0).round() / 10.0,
+        "memory_usage": (memory_usage * 10.0).round() / 10.0,
+        "disk_usage": (disk_usage * 10.0).round() / 10.0,
+        "disk_used_gb": disk_used_gb,
+        "disk_total_gb": disk_total_gb,
+        "uptime_hours": uptime_hours
+    })
+}
+
 /// Renders the pairing code banner the technician reads from the console.
 fn print_pairing_banner(state: &AgentState) {
     let Some(code) = state.active_pairing_code() else {
@@ -223,9 +261,31 @@ async fn run_session(config: &AgentConfig) -> Result<SessionOutcome, Box<dyn std
     // Commit any active upgrade transaction now that TLS WebSocket handshake is validated
     upgrade::commit_upgrade_success();
 
+    // Periodic telemetry interval (every 60 seconds)
+    let mut telemetry_ticker = tokio::time::interval(std::time::Duration::from_secs(60));
+    telemetry_ticker.tick().await; // Consume initial immediate tick
+
     // Main message loop
-    while let Some(msg_result) = reader.next().await {
-        match msg_result {
+    loop {
+        tokio::select! {
+            _ = telemetry_ticker.tick() => {
+                let ping = AgentEnvelope {
+                    correlation_id: uuid::Uuid::new_v4().to_string(),
+                    command: "TELEMETRY_PING".into(),
+                    payload: Some(build_telemetry_payload()),
+                };
+                if let Ok(json_str) = serde_json::to_string(&ping) {
+                    if let Err(e) = writer.send(Message::Text(json_str)).await {
+                        warn!("Failed to send periodic TELEMETRY_PING: {}", e);
+                        break;
+                    }
+                }
+            }
+            msg_result = reader.next() => {
+                let Some(msg_result) = msg_result else {
+                    break;
+                };
+                match msg_result {
             Ok(Message::Text(text)) => {
                 match serde_json::from_str::<AgentEnvelope>(&text) {
                     Ok(envelope) => {
@@ -343,6 +403,8 @@ async fn run_session(config: &AgentConfig) -> Result<SessionOutcome, Box<dyn std
                 break;
             }
             _ => {}
+                }
+            }
         }
     }
 
