@@ -4,6 +4,7 @@ import { EquipmentRepository, equipmentRepository } from '@modules/equipment';
 import { SubscriptionRepository, subscriptionRepository } from '@modules/subscriptions';
 import { AlertService, alertService } from '@modules/rmm/services/AlertService';
 import { ZabbixService, zabbixService } from '@modules/rmm/services/ZabbixService';
+import { AgentGateway, agentGateway } from '@modules/rmm/services/AgentGateway';
 import { NotFoundError, ForbiddenError } from '@shared/errors';
 import { RmmPatchItem, RmmDeviceTelemetry, RmmOverviewStats, RmmPatchStatus, RmmPatchSeverity } from '@shared/types';
 import { logger } from '@shared/utils/logger';
@@ -22,6 +23,7 @@ export class RmmPatchService {
    * @param subRepo - Subscription repository
    * @param zabbixSvc - Zabbix agent bridge service
    * @param alertSvc - RMM alert service
+   * @param gateway - WebSocket agent gateway relay
    */
   constructor(
     private patchRepo: RmmPatchRepository = rmmPatchRepository,
@@ -29,7 +31,8 @@ export class RmmPatchService {
     private equipRepo: EquipmentRepository = equipmentRepository,
     private subRepo: SubscriptionRepository = subscriptionRepository,
     private zabbixSvc: ZabbixService = zabbixService,
-    private alertSvc: AlertService = alertService
+    private alertSvc: AlertService = alertService,
+    private gateway: AgentGateway = agentGateway
   ) {}
 
   private get patchRepository(): RmmPatchRepository {
@@ -54,6 +57,10 @@ export class RmmPatchService {
 
   private get alertService(): AlertService {
     return this.alertSvc || alertService;
+  }
+
+  private get agentGatewayService(): AgentGateway {
+    return this.gateway || agentGateway;
   }
 
   /**
@@ -161,12 +168,86 @@ export class RmmPatchService {
     }
 
     const targetTenantId = equipment.tenant_id;
+    const pendingCount = await this.patchRepository.countPendingForEquipment(equipmentId);
 
-    // Sync host with Zabbix
+    // 1. Check if remote Rust agent is actively connected over WebSocket
+    const agentLookupId = equipment.agent_instance_id || equipmentId;
+    const isOnline = this.agentGatewayService.isAgentConnected(agentLookupId);
+
+    if (isOnline) {
+      try {
+        const diagResult = await this.agentGatewayService.sendCommand(
+          agentLookupId,
+          'DIAGNOSE_PC',
+          undefined,
+          10_000
+        );
+
+        if (diagResult?.data) {
+          const diag = diagResult.data;
+          const cpuUsage = typeof diag.cpu?.global_usage_pct === 'number'
+            ? Math.round(diag.cpu.global_usage_pct * 10) / 10
+            : undefined;
+
+          const memUsage = typeof diag.memory?.usage_pct === 'number'
+            ? Math.round(diag.memory.usage_pct * 10) / 10
+            : undefined;
+
+          // Find primary drive (C:\ on Windows or / on Linux) or first available disk
+          let primaryDisk: any = null;
+          if (Array.isArray(diag.disks) && diag.disks.length > 0) {
+            primaryDisk =
+              diag.disks.find((d: any) => d.mount_point?.startsWith('C:') || d.mount_point === '/') ||
+              diag.disks[0];
+          }
+
+          let diskUsage: number | undefined;
+          let diskUsedGb: number | undefined;
+          let diskTotalGb: number | undefined;
+
+          if (primaryDisk) {
+            diskUsage = typeof primaryDisk.usage_pct === 'number'
+              ? Math.round(primaryDisk.usage_pct * 10) / 10
+              : undefined;
+            if (typeof primaryDisk.used_bytes === 'number') {
+              diskUsedGb = Math.round((primaryDisk.used_bytes / (1024 ** 3)) * 100) / 100;
+            }
+            if (typeof primaryDisk.total_bytes === 'number') {
+              diskTotalGb = Math.round((primaryDisk.total_bytes / (1024 ** 3)) * 100) / 100;
+            }
+          }
+
+          const existingTelemetry = await this.telemetryRepository.findByEquipment(equipmentId);
+
+          const telemetry = await this.telemetryRepository.upsertTelemetry({
+            equipment_id: equipmentId,
+            tenant_id: targetTenantId,
+            zabbix_host_id: existingTelemetry?.zabbix_host_id,
+            agent_status: 'ONLINE',
+            cpu_usage: cpuUsage,
+            memory_usage: memUsage,
+            disk_usage: diskUsage,
+            disk_used_gb: diskUsedGb,
+            disk_total_gb: diskTotalGb,
+            pending_patch_count: pendingCount,
+            last_sync_at: new Date(),
+          });
+
+          await this.equipmentRepository.update(equipmentId, {
+            agent_last_seen_at: new Date(),
+          });
+
+          logger.info(`[RmmPatchService] Captured live agent diagnostics for ${equipmentId} (${equipment.device_name || 'Device'})`);
+          return telemetry;
+        }
+      } catch (err) {
+        logger.warn(`[RmmPatchService] Failed to query live agent diagnostics for ${equipmentId}, falling back to Zabbix:`, err);
+      }
+    }
+
+    // 2. Fall back to Zabbix agent metrics if Rust endpoint agent is not connected
     const zabbixHostId = await this.zabbixService.syncHost(equipmentId, equipment.device_name || 'Device');
     const metrics = await this.zabbixService.getHostTelemetry(equipmentId, zabbixHostId);
-
-    const pendingCount = await this.patchRepository.countPendingForEquipment(equipmentId);
 
     const telemetry = await this.telemetryRepository.upsertTelemetry({
       equipment_id: equipmentId,
