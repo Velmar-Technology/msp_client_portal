@@ -5,6 +5,7 @@ import { SubscriptionRepository, subscriptionRepository } from '@modules/subscri
 import { AlertService, alertService } from '@modules/rmm/services/AlertService';
 import { ZabbixService, zabbixService } from '@modules/rmm/services/ZabbixService';
 import { AgentGateway, agentGateway } from '@modules/rmm/services/AgentGateway';
+import { PatchCorrelationService, patchCorrelationService } from '@modules/rmm/services/PatchCorrelationService';
 import { NotFoundError, ForbiddenError } from '@shared/errors';
 import { RmmPatchItem, RmmDeviceTelemetry, RmmOverviewStats, RmmPatchStatus, RmmPatchSeverity } from '@shared/types';
 import { logger } from '@shared/utils/logger';
@@ -24,6 +25,7 @@ export class RmmPatchService {
    * @param zabbixSvc - Zabbix agent bridge service
    * @param alertSvc - RMM alert service
    * @param gateway - WebSocket agent gateway relay
+   * @param correlationSvc - OSINT threat correlation service
    */
   constructor(
     private patchRepo: RmmPatchRepository = rmmPatchRepository,
@@ -32,7 +34,8 @@ export class RmmPatchService {
     private subRepo: SubscriptionRepository = subscriptionRepository,
     private zabbixSvc: ZabbixService = zabbixService,
     private alertSvc: AlertService = alertService,
-    private gateway: AgentGateway = agentGateway
+    private gateway: AgentGateway = agentGateway,
+    private correlationSvc: PatchCorrelationService = patchCorrelationService
   ) {}
 
   private get patchRepository(): RmmPatchRepository {
@@ -57,6 +60,10 @@ export class RmmPatchService {
 
   private get alertService(): AlertService {
     return this.alertSvc || alertService;
+  }
+
+  private get correlationService(): PatchCorrelationService {
+    return this.correlationSvc || patchCorrelationService;
   }
 
   private get agentGatewayService(): AgentGateway {
@@ -92,7 +99,8 @@ export class RmmPatchService {
   }
 
   /**
-   * Retrieves pending and installed software patches for an equipment asset, seeding default patches if empty.
+   * Retrieves pending and installed software patches for an equipment asset,
+   * dynamically correlating against live OSINT threat feeds (CISA KEV, NIST NVD) if empty.
    *
    * @param equipmentId - Equipment UUID
    * @param tenantId - Calling user tenant UUID
@@ -113,36 +121,26 @@ export class RmmPatchService {
     const targetTenantId = equipment.tenant_id;
     let patches = await this.patchRepository.findByEquipment(equipmentId, targetTenantId);
 
-    // Seed default patches if device exists but has no patch entries
+    // Dynamic OSINT threat correlation if device exists but has no patch entries
     if (patches.length === 0) {
-      const p1 = await this.patchRepository.createPatch({
-        equipment_id: equipmentId,
-        patch_id: 'KB5034123',
-        title: 'Cumulative Windows Security Update (KB5034123)',
-        severity: RmmPatchSeverity.CRITICAL,
-        status: RmmPatchStatus.PENDING,
-        tenant_id: targetTenantId,
-      });
+      const osProfile = this.correlationService.detectOsProfile(equipment);
+      const candidates = await this.correlationService.correlateAdvisoriesForDevice(osProfile);
 
-      const p2 = await this.patchRepository.createPatch({
-        equipment_id: equipmentId,
-        patch_id: 'CVE-2024-21412',
-        title: 'Internet Shortcut Files Remote Code Execution Vulnerability Patch',
-        severity: RmmPatchSeverity.HIGH,
-        status: RmmPatchStatus.PENDING,
-        tenant_id: targetTenantId,
-      });
+      const createdPatches: RmmPatchItem[] = [];
+      for (const cand of candidates) {
+        const patchRecord = await this.patchRepository.createPatch({
+          equipment_id: equipmentId,
+          patch_id: cand.patchId,
+          title: cand.title,
+          severity: cand.severity,
+          status: cand.status,
+          release_date: cand.releaseDate,
+          tenant_id: targetTenantId,
+        });
+        createdPatches.push(patchRecord);
+      }
 
-      const p3 = await this.patchRepository.createPatch({
-        equipment_id: equipmentId,
-        patch_id: 'KB5034848',
-        title: 'System Driver Stability & Performance Servicing Stack Update',
-        severity: RmmPatchSeverity.MEDIUM,
-        status: RmmPatchStatus.INSTALLED,
-        tenant_id: targetTenantId,
-      });
-
-      patches = [p1, p2, p3];
+      patches = createdPatches;
     }
 
     return patches;

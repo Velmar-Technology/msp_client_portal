@@ -69,6 +69,34 @@ describe('RmmPatchService', () => {
       sendCommand: vi.fn(),
     };
 
+    const mockCorrelationSvc: any = {
+      detectOsProfile: vi.fn().mockReturnValue({
+        equipmentId,
+        deviceName: 'Server-01',
+        osFamily: 'WINDOWS',
+      }),
+      correlateAdvisoriesForDevice: vi.fn().mockResolvedValue([
+        {
+          patchId: 'CVE-2024-21412',
+          title: 'Internet Shortcut Files Remote Code Execution Vulnerability Patch',
+          severity: 'HIGH',
+          status: 'PENDING',
+          releaseDate: new Date('2024-02-13'),
+          summary: 'Security bypass',
+          isKnownExploited: true,
+        },
+        {
+          patchId: 'CVE-2023-38831',
+          title: 'WinRAR Remote Code Execution Vulnerability',
+          severity: 'HIGH',
+          status: 'PENDING',
+          releaseDate: new Date('2023-08-23'),
+          summary: 'Archive code execution',
+          isKnownExploited: true,
+        },
+      ]),
+    };
+
     service = new RmmPatchService(
       mockPatchRepo,
       mockTelemetryRepo,
@@ -76,16 +104,18 @@ describe('RmmPatchService', () => {
       mockSubRepo,
       mockZabbixSvc,
       mockAlertSvc,
-      mockGateway
+      mockGateway,
+      mockCorrelationSvc
     );
   });
 
-  it('seeds default security patches if equipment has no existing patches', async () => {
+  it('dynamically correlates OSINT security advisories when equipment has no existing patches', async () => {
     const patches = await service.getEquipmentPatches(equipmentId, tenantId);
 
     expect(mockEquipRepo.findById).toHaveBeenCalledWith(equipmentId);
-    expect(mockPatchRepo.createPatch).toHaveBeenCalledTimes(3);
-    expect(patches.length).toBe(3);
+    expect(mockPatchRepo.createPatch).toHaveBeenCalledTimes(2);
+    expect(patches.length).toBe(2);
+    expect(patches[0].patch_id).toBe('CVE-2024-21412');
   });
 
   it('triggers Zabbix telemetry scan and upserts device telemetry when agent is offline', async () => {
