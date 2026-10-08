@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.13.3](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.13.2...v1.13.3) (2026-10-08)
+
+
+### Features
+
+* **rmm:** replace hardcoded patches with OSINT threat advisory and KEV correlation ([6fa07ab](https://github.com/Velmar-Technology/msp_client_portal/commit/6fa07abb3044b80f53604001643307db64c23994))
+
 ## [1.13.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.13.1...v1.13.2) (2026-10-08)
 
 
