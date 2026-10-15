@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useState, useCallback, useRef } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Fragment } from "react";
-import { ChevronDown, ChevronRight, HelpCircle, Lock } from "lucide-react";
+import { ChevronDown, ChevronRight, HelpCircle, Lock, ChevronsUpDown, Search, Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import logoUrl from "@/assets/logo.png";
 import { useSidebar, type NavItem, type NavSubItem } from "@/hooks/useSidebar";
@@ -29,37 +29,120 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import type { Subscription } from "@/features/subscriptions";
+import { SpotlightSearchModal } from "./SpotlightSearchModal";
 
 const navItemButtonClass =
-  "h-8 gap-2.5 px-2.5 py-1 text-[13px] text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-foreground transition-colors";
+  "h-8 gap-2.5 px-2.5 py-1 text-[13px] rounded-lg text-muted-foreground hover:bg-muted/60 hover:text-foreground data-[active=true]:bg-muted/80 data-[active=true]:font-medium data-[active=true]:text-foreground transition-colors";
 
 const navGroupHeadingClass =
-  "px-1.5 pb-1 pt-3 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50";
+  "px-2 pb-1 pt-3 block text-[11px] font-medium tracking-normal text-muted-foreground/60";
 
 interface SidebarBrandProps {
   logo: string;
   portalTitle: string;
   infraTitle: string;
+  workspaceName?: string;
+  planName?: string;
+  userRole?: string;
+  onOpenSearch?: () => void;
 }
 
-export function SidebarBrand({ logo, portalTitle, infraTitle }: SidebarBrandProps) {
+export function SidebarBrand({
+  logo,
+  portalTitle,
+  infraTitle,
+  workspaceName,
+  planName,
+  userRole,
+  onOpenSearch,
+}: SidebarBrandProps) {
+  const displayTitle = workspaceName || portalTitle;
+  const displaySubtitle = planName || infraTitle;
+
   return (
-    <SidebarHeader className="border-b border-sidebar-border/50 px-3 py-2.5 bg-sidebar">
-      <div className="flex items-center gap-2.5">
-        <img
-          src={logo}
-          alt="Velmar Logo"
-          className="h-5.5 w-auto max-w-full shrink-0 object-contain dark:brightness-110"
-        />
-        <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-          <h1 className="text-xs font-bold text-sidebar-foreground font-heading leading-none">{portalTitle}</h1>
-          <span className="text-[9px] text-muted-foreground font-medium mt-0.5 uppercase tracking-wider">
-            {infraTitle}
-          </span>
+    <SidebarHeader className="border-b border-sidebar-border/50 p-2.5 bg-sidebar space-y-2">
+      {/* 1. ElevenLabs Workspace Switcher Dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            data-slot="workspace-switcher"
+            aria-label="Workspace Switcher"
+            className="flex w-full items-center gap-2.5 rounded-lg border border-border/60 bg-muted/20 p-2 text-left hover:bg-muted/50 transition-colors group-data-[collapsible=icon]:p-1 group-data-[collapsible=icon]:justify-center outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <div className="flex size-7 items-center justify-center rounded-md border border-border/80 bg-background shrink-0 overflow-hidden shadow-xs">
+              <img
+                src={logo}
+                alt="Workspace Logo"
+                className="h-4.5 w-auto max-w-full object-contain dark:brightness-110"
+              />
+            </div>
+            <div className="flex flex-col overflow-hidden text-left group-data-[collapsible=icon]:hidden flex-1 min-w-0">
+              <span className="truncate text-xs font-semibold text-sidebar-foreground leading-tight">
+                {displayTitle}
+              </span>
+              <span className="truncate text-[10px] text-muted-foreground font-medium">
+                {displaySubtitle}
+              </span>
+            </div>
+            <ChevronsUpDown className="size-3.5 text-muted-foreground/60 shrink-0 ml-auto group-data-[collapsible=icon]:hidden" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56" align="start">
+          <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
+            Workspaces
+          </DropdownMenuLabel>
+          <DropdownMenuItem className="flex items-center gap-2">
+            <span className="truncate font-medium">{displayTitle}</span>
+            <Check className="ml-auto size-3.5 text-foreground" />
+          </DropdownMenuItem>
+          {userRole === "ADMIN" && (
+            <>
+              <DropdownMenuItem className="text-muted-foreground">
+                <span className="truncate">Acme Corporation</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="text-muted-foreground">
+                <span className="truncate">Beta Industries</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="text-muted-foreground">
+                <span className="truncate">Gamma Retail Group</span>
+              </DropdownMenuItem>
+            </>
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <NavLink to="/plans" className="cursor-pointer">
+              Manage Subscriptions
+            </NavLink>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <NavLink to="/settings/ai" className="cursor-pointer">
+              AI Configuration
+            </NavLink>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* 2. ElevenLabs Quick Search Trigger (⌘K) */}
+      <button
+        type="button"
+        onClick={onOpenSearch}
+        data-slot="sidebar-search-trigger"
+        className="flex h-8 w-full items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-2.5 text-xs text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8"
+        title="Quick search (⌘K)"
+      >
+        <div className="flex items-center gap-2">
+          <Search className="size-3.5 shrink-0 text-muted-foreground/70" />
+          <span className="group-data-[collapsible=icon]:hidden text-[11px]">Search...</span>
         </div>
-      </div>
+        <kbd className="pointer-events-none inline-flex h-4.5 select-none items-center rounded border border-border/60 bg-muted/60 px-1 font-mono text-[9px] font-medium text-muted-foreground group-data-[collapsible=icon]:hidden">
+          ⌘K
+        </kbd>
+      </button>
     </SidebarHeader>
   );
 }
@@ -310,6 +393,7 @@ export function SidebarNavList({
 export function AppSidebar() {
   const { t } = useTranslation();
   const loc = useLocation();
+  const [searchOpen, setSearchOpen] = useState(false);
   const {
     user,
     location,
@@ -385,82 +469,93 @@ export function AppSidebar() {
   }, []);
 
   return (
-    <ShadcnSidebar collapsible="icon" className="border-r border-sidebar-border/50 bg-sidebar">
-      <SidebarBrand logo={logoUrl} portalTitle={t("topNav.portal")} infraTitle={t("nav.infrastructure")} />
+    <>
+      <ShadcnSidebar collapsible="icon" className="border-r border-sidebar-border/50 bg-sidebar">
+        <SidebarBrand
+          logo={logoUrl}
+          portalTitle={t("topNav.portal")}
+          infraTitle={t("nav.infrastructure")}
+          workspaceName={user?.name ? `${user.name}'s Workspace` : t("topNav.portal")}
+          planName={groupedSubs[0]?.[0]?.service_name || t("nav.infrastructure")}
+          userRole={user?.role}
+          onOpenSearch={() => setSearchOpen(true)}
+        />
 
-      <SidebarContent className="py-1 bg-sidebar">
-        <SidebarGroup className="p-0">
-          <SidebarGroupContent>
-            <SidebarNavList
-              navItems={navItems}
-              checkIsActive={checkIsActive}
-              checkIsGroupActive={checkIsGroupActive}
-              isFeatureLocked={isFeatureLocked}
-              counters={counters}
-            />
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
+        <SidebarContent className="py-1 bg-sidebar">
+          <SidebarGroup className="p-0">
+            <SidebarGroupContent>
+              <SidebarNavList
+                navItems={navItems}
+                checkIsActive={checkIsActive}
+                checkIsGroupActive={checkIsGroupActive}
+                isFeatureLocked={isFeatureLocked}
+                counters={counters}
+              />
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border/50 p-1 bg-sidebar group-data-[collapsible=icon]:px-0">
-        {user?.role === "CLIENT" &&
-          groupedSubs.length > 0 &&
-          !isPublicLegalPage &&
-          (hasMultipleGroups ? (
-            <Collapsible defaultOpen className="group/collapsible-sub">
-              <SidebarMenu className="px-0">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton className="h-auto w-full px-1.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
-                      <span>{t("sidebar.subscriptions")}</span>
-                      <span className="ml-auto rounded-full bg-sidebar-accent px-1.5 py-0.5 text-[9px] font-mono font-bold tabular-nums text-muted-foreground">
-                        {groupedSubs.length}
-                      </span>
-                      <ChevronRight
-                        width={32}
-                        height={32}
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        className="text-muted-foreground/50 transition-transform duration-200 group-data-[state=open]/collapsible-sub:rotate-90"
-                      />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-1 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1">
-                    <div className="space-y-0 pb-0.5">
-                      {groupedSubs.map((group) => (
-                        <ActiveSubCard key={group[0].plan} subs={group} planNameMap={planNameMap} />
-                      ))}
-                    </div>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </Collapsible>
-          ) : (
-            <ActiveSubCard subs={groupedSubs[0]} planNameMap={planNameMap} />
-          ))}
-        {user && !isPublicLegalPage && (
-          <SidebarMenu className="group-data-[collapsible=icon]:px-2">
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                isActive={checkIsActive("/help")}
-                tooltip={t("nav.help")}
-                className={navItemButtonClass}
-              >
-                <NavLink
-                  to="/help"
-                  className="flex items-center gap-2.5"
-                  onMouseEnter={() => preloadRoute("/help")}
-                  onFocus={() => preloadRoute("/help")}
+        <SidebarFooter className="border-t border-sidebar-border/50 p-1 bg-sidebar group-data-[collapsible=icon]:px-0">
+          {user?.role === "CLIENT" &&
+            groupedSubs.length > 0 &&
+            !isPublicLegalPage &&
+            (hasMultipleGroups ? (
+              <Collapsible defaultOpen className="group/collapsible-sub">
+                <SidebarMenu className="px-0">
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton className="h-auto w-full px-1.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
+                        <span>{t("sidebar.subscriptions")}</span>
+                        <span className="ml-auto rounded-full bg-sidebar-accent px-1.5 py-0.5 text-[9px] font-mono font-bold tabular-nums text-muted-foreground">
+                          {groupedSubs.length}
+                        </span>
+                        <ChevronRight
+                          width={32}
+                          height={32}
+                          viewBox="0 0 24 24"
+                          strokeWidth={1.5}
+                          className="text-muted-foreground/50 transition-transform duration-200 group-data-[state=open]/collapsible-sub:rotate-90"
+                        />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-1 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1">
+                      <div className="space-y-0 pb-0.5">
+                        {groupedSubs.map((group) => (
+                          <ActiveSubCard key={group[0].plan} subs={group} planNameMap={planNameMap} />
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </Collapsible>
+            ) : (
+              <ActiveSubCard subs={groupedSubs[0]} planNameMap={planNameMap} />
+            ))}
+          {user && !isPublicLegalPage && (
+            <SidebarMenu className="group-data-[collapsible=icon]:px-2">
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={checkIsActive("/help")}
+                  tooltip={t("nav.help")}
+                  className={navItemButtonClass}
                 >
-                  <HelpCircle width={32} height={32} viewBox="0 0 24 24" className="shrink-0" strokeWidth={1.5} />
-                  <span className="truncate group-data-[collapsible=icon]:hidden">{t("nav.help")}</span>
-                </NavLink>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        )}
-      </SidebarFooter>
-    </ShadcnSidebar>
+                  <NavLink
+                    to="/help"
+                    className="flex items-center gap-2.5"
+                    onMouseEnter={() => preloadRoute("/help")}
+                    onFocus={() => preloadRoute("/help")}
+                  >
+                    <HelpCircle width={32} height={32} viewBox="0 0 24 24" className="shrink-0" strokeWidth={1.5} />
+                    <span className="truncate group-data-[collapsible=icon]:hidden">{t("nav.help")}</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          )}
+        </SidebarFooter>
+      </ShadcnSidebar>
+      <SpotlightSearchModal open={searchOpen} onOpenChange={setSearchOpen} />
+    </>
   );
 }
