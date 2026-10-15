@@ -36,114 +36,132 @@ import type { Subscription } from "@/features/subscriptions";
 import { SpotlightSearchModal } from "./SpotlightSearchModal";
 
 const navItemButtonClass =
-  "h-8 gap-2.5 px-2.5 py-1 text-[13px] rounded-lg text-muted-foreground hover:bg-muted/60 hover:text-foreground data-[active=true]:bg-muted/80 data-[active=true]:font-medium data-[active=true]:text-foreground transition-colors";
+  "h-8 gap-2.5 px-2.5 py-1 text-[13px] rounded-[10px] text-muted-foreground hover:bg-muted/50 hover:text-foreground data-[active=true]:bg-muted data-[active=true]:font-medium data-[active=true]:text-foreground transition-colors";
 
 const navGroupHeadingClass =
-  "px-2 pb-1 pt-3 block text-[11px] font-medium tracking-normal text-muted-foreground/60";
+  "px-2 pb-1.5 pt-3.5 block text-xs font-medium tracking-normal text-muted-foreground/70 group-data-[collapsible=icon]:hidden";
 
 interface SidebarBrandProps {
   logo: string;
   portalTitle: string;
-  infraTitle: string;
-  workspaceName?: string;
-  planName?: string;
-  userRole?: string;
   onOpenSearch?: () => void;
 }
 
 export function SidebarBrand({
   logo,
   portalTitle,
-  infraTitle,
-  workspaceName,
-  planName,
-  userRole,
   onOpenSearch,
 }: SidebarBrandProps) {
-  const displayTitle = workspaceName || portalTitle;
-  const displaySubtitle = planName || infraTitle;
-
   return (
-    <SidebarHeader className="border-b border-sidebar-border/50 p-2.5 bg-sidebar space-y-2">
-      {/* 1. ElevenLabs Workspace Switcher Dropdown */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            data-slot="workspace-switcher"
-            aria-label="Workspace Switcher"
-            className="flex w-full items-center gap-2.5 rounded-lg border border-border/60 bg-muted/20 p-2 text-left hover:bg-muted/50 transition-colors group-data-[collapsible=icon]:p-1 group-data-[collapsible=icon]:justify-center outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <div className="flex size-7 items-center justify-center rounded-md border border-border/80 bg-background shrink-0 overflow-hidden shadow-xs">
-              <img
-                src={logo}
-                alt="Workspace Logo"
-                className="h-4.5 w-auto max-w-full object-contain dark:brightness-110"
-              />
-            </div>
-            <div className="flex flex-col overflow-hidden text-left group-data-[collapsible=icon]:hidden flex-1 min-w-0">
-              <span className="truncate text-xs font-semibold text-sidebar-foreground leading-tight">
-                {displayTitle}
-              </span>
-              <span className="truncate text-[10px] text-muted-foreground font-medium">
-                {displaySubtitle}
-              </span>
-            </div>
-            <ChevronsUpDown className="size-3.5 text-muted-foreground/60 shrink-0 ml-auto group-data-[collapsible=icon]:hidden" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56" align="start">
-          <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
-            Workspaces
-          </DropdownMenuLabel>
-          <DropdownMenuItem className="flex items-center gap-2">
-            <span className="truncate font-medium">{displayTitle}</span>
-            <Check className="ml-auto size-3.5 text-foreground" />
-          </DropdownMenuItem>
-          {userRole === "ADMIN" && (
-            <>
-              <DropdownMenuItem className="text-muted-foreground">
-                <span className="truncate">Acme Corporation</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-muted-foreground">
-                <span className="truncate">Beta Industries</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-muted-foreground">
-                <span className="truncate">Gamma Retail Group</span>
-              </DropdownMenuItem>
-            </>
-          )}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <NavLink to="/plans" className="cursor-pointer">
-              Manage Subscriptions
-            </NavLink>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <NavLink to="/settings/ai" className="cursor-pointer">
-              AI Configuration
-            </NavLink>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+    <SidebarHeader className="border-b border-sidebar-border/50 p-3 bg-sidebar space-y-2.5">
+      {/* 1. ElevenLabs Brand Row */}
+      <div className="flex items-center gap-2.5 px-0.5">
+        <div className="flex size-7 items-center justify-center rounded-lg border border-border/80 bg-background shrink-0 shadow-xs overflow-hidden">
+          <img
+            src={logo}
+            alt="Logo"
+            className="h-4.5 w-auto max-w-full object-contain dark:brightness-110"
+          />
+        </div>
+        <span className="font-semibold text-sm tracking-tight text-foreground truncate group-data-[collapsible=icon]:hidden">
+          {portalTitle}
+        </span>
+      </div>
 
-      {/* 2. ElevenLabs Quick Search Trigger (⌘K) */}
+      {/* 2. ElevenLabs Quick Search & Create Trigger (⌘K) */}
       <button
         type="button"
         onClick={onOpenSearch}
         data-slot="sidebar-search-trigger"
-        className="flex h-8 w-full items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-2.5 text-xs text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8"
-        title="Quick search (⌘K)"
+        className="relative flex h-8 w-full items-center justify-between rounded-xl border border-border/80 bg-background px-2.5 text-[13px] font-medium text-muted-foreground shadow-none hover:bg-muted/50 hover:text-foreground transition-colors group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8 cursor-pointer"
+        title="Search & create (⌘K)"
       >
         <div className="flex items-center gap-2">
-          <Search className="size-3.5 shrink-0 text-muted-foreground/70" />
-          <span className="group-data-[collapsible=icon]:hidden text-[11px]">Search...</span>
+          <Search className="size-3.5 shrink-0 text-muted-foreground/80" />
+          <span className="group-data-[collapsible=icon]:hidden truncate">Search & create</span>
         </div>
-        <kbd className="pointer-events-none inline-flex h-4.5 select-none items-center rounded border border-border/60 bg-muted/60 px-1 font-mono text-[9px] font-medium text-muted-foreground group-data-[collapsible=icon]:hidden">
+        <kbd className="pointer-events-none inline-flex h-4.5 select-none items-center rounded border border-border/60 bg-muted/40 px-1 font-mono text-[9px] font-medium text-muted-foreground group-data-[collapsible=icon]:hidden">
           ⌘K
         </kbd>
       </button>
     </SidebarHeader>
+  );
+}
+
+export interface SidebarWorkspaceSwitcherProps {
+  logo: string;
+  displayTitle: string;
+  displaySubtitle: string;
+  userRole?: string;
+}
+
+export function SidebarWorkspaceSwitcher({
+  logo,
+  displayTitle,
+  displaySubtitle,
+  userRole,
+}: SidebarWorkspaceSwitcherProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          data-slot="workspace-switcher"
+          aria-label="Workspace Switcher"
+          className="flex w-full items-center gap-2.5 rounded-lg border border-border/60 bg-muted/20 p-2 text-left hover:bg-muted/50 transition-colors group-data-[collapsible=icon]:p-1 group-data-[collapsible=icon]:justify-center outline-hidden focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+        >
+          <div className="flex size-7 items-center justify-center rounded-md border border-border/80 bg-background shrink-0 overflow-hidden shadow-xs">
+            <img
+              src={logo}
+              alt="Workspace Logo"
+              className="h-4.5 w-auto max-w-full object-contain dark:brightness-110"
+            />
+          </div>
+          <div className="flex flex-col overflow-hidden text-left group-data-[collapsible=icon]:hidden flex-1 min-w-0">
+            <span className="truncate text-xs font-semibold text-sidebar-foreground leading-tight">
+              {displayTitle}
+            </span>
+            <span className="truncate text-[10px] text-muted-foreground font-medium">
+              {displaySubtitle}
+            </span>
+          </div>
+          <ChevronsUpDown className="size-3.5 text-muted-foreground/60 shrink-0 ml-auto group-data-[collapsible=icon]:hidden" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56" align="start" side="top">
+        <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
+          Workspaces
+        </DropdownMenuLabel>
+        <DropdownMenuItem className="flex items-center gap-2">
+          <span className="truncate font-medium">{displayTitle}</span>
+          <Check className="ml-auto size-3.5 text-foreground" />
+        </DropdownMenuItem>
+        {userRole === "ADMIN" && (
+          <>
+            <DropdownMenuItem className="text-muted-foreground">
+              <span className="truncate">Acme Corporation</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-muted-foreground">
+              <span className="truncate">Beta Industries</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-muted-foreground">
+              <span className="truncate">Gamma Retail Group</span>
+            </DropdownMenuItem>
+          </>
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <NavLink to="/plans" className="cursor-pointer">
+            Manage Subscriptions
+          </NavLink>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <NavLink to="/settings/ai" className="cursor-pointer">
+            AI Configuration
+          </NavLink>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -474,10 +492,6 @@ export function AppSidebar() {
         <SidebarBrand
           logo={logoUrl}
           portalTitle={t("topNav.portal")}
-          infraTitle={t("nav.infrastructure")}
-          workspaceName={user?.name ? `${user.name}'s Workspace` : t("topNav.portal")}
-          planName={groupedSubs[0]?.[0]?.service_name || t("nav.infrastructure")}
-          userRole={user?.role}
           onOpenSearch={() => setSearchOpen(true)}
         />
 
@@ -552,6 +566,18 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
+          )}
+
+          {/* 3. Bottom Platform/Workspace Switcher (ElevenLabs footer position) */}
+          {user && !isPublicLegalPage && (
+            <div className="pt-1">
+              <SidebarWorkspaceSwitcher
+                logo={logoUrl}
+                displayTitle={user?.name ? `${user.name}'s Workspace` : t("topNav.portal")}
+                displaySubtitle={groupedSubs[0]?.[0]?.service_name || t("nav.infrastructure")}
+                userRole={user?.role}
+              />
+            </div>
           )}
         </SidebarFooter>
       </ShadcnSidebar>
