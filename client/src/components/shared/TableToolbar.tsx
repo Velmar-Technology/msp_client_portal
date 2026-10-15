@@ -30,18 +30,18 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
         className
       )}
     >
-      <div className="flex flex-1 items-center gap-2">
+      <div className="flex flex-1 items-center gap-2.5">
         {onSearchChange && (
           <Input
             placeholder={searchPlaceholder}
             value={searchValue ?? ''}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-8 w-full sm:w-64 bg-background text-foreground"
+            className="h-8.5 w-full sm:w-64 bg-background/60 border-border/80 rounded-lg text-xs"
           />
         )}
         {filters}
       </div>
-      {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
+      {actions && <div className="flex items-center gap-2.5 shrink-0">{actions}</div>}
     </div>
   );
 };

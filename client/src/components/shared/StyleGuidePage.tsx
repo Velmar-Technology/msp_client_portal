@@ -40,6 +40,12 @@ import {
   CommandItem,
   CommandShortcut,
 } from '@/components/ui/command';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Textarea } from '@/components/ui/textarea';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
+import { Info, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 /**
  * Dev-only Live Style Guide component.
@@ -267,6 +273,86 @@ export const StyleGuidePage: React.FC = () => {
           </div>
         </TooltipProvider>
       </section>
-    </Page>
-  );
-};
+ 
+       <section className="space-y-4">
+         <h2 className="text-xl font-semibold text-foreground">Interactive Forms, Inputs & Alerts</h2>
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+           {/* Form controls */}
+           <Card className="bg-card text-card-foreground p-5 space-y-4">
+             <h3 className="text-sm font-medium text-foreground">Checkboxes & Monochromatic Controls</h3>
+             <div className="space-y-3">
+               <div className="flex items-center space-x-2.5">
+                 <Checkbox id="terms" defaultChecked />
+                 <label
+                   htmlFor="terms"
+                   className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground cursor-pointer"
+                 >
+                   Enable ElevenLabs Conversational agent audio loopback
+                 </label>
+               </div>
+               <div className="flex items-center space-x-2.5">
+                 <Checkbox id="terms2" />
+                 <label
+                   htmlFor="terms2"
+                   className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-muted-foreground cursor-pointer"
+                 >
+                   Mirror telemetry to external OpenTelemetry collector
+                 </label>
+               </div>
+             </div>
+ 
+             <Separator className="my-2" />
+ 
+             <div className="space-y-2">
+               <label className="text-xs font-medium text-foreground">Agent Prompt System Instructions</label>
+               <Textarea
+                 rows={3}
+                 placeholder="You are an expert customer support agent for Acme Cloud Services..."
+                 defaultValue="You are an autonomous IT operations assistant. Speak clearly, confirm critical server restarts, and verify caller identity before resetting credentials."
+               />
+               <p className="text-[11px] text-muted-foreground">Prompt tokens will be calculated dynamically per session.</p>
+             </div>
+           </Card>
+ 
+           {/* Alerts & Skeletons */}
+           <Card className="bg-card text-card-foreground p-5 space-y-4">
+             <h3 className="text-sm font-medium text-foreground">Frosted Alerts & Skeletons</h3>
+             <div className="space-y-2.5">
+               <Alert>
+                 <Info className="size-4" />
+                 <AlertTitle>WebRTC Pipeline Connected</AlertTitle>
+                 <AlertDescription>
+                   Audio buffer latency is within optimal bounds (38ms).
+                 </AlertDescription>
+               </Alert>
+               <Alert variant="destructive">
+                 <AlertTriangle className="size-4" />
+                 <AlertTitle>Quota Warning</AlertTitle>
+                 <AlertDescription>
+                   Voice synthesis minutes reach 85% of monthly threshold.
+                 </AlertDescription>
+               </Alert>
+               <Alert variant="success">
+                 <CheckCircle2 className="size-4" />
+                 <AlertTitle>Deployment Succeeded</AlertTitle>
+                 <AlertDescription>
+                   Version 2.4.0 active across all edge instances.
+                 </AlertDescription>
+               </Alert>
+             </div>
+ 
+             <Separator className="my-2" />
+ 
+             <div className="space-y-2">
+               <div className="text-xs font-medium text-muted-foreground">Async Loading State</div>
+               <div className="space-y-2">
+                 <Skeleton className="h-4 w-3/4" />
+                 <Skeleton className="h-4 w-1/2" />
+               </div>
+             </div>
+           </Card>
+         </div>
+       </section>
+     </Page>
+   );
+ };

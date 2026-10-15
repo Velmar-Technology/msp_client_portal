@@ -27,23 +27,23 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50 p-8 text-center animate-in fade-in-50',
+        'flex flex-col items-center justify-center rounded-xl border border-dashed border-border/80 bg-muted/10 p-10 text-center animate-in fade-in-50 transition-colors',
         className
       )}
     >
       {icon && (
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground mb-4">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-full border border-border/60 bg-muted/40 text-muted-foreground mb-4 shadow-xs">
           {icon}
         </div>
       )}
-      <h3 className="text-base font-semibold text-foreground">{title}</h3>
+      <h3 className="text-sm font-semibold tracking-tight text-foreground">{title}</h3>
       {description && (
-        <p className="mt-1 text-sm text-muted-foreground max-w-sm">
+        <p className="mt-1.5 text-xs text-muted-foreground/80 max-w-sm leading-relaxed">
           {description}
         </p>
       )}
       {action && (
-        <Button onClick={action.onClick} size="sm" className="mt-5">
+        <Button onClick={action.onClick} size="sm" className="mt-4.5 rounded-lg">
           {action.label}
         </Button>
       )}

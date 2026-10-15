@@ -89,7 +89,7 @@ export function MetricCardRoot({
         aria-busy="true"
         aria-live="polite"
         className={cn(
-          "group rounded-lg border border-border bg-card p-3.5 shadow-xs transition-all duration-200 flex flex-col justify-between min-h-30 select-none",
+          "group rounded-xl border border-border/80 bg-card/60 backdrop-blur-sm p-4 shadow-xs transition-all duration-200 flex flex-col justify-between min-h-30 select-none",
           className,
         )}
         {...props}
@@ -100,13 +100,13 @@ export function MetricCardRoot({
             <Skeleton className="h-6 w-6 rounded-md" />
           </div>
           <div className="mt-2.5 flex items-baseline justify-between gap-2">
-            <Skeleton className="h-6 w-20 rounded-xs" />
-            <Skeleton className="h-4 w-12 rounded-full" />
+            <Skeleton className="h-7 w-20 rounded-xs" />
+            <Skeleton className="h-4.5 w-12 rounded-full" />
           </div>
           <Skeleton className="h-2.5 w-16 mt-2 rounded-xs" />
         </div>
         {footer && (
-          <div className="mt-3 pt-2 border-t border-border">
+          <div className="mt-3 pt-2 border-t border-border/60">
             <Skeleton className="h-3 w-28 rounded-xs" />
           </div>
         )}
@@ -135,9 +135,9 @@ export function MetricCardRoot({
             : undefined
         }
         className={cn(
-          "group rounded-lg border border-border bg-card p-3.5 shadow-xs transition-all duration-200 min-h-30 flex flex-col justify-between",
+          "group rounded-xl border border-border/80 bg-card/60 backdrop-blur-sm p-4 shadow-xs transition-all duration-200 min-h-30 flex flex-col justify-between",
           isInteractive &&
-            "cursor-pointer hover:border-primary/40 hover:shadow-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring select-none",
+            "cursor-pointer hover:border-foreground/20 hover:shadow-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring select-none",
           className,
         )}
         {...props}
@@ -196,9 +196,9 @@ export function MetricCardRoot({
           : undefined
       }
       className={cn(
-        "group rounded-lg border border-border bg-card p-3.5 shadow-xs transition-all duration-200 min-h-30 flex flex-col justify-between",
+        "group rounded-xl border border-border/80 bg-card/60 backdrop-blur-sm p-4 shadow-xs transition-all duration-200 min-h-30 flex flex-col justify-between",
         isInteractive &&
-          "cursor-pointer hover:border-primary/40 hover:shadow-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring select-none",
+          "cursor-pointer hover:border-foreground/20 hover:shadow-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring select-none",
         className,
       )}
       {...props}
@@ -207,21 +207,21 @@ export function MetricCardRoot({
         {/* Top Header Row */}
         <div className="flex items-center justify-between gap-2">
           {title && (
-            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider truncate">
+            <span className="text-xs font-medium text-muted-foreground/80 truncate">
               {title}
             </span>
           )}
           <div className="flex items-center gap-1.5 shrink-0 ml-auto">
             {badge &&
               (typeof badge === "string" || typeof badge === "number" ? (
-                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-medium bg-muted text-muted-foreground border border-border">
+                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground border border-border/60">
                   {badge}
                 </span>
               ) : (
                 badge
               ))}
             {icon && (
-              <div className="rounded-md bg-muted/60 p-1.5 text-muted-foreground transition-colors group-hover:bg-muted shrink-0">
+              <div className="rounded-lg bg-muted/60 p-1.5 text-muted-foreground transition-colors group-hover:bg-muted group-hover:text-foreground shrink-0">
                 {renderIconNode(icon)}
               </div>
             )}
@@ -231,22 +231,22 @@ export function MetricCardRoot({
         {/* Middle Value & Trend Row */}
         <div className="mt-2.5 flex items-baseline justify-between gap-2">
           {value !== undefined && (
-            <div className="text-xl font-bold tracking-tight text-foreground font-heading truncate">{value}</div>
+            <div className="text-2xl font-semibold tracking-tight text-foreground font-sans truncate">{value}</div>
           )}
 
           {trendContent !== null &&
             (typeof trendContent === "string" || typeof trendContent === "number" ? (
               <span
                 className={cn(
-                  "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none shrink-0 font-mono",
-                  isPositive && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
-                  isNegative && "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20",
-                  isNeutral && "bg-muted text-muted-foreground border border-border/60",
+                  "inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] font-medium leading-none shrink-0 font-mono",
+                  isPositive && "text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+                  isNegative && "text-rose-600 dark:text-rose-400 border-rose-500/20",
+                  isNeutral && "bg-muted text-muted-foreground border-border/60",
                 )}
               >
-                {isPositive && <ArrowUpRight className="size-2.5 shrink-0" />}
-                {isNegative && <ArrowDownRight className="size-2.5 shrink-0" />}
-                {isNeutral && <Minus className="size-2.5 shrink-0" />}
+                {isPositive && <ArrowUpRight className="size-3 shrink-0" />}
+                {isNegative && <ArrowDownRight className="size-3 shrink-0" />}
+                {isNeutral && <Minus className="size-3 shrink-0" />}
                 {trendContent}
               </span>
             ) : (
@@ -257,9 +257,9 @@ export function MetricCardRoot({
         {/* Subtitle / Description */}
         {(subtitle || description) &&
           (typeof (subtitle ?? description) === "string" || typeof (subtitle ?? description) === "number" ? (
-            <p className="mt-1 text-[9px] text-muted-foreground truncate">{subtitle ?? description}</p>
+            <p className="mt-1.5 text-xs text-muted-foreground/80 truncate">{subtitle ?? description}</p>
           ) : (
-            <div className="mt-1 text-[9px] text-muted-foreground">{subtitle ?? description}</div>
+            <div className="mt-1.5 text-xs text-muted-foreground/80">{subtitle ?? description}</div>
           ))}
 
         {/* Optional Inner Child Content */}
@@ -268,8 +268,8 @@ export function MetricCardRoot({
 
       {/* Footer Section */}
       {footer && (
-        <div className="mt-3 pt-2 border-t border-border">
-          <div className="text-[9px] text-muted-foreground font-mono flex items-center justify-between">{footer}</div>
+        <div className="mt-3 pt-2 border-t border-border/60">
+          <div className="text-[10px] text-muted-foreground font-mono flex items-center justify-between">{footer}</div>
         </div>
       )}
     </div>
@@ -292,7 +292,7 @@ export function MetricCardTitle({ className, children, ...props }: React.HTMLAtt
   return (
     <span
       data-slot="metric-card-title"
-      className={cn("text-[11px] font-medium text-muted-foreground uppercase tracking-wider truncate", className)}
+      className={cn("text-xs font-medium text-muted-foreground/80 truncate", className)}
       {...props}
     >
       {children}
@@ -305,7 +305,7 @@ export function MetricCardIcon({ className, children, ...props }: React.HTMLAttr
     <div
       data-slot="metric-card-icon"
       className={cn(
-        "rounded-md bg-muted/60 p-1.5 text-muted-foreground transition-colors group-hover:bg-muted shrink-0",
+        "rounded-lg bg-muted/60 p-1.5 text-muted-foreground transition-colors group-hover:bg-muted group-hover:text-foreground shrink-0",
         className,
       )}
       {...props}
@@ -320,7 +320,7 @@ export function MetricCardBadge({ className, children, ...props }: React.HTMLAtt
     <span
       data-slot="metric-card-badge"
       className={cn(
-        "inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-medium bg-muted text-muted-foreground border border-border",
+        "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground border border-border/60",
         className,
       )}
       {...props}
@@ -334,7 +334,7 @@ export function MetricCardValue({ className, children, ...props }: React.HTMLAtt
   return (
     <div
       data-slot="metric-card-value"
-      className={cn("text-xl font-bold tracking-tight text-foreground font-heading truncate mt-2.5", className)}
+      className={cn("text-2xl font-semibold tracking-tight text-foreground font-sans truncate mt-2.5", className)}
       {...props}
     >
       {children}
@@ -346,7 +346,7 @@ export function MetricCardSubtitle({ className, children, ...props }: React.HTML
   return (
     <p
       data-slot="metric-card-subtitle"
-      className={cn("mt-1 text-[9px] text-muted-foreground truncate", className)}
+      className={cn("mt-1.5 text-xs text-muted-foreground/80 truncate", className)}
       {...props}
     >
       {children}
@@ -359,7 +359,7 @@ export function MetricCardFooter({ className, children, ...props }: React.HTMLAt
     <div
       data-slot="metric-card-footer"
       className={cn(
-        "mt-3 pt-2 border-t border-border text-[9px] text-muted-foreground font-mono flex items-center justify-between",
+        "mt-3 pt-2 border-t border-border/60 text-[10px] text-muted-foreground font-mono flex items-center justify-between",
         className,
       )}
       {...props}
