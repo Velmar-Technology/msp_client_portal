@@ -129,6 +129,60 @@ export const StyleGuidePage: React.FC = () => {
       </section>
 
       <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-foreground">ElevenLabs Live Telemetry & Segmented Chart Card</h2>
+          <div className="max-w-full w-max flex items-center font-medium border border-border/80 rounded-full text-xs gap-1.5 p-1.5 pr-3.5 bg-background shadow-xs">
+            <div className="relative bg-foreground rounded-full h-2 w-2 m-1">
+              <div className="absolute inset-0 rounded-full bg-emerald-500 animate-ping" />
+            </div>
+            <span>Active conversations: </span>
+            <span className="font-semibold font-mono">0</span>
+          </div>
+        </div>
+
+        {/* Flush Segmented Tab Header inside ElevenLabs Card */}
+        <div className="bg-card rounded-2xl p-5 shadow-[var(--shadow-eleven)] border border-border/80 flex flex-col">
+          <div className="flex overflow-auto rounded-t-2xl -m-5 mb-5 border-b border-border/80">
+            <button className="flex-1 p-4 flex flex-col items-start text-start bg-card border-b-2 border-foreground min-w-max cursor-pointer">
+              <span className="text-xs text-muted-foreground">Number of conversations</span>
+              <span className="text-xl font-semibold text-foreground">2</span>
+            </button>
+            <button className="flex-1 p-4 flex flex-col items-start text-start bg-muted/30 border-b border-transparent hover:bg-muted/50 min-w-max cursor-pointer transition-colors">
+              <span className="text-xs text-muted-foreground">Average duration</span>
+              <span className="text-xl font-semibold text-foreground">1:34</span>
+            </button>
+            <button className="flex-1 p-4 flex flex-col items-start text-start bg-muted/30 border-b border-transparent hover:bg-muted/50 min-w-max cursor-pointer transition-colors">
+              <span className="text-xs text-muted-foreground">Total cost</span>
+              <span className="text-xl font-semibold text-foreground">1.35K credits</span>
+            </button>
+            <button className="flex-1 p-4 flex flex-col items-start text-start bg-muted/30 border-b border-transparent hover:bg-muted/50 min-w-max cursor-pointer transition-colors">
+              <span className="text-xs text-muted-foreground">Average LLM cost</span>
+              <span className="text-xl font-semibold text-foreground">$0.0102</span>
+            </button>
+          </div>
+
+          <div className="h-44 flex flex-col justify-between py-2">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Oct 09, 2026, 12:00 AM</span>
+              <span>Oct 15, 2026, 01:00 AM</span>
+            </div>
+            <div className="h-28 flex items-center justify-center border-b border-dashed border-border/60 text-xs text-muted-foreground font-mono">
+              [ High Resolution Conversational Telemetry Waveform ]
+            </div>
+            <div className="flex items-center justify-between pt-2">
+              <div className="flex items-center gap-1.5">
+                <Button size="sm" variant="outline" className="text-[11px] h-6 px-2">Linear</Button>
+                <Button size="sm" variant="ghost" className="text-[11px] h-6 px-2 text-muted-foreground">Log</Button>
+              </div>
+              <span className="text-xs text-muted-foreground hover:text-foreground cursor-pointer">
+                Filtered conversation history ↗
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4">
         <h2 className="text-xl font-semibold text-foreground">Table Toolbar & Empty States</h2>
         <Card className="bg-card text-card-foreground">
           <CardHeader>

@@ -89,7 +89,7 @@ export function MetricCardRoot({
         aria-busy="true"
         aria-live="polite"
         className={cn(
-          "group rounded-xl border border-border/80 bg-card/60 backdrop-blur-sm p-4 shadow-xs transition-all duration-200 flex flex-col justify-between min-h-30 select-none",
+          "group rounded-2xl border border-border/80 bg-card/60 backdrop-blur-sm p-5 shadow-[var(--shadow-eleven)] transition-all duration-200 flex flex-col justify-between min-h-30 select-none",
           className,
         )}
         {...props}
@@ -135,7 +135,7 @@ export function MetricCardRoot({
             : undefined
         }
         className={cn(
-          "group rounded-xl border border-border/80 bg-card/60 backdrop-blur-sm p-4 shadow-xs transition-all duration-200 min-h-30 flex flex-col justify-between",
+          "group rounded-2xl border border-border/80 bg-card/60 backdrop-blur-sm p-5 shadow-[var(--shadow-eleven)] transition-all duration-200 min-h-30 flex flex-col justify-between",
           isInteractive &&
             "cursor-pointer hover:border-foreground/20 hover:shadow-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring select-none",
           className,
@@ -196,7 +196,7 @@ export function MetricCardRoot({
           : undefined
       }
       className={cn(
-        "group rounded-xl border border-border/80 bg-card/60 backdrop-blur-sm p-4 shadow-xs transition-all duration-200 min-h-30 flex flex-col justify-between",
+        "group rounded-2xl border border-border/80 bg-card/60 backdrop-blur-sm p-5 shadow-[var(--shadow-eleven)] transition-all duration-200 min-h-30 flex flex-col justify-between",
         isInteractive &&
           "cursor-pointer hover:border-foreground/20 hover:shadow-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring select-none",
         className,
