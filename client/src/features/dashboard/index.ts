@@ -13,5 +13,10 @@ export * from './hooks/useClientDashboard';
 export * from './hooks/useDashboardFilters';
 export * from './hooks/useDashboardModals';
 
+// Components
+export * from './components/ElevenDashboardHero';
+export * from './components/ClientDashboardView';
+export * from './components/AdminDashboardView';
+
 // Ephemeral UI Types
 export * from './types';

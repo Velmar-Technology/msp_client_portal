@@ -38,6 +38,8 @@ coverage/
 tmp/
 temp/
 scratch/
+*.csv
+velmar_avatar_monogram.jpg
 
 # Rust
 target/

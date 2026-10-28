@@ -79,8 +79,8 @@ export function ActiveSubscriptions({ subscriptions }: ActiveSubscriptionsProps)
   ];
 
   return (
-    <div className="rounded-lg border border-border bg-card shadow-xs overflow-hidden">
-      <div className="p-3.5 border-b border-border flex justify-between items-center bg-muted/40">
+    <div className="rounded-2xl border border-border/80 bg-card shadow-[var(--shadow-eleven)] overflow-hidden">
+      <div className="p-3.5 border-b border-border/60 flex justify-between items-center bg-muted/20">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {t("dashboard.activeSubscriptions")}
         </h4>
