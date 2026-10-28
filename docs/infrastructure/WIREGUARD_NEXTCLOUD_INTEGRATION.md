@@ -1,6 +1,6 @@
 # Infrastructure Specification: Velmar MSP ↔ TrueNAS/Nextcloud WireGuard Integration
 
-_Status: Deployed & Active · Last Verified: 2026-08-27 · Version: 2.1_
+_Status: Deployed & Active · Last Verified: 2026-10-28 · Version: 2.2 (Endpoint 4 Migration)_
 
 ---
 
@@ -35,32 +35,37 @@ A persistent **WireGuard Site-to-Client Tunnel** connects the helpdesk VPS hub w
 
 ```mermaid
 graph TD
-    subgraph "Customer Premises"
-        NAS["TrueNAS SCALE<br/>10.0.0.254 (LAN)<br/>eno1"]
+    subgraph "Customer Premises — TrueNAS SCALE 10.0.0.254"
+        NAS["TrueNAS Host<br/>10.0.0.254 (LAN)<br/>eno1"]
         NC["ix-nextcloud<br/>172.16.1.5:80<br/>(host port 30027)"]
         WGNAS["cloud_wg_client<br/>Stack 19<br/>10.13.13.3/32"]
+        TNEXTRAEFIK["traefik-tnas<br/>Stack 42<br/>ports 30080 / 30443"]
+        MSP["msp_portal (Stack 43)<br/>server, client, db, redis, zabbix<br/>NEXTCLOUD_URL=10.0.0.254:30027"]
     end
 
     subgraph "VPS — Linode 172.235.145.77"
         TRAEFIK["Traefik v3.6.4<br/>:443 (HTTPS) / :80 (redirect)"]
         GW["cloud-gateway<br/>Stack 18 — nginx:alpine<br/>reverse-proxy network"]
         WG["WireGuard Hub<br/>Stack 14<br/>10.13.13.1<br/>UDP :51820"]
-        MSP["msp_server_prod<br/>Stack 17<br/>NEXTCLOUD_URL=10.13.13.3:30027"]
     end
 
-    BROWSER["Customer Browser /<br/>Nextcloud Client / Mobile"]
+    BROWSER["Customer Browser /<br/>Nextcloud Client / Helpdesk User"]
     INTERNET["Internet"]
-    DNS["DNS: atlas / sto01<br/>→ 172.235.145.77"]
+    DNS["DNS: helpdesk / atlas / sto01<br/>→ 172.235.145.77"]
 
     BROWSER -- "HTTPS / TLS" --> DNS
     DNS -- "A record" --> TRAEFIK
-    TRAEFIK -- "Host: atlas.velmartech.com.do<br/>reverse-proxy network" --> GW
+    TRAEFIK -- "Host: helpdesk.velmartech.com.do" --> GW
+    TRAEFIK -- "Host: atlas.velmartech.com.do" --> GW
     TRAEFIK -- "Host: sto01.velmartech.com.do<br/>basic-auth → nas-panel" --> GW
+    GW -- "proxy_pass https://10.13.13.3:30443<br/>proxy_ssl_verify off" --> WG
     GW -- "proxy_pass http://10.13.13.3:30027" --> WG
     GW -- "proxy_pass https://10.13.13.3:443<br/>proxy_ssl_verify off" --> WG
-    MSP -- "HTTP 10.13.13.3:30027" --> WG
     WG -- "WireGuard tunnel<br/>UDP 51820<br/>encrypted" --> WGNAS
+    WGNAS -- "host netns<br/>forwards to" --> TNEXTRAEFIK
     WGNAS -- "host netns<br/>forwards to" --> NAS
+    TNEXTRAEFIK -- "Docker labels" --> MSP
+    MSP -- "Local provisioning<br/>10.0.0.254:30027" --> NC
     NAS -- "DNAT :30027 → 172.16.1.5:80" --> NC
     NAS -- "listens :443<br/>(TrueNAS UI)" --> WGNAS
 ```
@@ -152,24 +157,41 @@ graph LR
 | Stack ID | Name | Endpoint | Image | Purpose |
 |---|---|---|---|---|
 | **3** | `traefik` | 3 | `traefik:v3.6.4` | Reverse proxy, TLS termination, Let's Encrypt |
+| **12** | `freescout` (legacy) | 3 | `nfrastack/freescout:latest` | Stopped / Inactive (migrated to Endpoint 4) |
+| **13** | `rustdesk` (legacy) | 3 | `rustdesk/rustdesk-server:latest` | Stopped / Inactive (migrated to Endpoint 4) |
 | **14** | `wireguard` | 3 | `linuxserver/wireguard:latest` | WireGuard hub (host netns) |
-| **17** | `msp_portal` | 3 | 12-service Compose stack | MSP backend + client, PostgreSQL, Zabbix observability, Dozzle, Prometheus/Grafana, Faro/Alloy (`NEXTCLOUD_URL=10.13.13.3:30027`) → see §4.4 |
-| **18** | `cloud-gateway` | 3 | `nginx:alpine` | Dual nginx proxy (Nextcloud + TrueNAS panel) |
+| **17** | `msp_portal` (legacy) | 3 | 12-service Compose stack | Stopped / Inactive (migrated to Endpoint 4) |
+| **18** | `cloud-gateway` | 3 | `nginx:alpine` | Multi-service reverse proxy (Nextcloud, TrueNAS panel, Helpdesk, DNS, FreeScout) |
 | **19** | `cloud-wg` | 4 | `linuxserver/wireguard:latest` | WireGuard client on TrueNAS (host netns) |
+| **24** | `pihole` (legacy) | 3 | `pihole/pihole:latest` | Stopped / Inactive (migrated to Endpoint 4) |
 | **26** | `kopia-backup` | 4 | `kopia/kopia:latest` | Automated Nextcloud offsite backup to Google Drive (AES-256 encrypted, FastCDC deduplication, nightly 02:00 AM AST) |
+| **36** | `odoo` | 3 | `odoo:20.0` + `postgres:17-alpine` | Maintained permanently on VPS (`atlas.velmartech.com.do/odoo`) |
+| **39** | `pdf-service` (legacy) | 3 | `ghcr.io/eapolancovelmar/pdf-service:latest` | Stopped / Inactive (migrated to Endpoint 4) |
+| **42** | `traefik-tnas` | 4 | `traefik:v3.6.4` | TrueNAS local ingress router (ports 30080/30443, Docker socket provider) |
+| **43** | `msp_portal` | 4 | 14-service Compose stack | Production MSP Portal, PostgreSQL, Redis, Zabbix, Observability (`NEXTCLOUD_URL=10.0.0.254:30027`) |
+| **44** | `pdf-service` | 4 | `ghcr.io/eapolancovelmar/pdf-service:latest` | PDF rendering microservice (`helpdesk.velmartech.com.do/pdf`) for invoices and reports |
+| **45** | `rustdesk` | 4 | `rustdesk/rustdesk-server:latest` | Remote desktop relay/rendezvous (`rustdesk.velmartech.com.do`, host netns) |
+| **46** | `pihole` | 4 | `pihole/pihole:latest` | Network-wide DNS sinkhole (port 53 on `10.0.0.254`) + Web UI (`dns.velmartech.com.do`) |
+| **47** | `freescout` | 4 | `nfrastack/freescout:latest` + `mariadb:10.11` | Helpdesk ticketing system (`freescout.velmartech.com.do`) with MariaDB volume |
 
 ### 4.3 Stack 18 — cloud-gateway (Detailed)
 
-This stack defines **two nginx server blocks** on a single container, each fronted by a dedicated Traefik router with explicit `.service=` binding:
+This stack defines **three primary nginx server blocks** (plus internal service routers) on a single container, each fronted by a dedicated Traefik router with explicit `.service=` binding:
 
-**Server Block 1 — Nextcloud (`atlas.velmartech.com.do`)**
+**Server Block 1 — MSP Helpdesk Portal (`helpdesk.velmartech.com.do`)**
+- `proxy_pass https://10.13.13.3:30443` (HTTPS to TrueNAS `traefik-tnas` ingress)
+- `proxy_ssl_verify off` (Internal self-signed cert on TrueNAS Traefik)
+- `proxy_http_version 1.1`, WebSocket upgrade headers passed through
+- Routes all portal SPA, `/api`, `/zabbix`, `/grafana`, `/logs`, and `/vault` requests directly to Endpoint 4
+
+**Server Block 2 — Nextcloud (`atlas.velmartech.com.do`)**
 - `proxy_pass http://10.13.13.3:30027` (plain HTTP to Nextcloud)
 - `client_max_body_size 0` (unlimited uploads)
 - `proxy_request_buffering off` (streaming large files)
 - CalDAV/CardDAV well-known redirects
 - WebSocket upgrade support
 
-**Server Block 2 — TrueNAS Panel (`sto01.velmartech.com.do`)**
+**Server Block 3 — TrueNAS Panel (`sto01.velmartech.com.do`)**
 - `proxy_pass https://10.13.13.3:443` (HTTPS to TrueNAS UI)
 - `proxy_ssl_verify off` (TrueNAS uses self-signed/internal cert)
 - `proxy_redirect` rewrites (`10.13.13.3` → `$host`)

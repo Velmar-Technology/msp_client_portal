@@ -1,6 +1,13 @@
 # Infrastructure Specification: MSP Client Portal Production Stack
 
-_Status: Deployed & Active · Last Verified: 2026-09-15 · Version: 1.4_
+_Status: Deployed & Active · Last Verified: 2026-10-28 · Version: 1.5 (Endpoint 4 Migration)_
+
+> **2026-10-28 Updates (v1.5 - Endpoint 4 Migration & WireGuard Transit Ingress):**
+> 1. **TrueNAS SCALE Deployment (Endpoint 4):** Migrated the entire `msp_portal` stack from VPS (Endpoint 3) to TrueNAS SCALE (`cloud-storage-srv-1`, Stack **43**). All 14 services run on-premise on host `10.0.0.254`.
+> 2. **Local Nextcloud Interconnect:** Updated `NEXTCLOUD_URL` to `http://10.0.0.254:30027`, eliminating the WireGuard transit hop for automated storage quota and user provisioning.
+> 3. **TrueNAS Ingress Router (`traefik-tnas`):** Deployed a dedicated Traefik router (Stack **42**) on Endpoint 4 listening on container ports `:80` and `:443` (host ports `30080` and `30443`), avoiding collisions with TrueNAS Web UI ports 80/443 while discovering stack routes via Docker labels.
+> 4. **VPS Ingress Forwarding:** Updated VPS `cloud-gateway` (Stack **18**) to forward `helpdesk.velmartech.com.do` over WireGuard to `https://10.13.13.3:30443`.
+> 5. **Forward-Ready for Cloudflare Tunnel:** Architecture is prepared to attach `cloudflared` directly to TrueNAS Traefik for complete VPS decommissioning once the Cloudflare Tunnel token is provisioned.
 
 > **2026-09-15 Updates (v1.4 - CAF Educational Agent & Multi-Profile MCP Isolation):**
 > 1. **CAF Educational Quality AI Agent (`/mcp/caf`):** Integrated the CAF (Marco Común de Evaluación) 9-criteria self-evaluation engine, documentary gap detector, and institutional improvement plan (PMI) generator into `@msp/mcp-server`.
@@ -17,10 +24,10 @@ _Status: Deployed & Active · Last Verified: 2026-09-15 · Version: 1.4_
 
 ## 1. Overview & Topology
 
-The **MSP Client Portal** runs as a single Docker Compose stack on the helpdesk VPS (Linode `172.235.145.77`) and is managed by **Portainer CE** (`https://helpdesk.velmartech.com.do:9443`, endpoint **3 `local`**, stack **17 `msp_portal`**, type Compose).
+The **MSP Client Portal** runs as a single Docker Compose stack on **TrueNAS SCALE** (`cloud-storage-srv-1`, `10.0.0.254`) and is managed by **Portainer CE** (`https://helpdesk.velmartech.com.do:9443`, endpoint **4 `cloud-storage-srv-1`**, stack **43 `msp_portal`**, type Compose).
 
 - **Source of truth:** [`docker-compose.prod.yml`](../../docker-compose.prod.yml) at the repository root. The stack content in Portainer is the exact file — the CI pipeline and manual redeploys push this file to Portainer verbatim.
-- **Public ingress:** Traefik v3.6.4 (Portainer stack **3 `traefik`**) terminates TLS via Let's Encrypt (`myresolver`) for `helpdesk.velmartech.com.do` and reverse-proxies path prefixes to the internal containers over the shared `reverse-proxy` network.
+- **Public ingress:** Traefik v3.6.4 (Portainer stack **3 `traefik`** on Linode VPS) terminates TLS via Let's Encrypt (`myresolver`) for `helpdesk.velmartech.com.do` and forwards via `cloud-gateway` (Stack **18**) over the WireGuard transit network (`10.13.13.0/24`) to TrueNAS Traefik (`traefik-tnas`, Stack **42** at `https://10.13.13.3:30443`), which routes path prefixes to the internal containers.
 - **App images:** `ghcr.io/velmar-technology/msp-services-server:<VERSION>` and `ghcr.io/velmar-technology/msp-services-client:<VERSION>` (reference tags are `:latest` + long SHA, built by GitHub Actions).
 - **Stack lifecycle:** Portainer owns the stack. Deploys pin `VERSION` into the stack environment and re-submit the repo compose spec via the Portainer REST API (see §7).
 - **Related infra:** WireGuard hub / TrueNAS / Nextcloud routing and the credentials matrix live in [`WIREGUARD_NEXTCLOUD_INTEGRATION.md`](WIREGUARD_NEXTCLOUD_INTEGRATION.md). Copilot Studio autonomous AI agent deployment and MCP operations are documented in [`COPILOT_STUDIO_AGENT_DEPLOYMENT.md`](COPILOT_STUDIO_AGENT_DEPLOYMENT.md). The CAF Educational Quality Agent (AIaaS multi-tenant BYOK deployment) is documented in [`COPILOT_STUDIO_CAF_AGENT_DEPLOYMENT.md`](COPILOT_STUDIO_CAF_AGENT_DEPLOYMENT.md) and [`docs/ideas/caf-education-aiaas-mcp-byok.md`](../ideas/caf-education-aiaas-mcp-byok.md). Live secrets are **not** duplicated here — see that document's §3.4 credentials reference and Portainer → stack environment.
@@ -221,8 +228,8 @@ Required secrets: `PORTAINER_URL`, `PORTAINER_API_KEY` (`ptr_…`), `PORTAINER_E
 # Linux/macOS (or in GitHub Actions)
 export PORTAINER_URL='https://helpdesk.velmartech.com.do:9443'
 export PORTAINER_API_KEY='<ptr_...>'
-export PORTAINER_ENDPOINT_ID='3'
-export PORTAINER_STACK_ID='17'
+export PORTAINER_ENDPOINT_ID='4'
+export PORTAINER_STACK_ID='43'
 export PORTAINER_TLS_INSECURE='true'
 bash scripts/portainer-stack-update.sh "1.6.0"
 ```
@@ -231,8 +238,8 @@ bash scripts/portainer-stack-update.sh "1.6.0"
 # Windows (PowerShell)
 $env:PORTAINER_URL='https://helpdesk.velmartech.com.do:9443'
 $env:PORTAINER_API_KEY='<ptr_...>'
-$env:PORTAINER_ENDPOINT_ID='3'
-$env:PORTAINER_STACK_ID='17'
+$env:PORTAINER_ENDPOINT_ID='4'
+$env:PORTAINER_STACK_ID='43'
 $env:PORTAINER_TLS_INSECURE='true'
 node scripts/portainer-stack-update.js "1.6.0"
 ```

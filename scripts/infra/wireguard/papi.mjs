@@ -7,7 +7,7 @@ const KEY = process.env.PORTAINER_API_KEY;
 export function req(method, path, body, { raw = false } = {}) {
   return new Promise((resolve, reject) => {
     const u = new URL(BASE + path);
-    const data = body === undefined || body === null ? null : Buffer.from(typeof body === 'string' ? body : JSON.stringify(body));
+    const data = body === undefined || body === null ? null : Buffer.isBuffer(body) ? body : Buffer.from(typeof body === 'string' ? body : JSON.stringify(body));
     const headers = { 'X-API-Key': KEY };
     if (data) {
       headers['Content-Type'] = raw ? 'application/octet-stream' : 'application/json';
