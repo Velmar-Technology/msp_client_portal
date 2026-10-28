@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.13.4](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.13.3...v1.13.4) (2026-10-28)
+
+
+### Features
+
+* **ui:** adapt ElevenLabs hero header and segmented telemetry layout ([20ec5ff](https://github.com/Velmar-Technology/msp_client_portal/commit/20ec5ff7eaa59510ab0414fa5d52c9f97a157e70))
+* **ui:** adapt exact ElevenLabs sidebar structure and geometry ([989430f](https://github.com/Velmar-Technology/msp_client_portal/commit/989430fae76ccb12ce626f2356ab2062a92d5b3c))
+* **ui:** apply ElevenLabs showcase elevation and primitives ([fc1a594](https://github.com/Velmar-Technology/msp_client_portal/commit/fc1a594de81a578a75c5e4f5fa896fe9c0c2ee7e))
+* **ui:** implement live ElevenLabs card elevation and telemetry header ([568355a](https://github.com/Velmar-Technology/msp_client_portal/commit/568355adc4d95b455d78e3d4119fc64f931b1a2e))
+* **ui:** modernize design system, spotlight search, and agent cards ([b87eb86](https://github.com/Velmar-Technology/msp_client_portal/commit/b87eb86496796b59c177015d65dab9bdb5203448))
+
 ## [1.13.3](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.13.2...v1.13.3) (2026-10-08)
 
 
