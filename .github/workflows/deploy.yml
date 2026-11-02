@@ -719,85 +719,57 @@ jobs:
             echo "::warning::No running msp_server_prod container found — automatic rollback disabled for this run."
           fi
 
-      - name: Pre-warm Image Pulls on VPS
-        # Best-effort: shrinks the synchronous Portainer PUT window by pulling
-        # the new app images ahead of time. Requires the one-time GHCR docker
-        # login on the VPS; failures are non-fatal (PUT still pulls on its own).
-        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
-        env:
-          VERSION: ${{ needs.prepare.outputs.version }}
-          OWNER_LC: ${{ needs.prepare.outputs.owner_lc }}
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT || 22 }}
-          envs: VERSION,OWNER_LC
-          script: |
-            for image in msp-services-server msp-services-client msp-mcp-server; do
-              if docker pull "ghcr.io/${OWNER_LC}/${image}:${VERSION}"; then
-                echo "[prewarm] Pulled ${image}:${VERSION}"
-              else
-                echo "[prewarm] WARNING: could not pre-pull ${image}:${VERSION} (GHCR login missing?) — Portainer will pull during stack update"
-              fi
-            done
-
       - name: Update Stack via Portainer API
         id: deploy
         run: bash scripts/portainer-stack-update.sh "${VERSION}"
 
       - name: Verify Application Health
         id: health
-        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT || 22 }}
-          script: |
-            SERVER_HEALTHY=false
-            for attempt in $(seq 1 12); do
-              if docker exec msp_server_prod node -e \
-                "fetch('http://127.0.0.1:3001/api/v1/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))" >/dev/null 2>&1; then
-                echo "[health] Server API healthy (attempt ${attempt}/12)"
-                SERVER_HEALTHY=true
-                break
-              fi
-              echo "[health] Waiting for API health... (${attempt}/12)"
-              sleep 5
-            done
+        run: |
+          set -euo pipefail
+          APP_BASE_URL="https://helpdesk.velmartech.com.do"
+          CURL_OPTS=(-sfS --max-time 10)
 
-            if [ "${SERVER_HEALTHY}" != "true" ]; then
-              echo "[health] ERROR: server failed health verification after 12 attempts"
-              exit 1
+          echo "[health] Verifying Server API health at ${APP_BASE_URL}/api/v1/health..."
+          SERVER_HEALTHY=false
+          for attempt in $(seq 1 24); do
+            if curl "${CURL_OPTS[@]}" "${APP_BASE_URL}/api/v1/health" >/dev/null 2>&1; then
+              echo "[health] Server API healthy (attempt ${attempt}/24)"
+              SERVER_HEALTHY=true
+              break
             fi
+            echo "[health] Waiting for Server API health... (${attempt}/24)"
+            sleep 5
+          done
 
-            MCP_HEALTHY=false
-            for attempt in $(seq 1 12); do
-              if docker exec msp_mcp_prod wget -q --spider http://127.0.0.1:3005/health >/dev/null 2>&1; then
-                echo "[health] MCP Server healthy (attempt ${attempt}/12)"
-                MCP_HEALTHY=true
-                break
-              fi
-              echo "[health] Waiting for MCP Server health... (${attempt}/12)"
-              sleep 5
-            done
-
-            CAF_HEALTHY=false
-            for attempt in $(seq 1 12); do
-              if docker exec msp_mcp_prod wget -q --spider http://127.0.0.1:3005/mcp/caf/health >/dev/null 2>&1; then
-                echo "[health] CAF Educational Agent MCP endpoint healthy (attempt ${attempt}/12)"
-                CAF_HEALTHY=true
-                break
-              fi
-              echo "[health] Waiting for CAF MCP endpoint health... (${attempt}/12)"
-              sleep 5
-            done
-
-            if [ "${MCP_HEALTHY}" != "true" ] || [ "${CAF_HEALTHY}" != "true" ]; then
-              echo "[health] WARNING: MCP server container health check timed out (MCP: ${MCP_HEALTHY}, CAF: ${CAF_HEALTHY})"
+          if [ "${SERVER_HEALTHY}" != "true" ]; then
+            echo "[health] ERROR: server failed health verification after 24 attempts"
+            if [ -n "${PORTAINER_URL:-}" ] && [ -n "${PORTAINER_API_KEY:-}" ]; then
+              echo "[health] Querying Portainer for container inspect state..."
+              PORT_OPTS=(-s --max-time 15)
+              [ "${PORTAINER_TLS_INSECURE:-}" = "true" ] && PORT_OPTS+=(-k)
+              curl "${PORT_OPTS[@]}" -H "X-API-Key: ${PORTAINER_API_KEY}" \
+                "${PORTAINER_URL%/}/api/endpoints/${PORTAINER_ENDPOINT_ID:-4}/docker/containers/msp_server_prod/json" | jq '.State // "error"' || true
             fi
-            exit 0
+            exit 1
+          fi
+
+          echo "[health] Verifying MCP Server endpoints..."
+          MCP_HEALTHY=false
+          for attempt in $(seq 1 12); do
+            if curl "${CURL_OPTS[@]}" "${APP_BASE_URL}/mcp" >/dev/null 2>&1 && curl "${CURL_OPTS[@]}" "${APP_BASE_URL}/mcp/caf" >/dev/null 2>&1; then
+              echo "[health] MCP Server endpoints healthy (attempt ${attempt}/12)"
+              MCP_HEALTHY=true
+              break
+            fi
+            echo "[health] Waiting for MCP Server health... (${attempt}/12)"
+            sleep 5
+          done
+
+          if [ "${MCP_HEALTHY}" != "true" ]; then
+            echo "[health] WARNING: MCP server container health check timed out"
+          fi
+          exit 0
 
       - name: Rollback to Previous Version
         if: steps.deploy.outcome == 'failure' || steps.health.outcome == 'failure'
@@ -811,24 +783,21 @@ jobs:
 
       - name: Verify Rollback Health
         if: steps.deploy.outcome == 'failure' || steps.health.outcome == 'failure'
-        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT || 22 }}
-          script: |
-            for attempt in $(seq 1 12); do
-              if docker exec msp_server_prod node -e \
-                "fetch('http://127.0.0.1:3001/api/v1/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))" >/dev/null 2>&1; then
-                echo "[health] Rollback healthy (attempt ${attempt}/12)"
-                exit 0
-              fi
-              echo "[health] Waiting for rollback health... (${attempt}/12)"
-              sleep 5
-            done
-            echo "[health] ERROR: rollback failed health verification — manual intervention required"
-            exit 1
+        run: |
+          set -euo pipefail
+          APP_BASE_URL="https://helpdesk.velmartech.com.do"
+          CURL_OPTS=(-sfS --max-time 10)
+
+          for attempt in $(seq 1 24); do
+            if curl "${CURL_OPTS[@]}" "${APP_BASE_URL}/api/v1/health" >/dev/null 2>&1; then
+              echo "[health] Rollback healthy (attempt ${attempt}/24)"
+              exit 0
+            fi
+            echo "[health] Waiting for rollback health... (${attempt}/24)"
+            sleep 5
+          done
+          echo "[health] ERROR: rollback failed health verification — manual intervention required"
+          exit 1
 
       - name: Write Deployment Summary
         run: |
