@@ -1,9 +1,23 @@
 import { memo } from "react";
-import { Laptop, BadgeCheck, Cloud } from "lucide-react";
+import { Laptop, Cloud } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { SubscriptionEquipment } from "@shared/contracts";
-import { Card, CardFooter } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { formatRelativeTime } from "@/lib/formatRelativeTime";
+import {
+  GlowCard,
+  GlowCardHeader,
+  GlowCardIcon,
+  GlowCardTitleGroup,
+  GlowCardTitle,
+  GlowCardStatus,
+  GlowCardStatusDot,
+  GlowCardAction,
+  GlowCardContent,
+  GlowCardDivider,
+  GlowCardFooter,
+  GlowCardBadge,
+  type GlowCardVariant,
+} from "@/components/ui/glow-card";
 import { CopyableSerial, CopyableDeviceId } from "./CopyableBadge";
 import { DeviceActionsCell } from "./DeviceActionsCell";
 
@@ -21,7 +35,8 @@ export interface DeviceCardProps {
 }
 
 /**
- * High-End Tiled Card Component representing an individual device slot.
+ * Signature High-End Equipment Card with status-aware top-left gradient border
+ * highlight, ambient backlight bloom, and 3-dot action menu.
  */
 export const DeviceCard = memo(function DeviceCard({
   equip,
@@ -35,7 +50,7 @@ export const DeviceCard = memo(function DeviceCard({
   onDeployAgent,
   onOpenRMMDashboard,
 }: DeviceCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isActive = equip.status === "ACTIVE";
   const isOnline =
     isActive &&
@@ -43,133 +58,139 @@ export const DeviceCard = memo(function DeviceCard({
       (equip.agent_status !== "OFFLINE" &&
         Boolean(
           equip.agent_last_seen_at &&
-            Date.now() - new Date(equip.agent_last_seen_at).getTime() <= 15 * 60 * 1000,
+            Date.now() - new Date(equip.agent_last_seen_at).getTime() <= 15 * 60 * 1000
         )));
   const isOffline = isActive && !isOnline;
   const slotNum = equip.slot_index !== undefined ? equip.slot_index + 1 : 1;
 
+  // Determine glow variant and status dot color based on endpoint telemetry
+  const variant: GlowCardVariant = !isActive
+    ? "amber"
+    : isOffline
+    ? "rose"
+    : "emerald";
+
+  const dotColor = !isActive
+    ? "amber"
+    : isOffline
+    ? "rose"
+    : "emerald";
+
   return (
-    <Card className="p-4 shadow-xs hover:shadow-sm transition-shadow flex flex-col gap-3 h-full">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className="p-2 bg-muted text-muted-foreground rounded-md border border-border shrink-0">
-            <Laptop className="h-4 w-4" />
-          </span>
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <h3 className="text-sm font-bold text-foreground truncate font-heading">
-                {isActive ? equip.device_name || t("devices.unnamedDevice") : t("devices.pendingUnboundSlot")}
-              </h3>
-              {isActive && equip.agent_last_seen_at && (
-                <span
-                  title={
-                    isOnline
-                      ? t("devices.agentVerifiedTooltip")
-                      : t("devices.agentOfflineTooltip", "Agent paired but currently offline")
-                  }
-                  className={cn(
-                    "inline-flex items-center gap-1 text-[9px] font-bold shrink-0",
-                    isOnline ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground",
-                  )}
-                >
-                  <BadgeCheck className="w-3.5 h-3.5" />
-                  <span className="sr-only sm:not-sr-only">
-                    {isOnline ? t("devices.agentVerified") : t("devices.agentOffline", "Offline")}
-                  </span>
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-                {t("devices.slotNumber", { num: slotNum })}
-              </p>
+    <GlowCard variant={variant} className="h-full">
+      {/* Header: Icon, Device Title & Telemetry Status, Top-Right 3-Dot Kebab Menu */}
+      <GlowCardHeader>
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <GlowCardIcon>
+            <Laptop className="h-5 w-5" />
+          </GlowCardIcon>
+
+          <GlowCardTitleGroup>
+            <GlowCardTitle>
+              {isActive
+                ? equip.device_name || t("devices.unnamedDevice")
+                : t("devices.pendingUnboundSlot")}
+            </GlowCardTitle>
+
+            <GlowCardStatus>
+              <GlowCardStatusDot color={dotColor} pulse={isOnline} />
+              <span className="font-semibold uppercase tracking-wider text-[11px]">
+                {isActive
+                  ? isOnline
+                    ? t("devices.statusOnline", "ONLINE")
+                    : t("devices.statusOffline", "OFFLINE")
+                  : t("devices.statusPendingActivation", "PENDING")}
+              </span>
+              <span>•</span>
+              <span>{t("devices.slotNumber", { num: slotNum })}</span>
               {equip.plan && (
-                <span className="text-[9px] font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border uppercase font-mono">
-                  {equip.plan}
-                </span>
+                <>
+                  <span>•</span>
+                  <span className="font-mono uppercase text-[10px]">{equip.plan}</span>
+                </>
               )}
-              {equip.tenant_name && (
-                <span className="text-[9px] font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border truncate max-w-28">
-                  {equip.tenant_name}
-                </span>
-              )}
-            </div>
-          </div>
+            </GlowCardStatus>
+          </GlowCardTitleGroup>
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-          <span
-            className={cn(
-              "text-[10px] font-mono font-semibold uppercase px-1.5 py-0.5 rounded border",
-              isActive
-                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-            )}
-          >
-            {isActive ? "ACTIVE" : t("devices.statusPendingActivation")}
-          </span>
-          {isActive && isOnline && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold uppercase px-1.5 py-0.5 rounded border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-              {t("devices.statusOnline", "ONLINE")}
-            </span>
-          )}
-          {isActive && isOffline && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold uppercase px-1.5 py-0.5 rounded border bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-              {t("devices.statusOffline", "OFFLINE")}
-            </span>
-          )}
-        </div>
-      </div>
+        <GlowCardAction>
+          <DeviceActionsCell
+            equip={equip}
+            onOpenNcModal={onOpenNcModal}
+            onOpenVaultModal={onOpenVaultModal}
+            onOpenScheduleMaint={onOpenScheduleMaint}
+            onRequestRevoke={onRequestRevoke}
+            onRequestRepair={onRequestRepair}
+            onOpenActivateWithOtp={onOpenActivateWithOtp}
+            onDeployClient={onDeployClient}
+            onDeployAgent={onDeployAgent}
+            onOpenRMMDashboard={onOpenRMMDashboard}
+            showPrimaryButton={false}
+          />
+        </GlowCardAction>
+      </GlowCardHeader>
 
-      <div className="text-xs text-muted-foreground space-y-1.5 flex-1">
+      {/* Middle Specs & Description Area */}
+      <GlowCardContent>
         {isActive ? (
-          <>
+          <div className="space-y-1.5 py-1">
             <div className="flex items-center justify-between text-[11px]">
-              <span className="text-muted-foreground font-medium">{t("devices.tableDeviceDetails")}:</span>
+              <span className="text-muted-foreground font-medium">
+                {t("devices.tableDeviceDetails")}:
+              </span>
               <CopyableSerial serial={equip.device_serial} />
             </div>
+
             {equip.nextcloud_username && (
               <div className="flex items-center justify-between text-[11px]">
-                <span className="text-muted-foreground font-medium">{t("devices.tableCloudBackup")}:</span>
+                <span className="text-muted-foreground font-medium">
+                  {t("devices.tableCloudBackup")}:
+                </span>
                 <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
                   <Cloud className="h-3 w-3" />
                   {t("devices.configured")}
                 </span>
               </div>
             )}
-            {equip.client_name && (
+
+            {(equip.client_name || equip.tenant_name) && (
               <div className="flex items-center justify-between text-[11px]">
-                <span className="text-muted-foreground font-medium">{t("devices.tableClientTenant")}:</span>
-                <span className="text-foreground truncate max-w-35 font-medium">{equip.client_name}</span>
+                <span className="text-muted-foreground font-medium">
+                  {t("devices.tableClientTenant")}:
+                </span>
+                <span className="text-foreground truncate max-w-36 font-medium">
+                  {equip.client_name || equip.tenant_name}
+                </span>
               </div>
             )}
-          </>
+          </div>
         ) : (
-          <p className="text-xs text-muted-foreground italic leading-relaxed">{t("devices.pendingUnboundSlot")}</p>
+          <p className="text-xs text-muted-foreground italic leading-relaxed py-1">
+            {t("devices.pendingUnboundSlot")}
+          </p>
         )}
-      </div>
+      </GlowCardContent>
 
-      <CardFooter className="p-0 border-none flex items-center justify-between gap-2 pt-2 border-t border-border text-[10px] text-muted-foreground mt-auto">
-        <CopyableDeviceId
-          id={equip.id}
-          labelPrefix={t("devices.idLabel")}
-          className="text-[10px] break-all max-w-[calc(100%-70px)]"
-        />
-        <DeviceActionsCell
-          equip={equip}
-          onOpenNcModal={onOpenNcModal}
-          onOpenVaultModal={onOpenVaultModal}
-          onOpenScheduleMaint={onOpenScheduleMaint}
-          onRequestRevoke={onRequestRevoke}
-          onRequestRepair={onRequestRepair}
-          onOpenActivateWithOtp={onOpenActivateWithOtp}
-          onDeployClient={onDeployClient}
-          onDeployAgent={onDeployAgent}
-          onOpenRMMDashboard={onOpenRMMDashboard}
-        />
-      </CardFooter>
-    </Card>
+      <GlowCardDivider />
+
+      {/* Footer: Bottom Left ID Badge & Bottom Right Last Seen Timestamp */}
+      <GlowCardFooter>
+        <GlowCardBadge>
+          <CopyableDeviceId
+            id={equip.id}
+            labelPrefix={t("devices.idLabel")}
+            className="text-[10px] break-all max-w-[calc(100%-10px)]"
+          />
+        </GlowCardBadge>
+
+        <span className="text-[11px] font-mono text-muted-foreground/80 shrink-0">
+          {equip.agent_last_seen_at
+            ? formatRelativeTime(equip.agent_last_seen_at, i18n.language)
+            : isActive
+            ? t("common.active", "Active")
+            : t("common.ready", "Ready")}
+        </span>
+      </GlowCardFooter>
+    </GlowCard>
   );
 });

@@ -1,12 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '@shared/config/env';
-import { JwtPayload } from '@shared/types';
+import { JwtPayload, UserRole } from '@shared/types';
 import { UnauthorizedError } from '@shared/errors';
 import { userRepository, permissionService } from '@modules/auth';
 
 /**
  * Express middleware validating incoming JWT Bearer tokens and populating req.user context.
+ * Honors active tenant context switching via X-Tenant-Id for Admins and Technicians.
  *
  * @param req - Express request
  * @param _res - Express response
@@ -36,6 +37,13 @@ export async function authMiddleware(req: Request, _res: Response, next: NextFun
       if (user) {
         decoded.tenantId = user.tenant_id;
       }
+    }
+
+    const requestedTenantId = req.headers['x-tenant-id'] as string;
+    const canSwitchTenant = decoded.role === UserRole.ADMIN || decoded.role === UserRole.TECHNICIAN;
+
+    if (canSwitchTenant && requestedTenantId) {
+      decoded.tenantId = requestedTenantId;
     }
 
     // Resolve dynamic capabilities via Redis-cached PermissionService

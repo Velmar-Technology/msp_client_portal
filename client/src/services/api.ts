@@ -2,6 +2,7 @@ import axios from 'axios';
 import { setupAxiosErrorInterceptor } from '@shared/errors';
 import { toast } from 'sonner';
 import { getAuthItem, setAuthItem } from '@/lib/authStorage';
+import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 
 let trackApiErrorFn: typeof import('@/telemetry/faro').trackApiError | null = null;
 
@@ -18,7 +19,7 @@ async function trackFaroApiError(error: unknown): Promise<void> {
 
 /**
  * Pre-configured Axios instance for MSP Client Portal API communications.
- * Includes bearer token injection, automated token refresh on 401 Unauthorized responses,
+ * Includes bearer token injection, active tenant context injection, automated token refresh on 401 Unauthorized responses,
  * error telemetry logging (Grafana Faro RUM), and user-friendly toast notifications.
  */
 const api = axios.create({
@@ -28,13 +29,19 @@ const api = axios.create({
   },
 });
 
-// Request interceptor — attach JWT token
+// Request interceptor — attach JWT token and active tenant context
 api.interceptors.request.use(
   (config) => {
     const token = getAuthItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    const activeTenant = useWorkspaceStore.getState().activeTenant;
+    if (activeTenant?.id) {
+      config.headers['X-Tenant-Id'] = activeTenant.id;
+    }
+
     return config;
   },
   (error) => Promise.reject(error),
@@ -43,7 +50,7 @@ api.interceptors.request.use(
 // Global response interceptor to show toast notifications for backend errors & telemetry
 api.interceptors.response.use(
   (response) => response,
-(error) => {
+  (error) => {
     // Send API error telemetry to Grafana Faro RUM
     trackFaroApiError(error);
 
@@ -93,4 +100,3 @@ setupAxiosErrorInterceptor(api, {
 });
 
 export default api;
-

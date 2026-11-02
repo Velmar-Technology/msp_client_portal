@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '@shared/config/env';
-import { JwtPayload } from '@shared/types';
+import { JwtPayload, UserRole } from '@shared/types';
 import { userRepository } from '@modules/auth';
 
 /**
@@ -10,6 +10,7 @@ import { userRepository } from '@modules/auth';
  * - `X-User-Id`
  * - `X-Tenant-Id`
  * Also populates `req.user` for downstream context compatibility.
+ * Allows Admins and Technicians to switch tenant context via `X-Tenant-Id`.
  *
  * @param req - Express request
  * @param _res - Express response
@@ -45,7 +46,14 @@ export async function gatewayAuthMiddleware(
       if (decoded.userId) {
         req.headers['x-user-id'] = decoded.userId;
       }
-      if (decoded.tenantId) {
+
+      const requestedTenantId = req.headers['x-tenant-id'] as string;
+      const canSwitchTenant = decoded.role === UserRole.ADMIN || decoded.role === UserRole.TECHNICIAN;
+
+      if (canSwitchTenant && requestedTenantId) {
+        req.headers['x-tenant-id'] = requestedTenantId;
+        decoded.tenantId = requestedTenantId;
+      } else if (decoded.tenantId) {
         req.headers['x-tenant-id'] = decoded.tenantId;
       }
 

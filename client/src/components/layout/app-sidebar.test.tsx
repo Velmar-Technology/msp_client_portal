@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { expect, test, vi, beforeEach, describe } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { subscriptionService, planService, type Plan } from "@/features/subscriptions";
 import React from 'react';
 
@@ -105,6 +106,25 @@ const makePlan = (overrides: Partial<Plan> = {}): Plan => ({
   ...overrides,
 });
 
+
+const testQueryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+    },
+  },
+});
+
+function renderSidebar() {
+  return render(
+    <QueryClientProvider client={testQueryClient}>
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <AppSidebar />
+      </MemoryRouter>
+    </QueryClientProvider>
+  );
+}
+
 const clientUser = {
   user: { id: 'client-123', name: 'John Client', role: 'CLIENT', email: 'john@client.com', tenantId: 'tenant-1' },
   isAuthenticated: true,
@@ -138,11 +158,7 @@ describe('AppSidebar', () => {
 
     vi.mocked(subscriptionService.getAll).mockResolvedValue([makeSub()]);
 
-    render(
-      <MemoryRouter initialEntries={["/dashboard"]}>
-        <AppSidebar />
-      </MemoryRouter>
-    );
+    renderSidebar();
 
     await waitFor(() => {
       expect(screen.getAllByText('Standard Support').length).toBeGreaterThan(0);
@@ -161,11 +177,7 @@ describe('AppSidebar', () => {
       makeSub({ status: 'EXPIRING', renewal_date: futureDate(3), id: 'sub-exp' }),
     ]);
 
-    render(
-      <MemoryRouter initialEntries={["/dashboard"]}>
-        <AppSidebar />
-      </MemoryRouter>
-    );
+    renderSidebar();
 
     await waitFor(() => {
       expect(screen.getByText('sidebar.expiring')).toBeInTheDocument();
@@ -181,11 +193,7 @@ describe('AppSidebar', () => {
       makeSub({ id: 'sub-2', plan: 'plan-2', service_name: 'Premium Support' }),
     ]);
 
-    render(
-      <MemoryRouter initialEntries={["/dashboard"]}>
-        <AppSidebar />
-      </MemoryRouter>
-    );
+    renderSidebar();
 
     await waitFor(() => {
       expect(screen.getByText('sidebar.subscriptions')).toBeInTheDocument();
@@ -202,11 +210,7 @@ describe('AppSidebar', () => {
       makeSub({ status: 'EXPIRED' }),
     ]);
 
-    render(
-      <MemoryRouter initialEntries={["/dashboard"]}>
-        <AppSidebar />
-      </MemoryRouter>
-    );
+    renderSidebar();
 
     await waitFor(() => {
       expect(subscriptionService.getAll).toHaveBeenCalled();
@@ -221,11 +225,7 @@ describe('AppSidebar', () => {
       isAuthenticated: true,
     });
 
-    render(
-      <MemoryRouter initialEntries={["/dashboard"]}>
-        <AppSidebar />
-      </MemoryRouter>
-    );
+    renderSidebar();
 
     expect(subscriptionService.getAll).not.toHaveBeenCalled();
     expect(screen.getByText('sidebar.groups.management')).toBeInTheDocument();
@@ -245,11 +245,7 @@ describe('AppSidebar', () => {
       { id: 'basic', name: 'Basic Plan' } as any,
     ]);
 
-    render(
-      <MemoryRouter initialEntries={["/dashboard"]}>
-        <AppSidebar />
-      </MemoryRouter>
-    );
+    renderSidebar();
 
     await waitFor(() => {
       expect(screen.getByTestId('sidebar-item-lock')).toBeInTheDocument();

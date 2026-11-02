@@ -1,5 +1,6 @@
 import React, { useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   LayoutDashboard,
   Laptop,
@@ -25,7 +26,6 @@ import {
   CommandEmpty,
   CommandGroup,
   CommandItem,
-  CommandShortcut,
   CommandSeparator,
 } from "@/components/ui/command";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,6 +42,7 @@ function useSafeTheme() {
 }
 
 export function SpotlightSearchModal({ open, onOpenChange }: SpotlightSearchModalProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { theme, setTheme } = useSafeTheme();
@@ -70,97 +71,94 @@ export function SpotlightSearchModal({ open, onOpenChange }: SpotlightSearchModa
     <CommandDialog
       open={open}
       onOpenChange={onOpenChange}
-      title="Quick Navigation"
-      description="Search across portal workspaces, tools, and actions"
+      title={t("spotlight.title")}
+      description={t("spotlight.description")}
     >
-      <CommandInput placeholder="Type a command or search..." />
+      <CommandInput placeholder={t("spotlight.placeholder")} />
       <CommandList>
-        <CommandEmpty>No matching results found.</CommandEmpty>
+        <CommandEmpty>{t("spotlight.noResults")}</CommandEmpty>
 
-        <CommandGroup heading="Navigation">
+        <CommandGroup heading={t("spotlight.groupNavigation")}>
           <CommandItem
             onSelect={() => runCommand(() => navigate(user?.role === "TECHNICIAN" ? "/tech/dashboard" : "/dashboard"))}
           >
             <LayoutDashboard className="size-4" />
-            <span>Dashboard</span>
-            <CommandShortcut>⌘D</CommandShortcut>
+            <span>{t("spotlight.dashboard")}</span>
           </CommandItem>
 
           <CommandItem onSelect={() => runCommand(() => navigate("/tickets"))}>
             <Ticket className="size-4" />
-            <span>Support Tickets</span>
-            <CommandShortcut>⌘T</CommandShortcut>
+            <span>{t("spotlight.tickets")}</span>
           </CommandItem>
 
           <CommandItem onSelect={() => runCommand(() => navigate("/devices"))}>
             <Laptop className="size-4" />
-            <span>Devices & RMM Telemetry</span>
+            <span>{t("spotlight.devices")}</span>
           </CommandItem>
 
           <CommandItem onSelect={() => runCommand(() => navigate("/password-manager"))}>
             <KeyRound className="size-4" />
-            <span>Password Vault</span>
+            <span>{t("spotlight.passwordVault")}</span>
           </CommandItem>
 
           <CommandItem onSelect={() => runCommand(() => navigate("/resources"))}>
             <Download className="size-4" />
-            <span>Cloud Storage Resources</span>
+            <span>{t("spotlight.storage")}</span>
           </CommandItem>
 
           <CommandItem onSelect={() => runCommand(() => navigate("/maintenance"))}>
             <Calendar className="size-4" />
-            <span>Maintenance Schedule</span>
+            <span>{t("spotlight.maintenance")}</span>
           </CommandItem>
 
           <CommandItem onSelect={() => runCommand(() => navigate("/settings/ai"))}>
             <Sparkles className="size-4" />
-            <span>Conversational AI Diagnostics</span>
+            <span>{t("spotlight.aiDiagnostics")}</span>
           </CommandItem>
 
           <CommandItem onSelect={() => runCommand(() => navigate("/billing"))}>
             <CreditCard className="size-4" />
-            <span>Billing & Invoices</span>
+            <span>{t("spotlight.billing")}</span>
           </CommandItem>
 
           <CommandItem onSelect={() => runCommand(() => navigate("/plans"))}>
             <Layers className="size-4" />
-            <span>Subscription Plans</span>
+            <span>{t("spotlight.plans")}</span>
           </CommandItem>
         </CommandGroup>
 
         {user?.role === "ADMIN" && (
-          <CommandGroup heading="Administration">
+          <CommandGroup heading={t("spotlight.groupAdministration")}>
             <CommandItem onSelect={() => runCommand(() => navigate("/crm"))}>
               <Users className="size-4" />
-              <span>CRM & Client Leads</span>
+              <span>{t("spotlight.crm")}</span>
             </CommandItem>
             <CommandItem onSelect={() => runCommand(() => navigate("/financial"))}>
               <Activity className="size-4" />
-              <span>Financial Dashboard</span>
+              <span>{t("spotlight.financial")}</span>
             </CommandItem>
             <CommandItem onSelect={() => runCommand(() => navigate("/admin/users"))}>
               <Shield className="size-4" />
-              <span>User & Role Management</span>
+              <span>{t("spotlight.users")}</span>
             </CommandItem>
             <CommandItem onSelect={() => runCommand(() => navigate("/admin/api-status"))}>
               <Activity className="size-4" />
-              <span>API Gateway Health</span>
+              <span>{t("spotlight.apiStatus")}</span>
             </CommandItem>
           </CommandGroup>
         )}
 
         <CommandSeparator />
 
-        <CommandGroup heading="System & Theme">
+        <CommandGroup heading={t("spotlight.groupSystemTheme")}>
           <CommandItem onSelect={() => runCommand(() => navigate("/dev/style-guide"))}>
             <Palette className="size-4" />
-            <span>ElevenLabs Style Guide Showcase</span>
-            <CommandShortcut>⌘S</CommandShortcut>
+            <span>{t("spotlight.styleGuide")}</span>
           </CommandItem>
 
           <CommandItem onSelect={() => runCommand(() => navigate("/help"))}>
             <HelpCircle className="size-4" />
-            <span>Help Center & Knowledge Base</span>
+            <span>{t("spotlight.help")}</span>
           </CommandItem>
 
           <CommandItem
@@ -169,8 +167,11 @@ export function SpotlightSearchModal({ open, onOpenChange }: SpotlightSearchModa
             }
           >
             {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
-            <span>Toggle Theme ({theme === "dark" ? "Light Mode" : "Dark Mode"})</span>
-            <CommandShortcut>⌘M</CommandShortcut>
+            <span>
+              {t("spotlight.toggleTheme", {
+                mode: theme === "dark" ? t("spotlight.themeLight") : t("spotlight.themeDark"),
+              })}
+            </span>
           </CommandItem>
         </CommandGroup>
       </CommandList>

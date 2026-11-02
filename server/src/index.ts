@@ -64,6 +64,13 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 app.use('/uploads', express.static(uploadsDir));
+app.use('/uploads', (_req, res) => {
+  res.status(404).json({
+    success: false,
+    code: 'NOT_FOUND',
+    message: 'Uploaded file not found',
+  });
+});
 
 // ---- API Documentation ----
 const swaggerOptions = {
