@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { ArrowUpRight, ArrowDownRight, Minus, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -50,11 +51,11 @@ export interface ElevenDashboardHeroProps {
 /**
  * Returns dynamic salutation based on user's current local hour.
  */
-function getGreeting(): string {
+function getGreeting(t: (key: string) => string): string {
   const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
+  if (hour < 12) return t("dashboard.greetingMorning");
+  if (hour < 18) return t("dashboard.greetingAfternoon");
+  return t("dashboard.greetingEvening");
 }
 
 /**
@@ -86,16 +87,11 @@ function generateSmoothCurve(points: { x: number; y: number }[]): string {
 }
 
 export function ElevenDashboardHero({
-  workspaceName = "Estiven's Workspace",
-  userName = "Estiven",
+  workspaceName,
+  userName = "User",
   statusText,
   statusType = "operational",
-  categories = [
-    { id: "overview", label: "Overview", targetId: "section-overview" },
-    { id: "tickets", label: "Support & Tickets", targetId: "section-tickets" },
-    { id: "infrastructure", label: "Infrastructure", targetId: "section-infrastructure" },
-    { id: "billing", label: "Billing & Invoices", targetId: "section-billing" },
-  ],
+  categories: explicitCategories,
   activeCategoryId,
   onCategoryChange,
   actions,
@@ -107,6 +103,23 @@ export function ElevenDashboardHero({
   defaultPeriod = "7d",
   className,
 }: ElevenDashboardHeroProps) {
+  const { t } = useTranslation();
+
+  const categories = useMemo(() => {
+    if (explicitCategories && explicitCategories.length > 0) {
+      return explicitCategories;
+    }
+    return [
+      { id: "overview", label: t("dashboard.systemOverview"), targetId: "section-overview" },
+      { id: "tickets", label: t("dashboard.technicalSupport"), targetId: "section-tickets" },
+      { id: "infrastructure", label: t("dashboard.cloudStorage"), targetId: "section-infrastructure" },
+      { id: "billing", label: t("dashboard.recentInvoices"), targetId: "section-billing" },
+    ];
+  }, [explicitCategories, t]);
+
+  const greeting = useMemo(() => getGreeting(t), [t]);
+  const effectiveWorkspaceName = workspaceName || t("dashboard.clientWorkspace");
+
   const [selectedCategory, setSelectedCategory] = useState<string>(
     activeCategoryId || (categories[0]?.id ?? "overview")
   );
@@ -258,12 +271,12 @@ export function ElevenDashboardHero({
 
           {/* Workspace subtle label */}
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">
-            {workspaceName}
+            {effectiveWorkspaceName}
           </p>
 
           {/* Greeting Heading */}
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-            {getGreeting()}, {userName}
+            {greeting}, {userName}
           </h1>
         </div>
 
@@ -378,7 +391,7 @@ export function ElevenDashboardHero({
           <div className="flex items-center gap-2">
             <Activity className="h-4 w-4 text-muted-foreground" />
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {currentTab?.label} · Telemetry Trend
+              {currentTab?.label} · {t("dashboard.telemetryTrend")}
             </h3>
           </div>
 
@@ -414,7 +427,7 @@ export function ElevenDashboardHero({
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                Linear
+                {t("dashboard.chartScaleLinear")}
               </button>
               <button
                 type="button"
@@ -426,7 +439,7 @@ export function ElevenDashboardHero({
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                Log
+                {t("dashboard.chartScaleLog")}
               </button>
             </div>
           </div>
@@ -485,19 +498,7 @@ export function ElevenDashboardHero({
               />
             )}
 
-            {/* Bottom X-axis Date Labels */}
-            {points.map((pt, idx) => (
-              <text
-                key={idx}
-                x={pt.x}
-                y={chartHeight - 10}
-                textAnchor="middle"
-                fontSize="10"
-                className="fill-muted-foreground font-mono text-[10px]"
-              >
-                {pt.data.label}
-              </text>
-            ))}
+            {/* X-axis labels rendered in HTML layer below to avoid SVG non-uniform stretching */}
 
             {/* Hover Crosshair & Indicator Point */}
             {hoveredPoint && (
@@ -529,6 +530,25 @@ export function ElevenDashboardHero({
               </g>
             )}
           </svg>
+
+          {/* Coordinate-Aligned HTML Date Labels (Never distorted by SVG non-uniform scaling) */}
+          <div className="relative w-full h-5 mt-1.5 pointer-events-none">
+            {points.map((pt, idx) => {
+              if (!pt.data.label) return null;
+              return (
+                <span
+                  key={idx}
+                  className="absolute text-[10px] font-mono text-muted-foreground whitespace-nowrap"
+                  style={{
+                    left: `${(pt.x / chartWidth) * 100}%`,
+                    transform: "translateX(-50%)",
+                  }}
+                >
+                  {pt.data.label}
+                </span>
+              );
+            })}
+          </div>
 
           {/* Floating Hover Tooltip */}
           {hoveredPoint && (

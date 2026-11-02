@@ -49,7 +49,7 @@ export const formatBytes = (bytes: number, decimals = 1): string => {
  * @returns Client dashboard metrics, recent subscription/invoice records, and navigation actions.
  */
 export function useClientDashboard() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
   const [statusSummary, setStatusSummary] = useState<Record<string, number>>({});
@@ -163,6 +163,7 @@ export function useClientDashboard() {
 
   return {
     t,
+    i18n,
     loading,
     subscriptions,
     invoices,

@@ -16,6 +16,7 @@ export function ClientDashboardView() {
   const { user } = useAuth();
   const {
     t,
+    i18n,
     loading,
     subscriptions,
     invoices,
@@ -36,6 +37,15 @@ export function ClientDashboardView() {
     const storagePercent = totalStorageQuota > 0 ? Math.round((activeStorageQuota / totalStorageQuota) * 100) : 0;
     const totalSpend = invoices.reduce((sum, inv) => sum + (Number(inv.total) || 0), 0);
 
+    const locale = i18n?.language ? i18n.language.replace("_", "-") : "en-US";
+    const dayFormatter = new Intl.DateTimeFormat(locale, { weekday: "short" });
+    const now = new Date();
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(now);
+      d.setDate(now.getDate() - (6 - i));
+      return dayFormatter.format(d);
+    });
+
     return [
       {
         id: "tickets",
@@ -44,19 +54,19 @@ export function ClientDashboardView() {
         subtext: `${openTickets} ${t("dashboard.activeTickets")}`,
         trend: {
           direction: openTickets > 0 ? "up" : "neutral",
-          value: `${openTickets} active`,
+          value: t("dashboard.activeCount", { count: openTickets }),
           isPositive: openTickets === 0,
         },
         chartData: [
-          { label: "Mon", value: Math.max(0, openTickets - 1) },
-          { label: "Tue", value: Math.max(1, openTickets) },
-          { label: "Wed", value: Math.max(0, openTickets - 1) },
-          { label: "Thu", value: openTickets + 1 },
-          { label: "Fri", value: Math.max(0, openTickets) },
-          { label: "Sat", value: Math.max(0, openTickets - 2) },
-          { label: "Sun", value: openTickets },
+          { label: days[0], value: Math.max(0, openTickets - 1) },
+          { label: days[1], value: Math.max(1, openTickets) },
+          { label: days[2], value: Math.max(0, openTickets - 1) },
+          { label: days[3], value: openTickets + 1 },
+          { label: days[4], value: Math.max(0, openTickets) },
+          { label: days[5], value: Math.max(0, openTickets - 2) },
+          { label: days[6], value: openTickets },
         ],
-        unit: "tickets",
+        unit: t("dashboard.unitTickets"),
       },
       {
         id: "devices",
@@ -69,13 +79,13 @@ export function ClientDashboardView() {
           isPositive: true,
         },
         chartData: [
-          { label: "Mon", value: activeSlotsCount || 8 },
-          { label: "Tue", value: activeSlotsCount || 8 },
-          { label: "Wed", value: activeSlotsCount || 8 },
-          { label: "Thu", value: activeSlotsCount || 8 },
-          { label: "Fri", value: activeSlotsCount || 8 },
-          { label: "Sat", value: activeSlotsCount || 8 },
-          { label: "Sun", value: activeSlotsCount || 8 },
+          { label: days[0], value: activeSlotsCount || 8 },
+          { label: days[1], value: activeSlotsCount || 8 },
+          { label: days[2], value: activeSlotsCount || 8 },
+          { label: days[3], value: activeSlotsCount || 8 },
+          { label: days[4], value: activeSlotsCount || 8 },
+          { label: days[5], value: activeSlotsCount || 8 },
+          { label: days[6], value: activeSlotsCount || 8 },
         ],
         unit: "nodes",
       },
@@ -90,13 +100,13 @@ export function ClientDashboardView() {
           isPositive: storagePercent < 85,
         },
         chartData: [
-          { label: "Mon", value: Math.max(1, activeGB * 0.9) },
-          { label: "Tue", value: Math.max(1, activeGB * 0.92) },
-          { label: "Wed", value: Math.max(1, activeGB * 0.95) },
-          { label: "Thu", value: Math.max(1, activeGB * 0.97) },
-          { label: "Fri", value: Math.max(1, activeGB * 0.98) },
-          { label: "Sat", value: Math.max(1, activeGB * 0.99) },
-          { label: "Sun", value: activeGB },
+          { label: days[0], value: Math.max(1, activeGB * 0.9) },
+          { label: days[1], value: Math.max(1, activeGB * 0.92) },
+          { label: days[2], value: Math.max(1, activeGB * 0.95) },
+          { label: days[3], value: Math.max(1, activeGB * 0.97) },
+          { label: days[4], value: Math.max(1, activeGB * 0.98) },
+          { label: days[5], value: Math.max(1, activeGB * 0.99) },
+          { label: days[6], value: activeGB },
         ],
         unit: "GB",
       },
@@ -111,18 +121,18 @@ export function ClientDashboardView() {
           isPositive: true,
         },
         chartData: [
-          { label: "Mon", value: Math.max(10, totalSpend * 0.4) },
-          { label: "Tue", value: Math.max(20, totalSpend * 0.5) },
-          { label: "Wed", value: Math.max(30, totalSpend * 0.65) },
-          { label: "Thu", value: Math.max(40, totalSpend * 0.8) },
-          { label: "Fri", value: Math.max(50, totalSpend * 0.9) },
-          { label: "Sat", value: Math.max(55, totalSpend * 0.95) },
-          { label: "Sun", value: Math.max(60, totalSpend) },
+          { label: days[0], value: Math.max(10, totalSpend * 0.4) },
+          { label: days[1], value: Math.max(20, totalSpend * 0.5) },
+          { label: days[2], value: Math.max(30, totalSpend * 0.65) },
+          { label: days[3], value: Math.max(40, totalSpend * 0.8) },
+          { label: days[4], value: Math.max(50, totalSpend * 0.9) },
+          { label: days[5], value: Math.max(55, totalSpend * 0.95) },
+          { label: days[6], value: Math.max(60, totalSpend) },
         ],
         unit: "USD",
       },
     ];
-  }, [t, openTickets, activeSlotsCount, totalSlotsCount, totalStorageQuota, activeStorageQuota, invoices]);
+  }, [t, i18n, openTickets, activeSlotsCount, totalSlotsCount, totalStorageQuota, activeStorageQuota, invoices]);
 
   const categories = useMemo(() => [
     { id: "overview", label: t("dashboard.systemOverview"), targetId: "section-overview" },
@@ -168,7 +178,11 @@ export function ClientDashboardView() {
       <div className="flex flex-col gap-6">
         {/* ElevenLabs Hero Header & Segmented Telemetry Card */}
         <ElevenDashboardHero
-          workspaceName={user?.name ? `${user.name}'s Workspace` : "Client Workspace"}
+          workspaceName={
+            user?.name
+              ? t("dashboard.userWorkspace", { name: user.name })
+              : t("dashboard.clientWorkspace")
+          }
           userName={user?.name?.split(" ")[0] || "Client"}
           statusText={openTickets === 0 ? t("dashboard.systemStatus") : `${openTickets} ${t("tickets.statusOpen")}`}
           statusType={openTickets === 0 ? "operational" : "warning"}

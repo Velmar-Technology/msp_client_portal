@@ -268,11 +268,12 @@ export function AdminDashboardView() {
     ).length;
 
     // 4. Generate sparkline timeline buckets based on period
-    const buckets: { label: string; dateStart: Date; dateEnd: Date }[] = [];
+    const buckets: { label: string; tooltipLabel?: string; dateStart: Date; dateEnd: Date }[] = [];
     const now = new Date();
+    const locale = i18n?.language ? i18n.language.replace("_", "-") : "en-US";
 
     if (period === "7d") {
-      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const dayFormatter = new Intl.DateTimeFormat(locale, { weekday: "short" });
       for (let i = 6; i >= 0; i--) {
         const d = new Date(now);
         d.setDate(now.getDate() - i);
@@ -280,7 +281,7 @@ export function AdminDashboardView() {
         start.setHours(0, 0, 0, 0);
         const end = new Date(d);
         end.setHours(23, 59, 59, 999);
-        buckets.push({ label: days[d.getDay()], dateStart: start, dateEnd: end });
+        buckets.push({ label: dayFormatter.format(d), dateStart: start, dateEnd: end });
       }
     } else if (period === "30d") {
       for (let i = 3; i >= 0; i--) {
@@ -293,12 +294,20 @@ export function AdminDashboardView() {
         buckets.push({ label: `W${4 - i}`, dateStart: start, dateEnd: end });
       }
     } else {
-      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      for (let i = 2; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const start = new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
-        const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
-        buckets.push({ label: monthNames[d.getMonth()], dateStart: start, dateEnd: end });
+      const dateFormatter = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" });
+      // 12 weekly intervals over 90 days with bi-weekly clean labels
+      for (let i = 11; i >= 0; i--) {
+        const end = new Date(now);
+        end.setDate(now.getDate() - i * 7);
+        end.setHours(23, 59, 59, 999);
+        const start = new Date(now);
+        start.setDate(now.getDate() - (i + 1) * 7);
+        start.setHours(0, 0, 0, 0);
+
+        const dateStr = dateFormatter.format(start);
+        // Show bi-weekly mark every second bucket to keep axis uncrowded
+        const label = i % 2 === 0 ? dateStr : "";
+        buckets.push({ label, tooltipLabel: dateStr, dateStart: start, dateEnd: end });
       }
     }
 
@@ -309,7 +318,11 @@ export function AdminDashboardView() {
         const ticketDate = new Date(t.created_at);
         return ticketDate >= b.dateStart && ticketDate <= b.dateEnd;
       }).length;
-      return { label: b.label, value: count };
+      return {
+        label: b.label,
+        value: count,
+        tooltipValue: `${count} ${t("dashboard.unitTickets")}${b.tooltipLabel ? ` (${b.tooltipLabel})` : ""}`,
+      };
     });
 
     // Client sparkline: cumulative organizations registered up to each bucket end
@@ -318,29 +331,29 @@ export function AdminDashboardView() {
         if (!t.created_at) return true;
         return new Date(t.created_at) <= b.dateEnd;
       }).length;
-      return { label: b.label, value: count };
+      return {
+        label: b.label,
+        value: count,
+        tooltipValue: `${count} ${t("dashboard.unitClients")}${b.tooltipLabel ? ` (${b.tooltipLabel})` : ""}`,
+      };
     });
 
-    // Revenue sparkline:
-    let revenueChartData: { label: string; value: number }[];
-    if (period === "90d" && financialStats?.monthlyData && financialStats.monthlyData.length > 0) {
-      revenueChartData = financialStats.monthlyData.slice(-3).map((m) => ({
-        label: m.month,
-        value: m.revenue,
-      }));
-    } else {
-      revenueChartData = buckets.map((b) => {
-        const bucketTotal = invoices.reduce((sum, inv) => {
-          if (!inv.created_at) return sum;
-          const invDate = new Date(inv.created_at);
-          if (invDate >= b.dateStart && invDate <= b.dateEnd) {
-            return sum + (Number(inv.total) || 0);
-          }
-          return sum;
-        }, 0);
-        return { label: b.label, value: bucketTotal };
-      });
-    }
+    // Revenue sparkline: bucketed invoice totals
+    const revenueChartData = buckets.map((b) => {
+      const bucketTotal = invoices.reduce((sum, inv) => {
+        if (!inv.created_at) return sum;
+        const invDate = new Date(inv.created_at);
+        if (invDate >= b.dateStart && invDate <= b.dateEnd) {
+          return sum + (Number(inv.total) || 0);
+        }
+        return sum;
+      }, 0);
+      return {
+        label: b.label,
+        value: bucketTotal,
+        tooltipValue: `${bucketTotal.toFixed(2)}${b.tooltipLabel ? ` (${b.tooltipLabel})` : ""}`,
+      };
+    });
 
     // Storage sparkline
     const storageChartData = buckets.map((b) => ({
@@ -356,30 +369,33 @@ export function AdminDashboardView() {
         subtext: `${openTickets} ${t("dashboard.activeTickets")}`,
         trend: {
           direction: openTickets > 5 ? "up" : "neutral",
-          value: `${openTickets} active`,
+          value: t("dashboard.activeCount", { count: openTickets }),
           isPositive: openTickets === 0,
         },
         chartData: ticketChartData,
-        unit: "tickets",
+        unit: t("dashboard.unitTickets"),
       },
       {
         id: "clients",
-        label: t("dashboard.activeAccounts") || "Active Clients",
-        value: `${activeClientsCount} ${activeClientsCount === 1 ? "Account" : "Accounts"}`,
-        subtext: `${activeClientsCount} Active Organizations`,
+        label: t("dashboard.activeAccounts"),
+        value:
+          activeClientsCount === 1
+            ? t("dashboard.activeAccountsCount", { count: 1 })
+            : t("dashboard.activeAccountsCount_plural", { count: activeClientsCount }),
+        subtext: t("dashboard.activeOrganizations", { count: activeClientsCount }),
         trend: {
           direction: clientsAddedThisMonth > 0 ? "up" : "neutral",
-          value: `+${clientsAddedThisMonth} this month`,
+          value: t("dashboard.addedThisMonth", { count: clientsAddedThisMonth }),
           isPositive: true,
         },
         chartData: clientChartData,
-        unit: "clients",
+        unit: t("dashboard.unitClients"),
       },
       {
         id: "revenue",
-        label: "MRR & Invoicing",
+        label: t("dashboard.mrrAndInvoicing"),
         value: revenueDisplay,
-        subtext: `MRR: ${mrrDisplay} · ${invoices.length} invoices in cycle`,
+        subtext: `MRR: ${mrrDisplay} · ${t("dashboard.invoicesInCycle", { count: invoices.length })}`,
         trend: {
           direction: revenueKpi?.isPositiveTrend ? "up" : (revenueKpi?.trend && revenueKpi.trend !== "0%" ? "down" : "neutral"),
           value: revenueKpi?.trend || "+0%",
@@ -391,7 +407,7 @@ export function AdminDashboardView() {
       {
         id: "storage",
         label: t("dashboard.cloudStorage"),
-        value: isStorageOffline ? "Offline" : `${storageUsage}%`,
+        value: isStorageOffline ? t("dashboard.offline") : `${storageUsage}%`,
         subtext: isStorageOffline ? t("dashboard.offline") : (t("dashboard.online") || "Storage Cluster Online"),
         trend: {
           direction: "neutral",
@@ -402,11 +418,11 @@ export function AdminDashboardView() {
         unit: "%",
       },
     ];
-  }, [t, openTickets, invoices, storage, financialStats, tenants, recentTickets, period]);
+  }, [t, i18n, openTickets, invoices, storage, financialStats, tenants, recentTickets, period]);
 
   const categories = useMemo(() => [
     { id: "overview", label: t("dashboard.systemOverview"), targetId: "section-overview" },
-    { id: "metrics", label: "Operations & Telemetry", targetId: "section-metrics" },
+    { id: "metrics", label: t("dashboard.operationsTelemetry"), targetId: "section-metrics" },
     { id: "invoices", label: t("dashboard.recentInvoices"), targetId: "section-invoices" },
   ], [t]);
 
@@ -426,7 +442,11 @@ export function AdminDashboardView() {
       <div className="flex flex-col gap-6" id="section-overview">
         {/* ElevenLabs Hero Header & Segmented Telemetry Card */}
         <ElevenDashboardHero
-          workspaceName={user?.name ? `${user.name}'s Console` : "MSP Admin Console"}
+          workspaceName={
+            user?.name
+              ? t("dashboard.userConsole", { name: user.name })
+              : t("dashboard.adminConsole")
+          }
           userName={user?.name?.split(" ")[0] || "Admin"}
           categories={categories}
           metricTabs={metricTabs}
