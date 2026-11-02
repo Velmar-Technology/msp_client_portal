@@ -55,6 +55,8 @@ export function SidebarBrand({
   portalTitle,
   onOpenSearch,
 }: SidebarBrandProps) {
+  const { t } = useTranslation();
+
   return (
     <SidebarHeader className="border-b border-sidebar-border/50 p-3 bg-sidebar space-y-2.5">
       {/* 1. ElevenLabs Brand Row */}
@@ -71,21 +73,18 @@ export function SidebarBrand({
         </span>
       </div>
 
-      {/* 2. ElevenLabs Quick Search & Create Trigger (⌘K) */}
+      {/* 2. ElevenLabs Quick Search & Create Trigger */}
       <button
         type="button"
         onClick={onOpenSearch}
         data-slot="sidebar-search-trigger"
         className="relative flex h-8 w-full items-center justify-between rounded-xl border border-border/80 bg-background px-2.5 text-[13px] font-medium text-muted-foreground shadow-none hover:bg-muted/50 hover:text-foreground transition-colors group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8 cursor-pointer"
-        title="Search & create (⌘K)"
+        title={t("spotlight.trigger")}
       >
         <div className="flex items-center gap-2">
           <Search className="size-3.5 shrink-0 text-muted-foreground/80" />
-          <span className="group-data-[collapsible=icon]:hidden truncate">Search & create</span>
+          <span className="group-data-[collapsible=icon]:hidden truncate">{t("spotlight.trigger")}</span>
         </div>
-        <kbd className="pointer-events-none inline-flex h-4.5 select-none items-center rounded border border-border/60 bg-muted/40 px-1 font-mono text-[9px] font-medium text-muted-foreground group-data-[collapsible=icon]:hidden">
-          ⌘K
-        </kbd>
       </button>
     </SidebarHeader>
   );
