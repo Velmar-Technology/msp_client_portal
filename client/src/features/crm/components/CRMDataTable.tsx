@@ -246,6 +246,7 @@ export function CRMDataTable({
       {
         accessorKey: "next_follow_up_date",
         header: t("crm.columns.nextFollowUp"),
+        meta: { className: "hidden xl:table-cell" },
         cell: ({ row }) => {
           const dateStr = row.getValue("next_follow_up_date") as string | null;
           if (!dateStr) return <span className="text-xs text-zinc-400">—</span>;
@@ -267,6 +268,7 @@ export function CRMDataTable({
       {
         accessorKey: "assigned_user_name",
         header: t("crm.columns.assignedTo"),
+        meta: { className: "hidden xl:table-cell" },
         cell: ({ row }) => {
           const name = row.getValue("assigned_user_name") as string | null;
           return (
