@@ -230,6 +230,9 @@ export function AdminDashboardView() {
     t,
     i18n,
     invoices,
+    financialStats,
+    tenants,
+    recentTickets,
     loading,
     storage,
     storageLoading,
@@ -237,13 +240,113 @@ export function AdminDashboardView() {
     nextMaintenance,
     getStatusLabel,
     getStatusColorClass,
+    period,
+    setPeriod,
   } = useAdminDashboard();
 
   const showSkeleton = useDeferredLoading(loading, SKELETON_DISPLAY_DELAY_MS);
 
   const metricTabs: TelemetryMetricTab[] = useMemo(() => {
-    const totalRevenue = invoices.reduce((sum, inv) => sum + (Number(inv.total) || 0), 0);
+    // 1. Storage
+    const isStorageOffline = storage?.status === "offline";
     const storageUsage = storage && storage.percentage !== undefined ? Math.round(storage.percentage) : 0;
+
+    // 2. Financial KPIs
+    const revenueKpi = financialStats?.kpis?.find((k) => k.key === "revenue");
+    const mrrKpi = financialStats?.kpis?.find((k) => k.key === "mrr");
+    const totalRevenueFallback = invoices.reduce((sum, inv) => sum + (Number(inv.total) || 0), 0);
+    const revenueDisplay = revenueKpi ? revenueKpi.value : `$${totalRevenueFallback.toFixed(2)}`;
+    const mrrDisplay = mrrKpi ? mrrKpi.value : "$0.00";
+
+    // 3. Active Clients
+    const activeClientsCount = tenants.length;
+    const startOfCurrentMonth = new Date();
+    startOfCurrentMonth.setDate(1);
+    startOfCurrentMonth.setHours(0, 0, 0, 0);
+    const clientsAddedThisMonth = tenants.filter(
+      (t) => t.created_at && new Date(t.created_at) >= startOfCurrentMonth
+    ).length;
+
+    // 4. Generate sparkline timeline buckets based on period
+    const buckets: { label: string; dateStart: Date; dateEnd: Date }[] = [];
+    const now = new Date();
+
+    if (period === "7d") {
+      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(now.getDate() - i);
+        const start = new Date(d);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(d);
+        end.setHours(23, 59, 59, 999);
+        buckets.push({ label: days[d.getDay()], dateStart: start, dateEnd: end });
+      }
+    } else if (period === "30d") {
+      for (let i = 3; i >= 0; i--) {
+        const end = new Date(now);
+        end.setDate(now.getDate() - i * 7);
+        end.setHours(23, 59, 59, 999);
+        const start = new Date(now);
+        start.setDate(now.getDate() - (i + 1) * 7);
+        start.setHours(0, 0, 0, 0);
+        buckets.push({ label: `W${4 - i}`, dateStart: start, dateEnd: end });
+      }
+    } else {
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      for (let i = 2; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const start = new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
+        const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
+        buckets.push({ label: monthNames[d.getMonth()], dateStart: start, dateEnd: end });
+      }
+    }
+
+    // Ticket sparkline: bucketed created count
+    const ticketChartData = buckets.map((b) => {
+      const count = recentTickets.filter((t) => {
+        if (!t.created_at) return false;
+        const ticketDate = new Date(t.created_at);
+        return ticketDate >= b.dateStart && ticketDate <= b.dateEnd;
+      }).length;
+      return { label: b.label, value: count };
+    });
+
+    // Client sparkline: cumulative organizations registered up to each bucket end
+    const clientChartData = buckets.map((b) => {
+      const count = tenants.filter((t) => {
+        if (!t.created_at) return true;
+        return new Date(t.created_at) <= b.dateEnd;
+      }).length;
+      return { label: b.label, value: count };
+    });
+
+    // Revenue sparkline:
+    let revenueChartData: { label: string; value: number }[];
+    if (period === "90d" && financialStats?.monthlyData && financialStats.monthlyData.length > 0) {
+      revenueChartData = financialStats.monthlyData.slice(-3).map((m) => ({
+        label: m.month,
+        value: m.revenue,
+      }));
+    } else {
+      revenueChartData = buckets.map((b) => {
+        const bucketTotal = invoices.reduce((sum, inv) => {
+          if (!inv.created_at) return sum;
+          const invDate = new Date(inv.created_at);
+          if (invDate >= b.dateStart && invDate <= b.dateEnd) {
+            return sum + (Number(inv.total) || 0);
+          }
+          return sum;
+        }, 0);
+        return { label: b.label, value: bucketTotal };
+      });
+    }
+
+    // Storage sparkline
+    const storageChartData = buckets.map((b) => ({
+      label: b.label,
+      value: isStorageOffline ? 0 : storageUsage,
+    }));
 
     return [
       {
@@ -256,82 +359,50 @@ export function AdminDashboardView() {
           value: `${openTickets} active`,
           isPositive: openTickets === 0,
         },
-        chartData: [
-          { label: "Mon", value: Math.max(0, openTickets - 2) },
-          { label: "Tue", value: Math.max(1, openTickets - 1) },
-          { label: "Wed", value: openTickets + 2 },
-          { label: "Thu", value: Math.max(0, openTickets) },
-          { label: "Fri", value: openTickets + 1 },
-          { label: "Sat", value: Math.max(0, openTickets - 1) },
-          { label: "Sun", value: openTickets },
-        ],
+        chartData: ticketChartData,
         unit: "tickets",
       },
       {
         id: "clients",
-        label: "Active Clients",
-        value: "42 Accounts",
-        subtext: "100% active SLA contracts",
+        label: t("dashboard.activeAccounts") || "Active Clients",
+        value: `${activeClientsCount} ${activeClientsCount === 1 ? "Account" : "Accounts"}`,
+        subtext: `${activeClientsCount} Active Organizations`,
         trend: {
-          direction: "up",
-          value: "+3 this month",
+          direction: clientsAddedThisMonth > 0 ? "up" : "neutral",
+          value: `+${clientsAddedThisMonth} this month`,
           isPositive: true,
         },
-        chartData: [
-          { label: "Mon", value: 38 },
-          { label: "Tue", value: 39 },
-          { label: "Wed", value: 40 },
-          { label: "Thu", value: 40 },
-          { label: "Fri", value: 41 },
-          { label: "Sat", value: 41 },
-          { label: "Sun", value: 42 },
-        ],
+        chartData: clientChartData,
         unit: "clients",
       },
       {
         id: "revenue",
         label: "MRR & Invoicing",
-        value: `$${totalRevenue.toFixed(2)}`,
-        subtext: `${invoices.length} invoices in cycle`,
+        value: revenueDisplay,
+        subtext: `MRR: ${mrrDisplay} · ${invoices.length} invoices in cycle`,
         trend: {
-          direction: "up",
-          value: "+8.4%",
-          isPositive: true,
+          direction: revenueKpi?.isPositiveTrend ? "up" : (revenueKpi?.trend && revenueKpi.trend !== "0%" ? "down" : "neutral"),
+          value: revenueKpi?.trend || "+0%",
+          isPositive: revenueKpi?.isPositiveTrend ?? true,
         },
-        chartData: [
-          { label: "Mon", value: Math.max(50, totalRevenue * 0.45) },
-          { label: "Tue", value: Math.max(80, totalRevenue * 0.55) },
-          { label: "Wed", value: Math.max(100, totalRevenue * 0.7) },
-          { label: "Thu", value: Math.max(120, totalRevenue * 0.8) },
-          { label: "Fri", value: Math.max(140, totalRevenue * 0.9) },
-          { label: "Sat", value: Math.max(150, totalRevenue * 0.95) },
-          { label: "Sun", value: Math.max(160, totalRevenue) },
-        ],
+        chartData: revenueChartData,
         unit: "USD",
       },
       {
         id: "storage",
         label: t("dashboard.cloudStorage"),
-        value: `${storageUsage}%`,
-        subtext: storage?.status === "offline" ? t("dashboard.offline") : "Storage Cluster Online",
+        value: isStorageOffline ? "Offline" : `${storageUsage}%`,
+        subtext: isStorageOffline ? t("dashboard.offline") : (t("dashboard.online") || "Storage Cluster Online"),
         trend: {
           direction: "neutral",
-          value: storage?.status === "offline" ? "Offline" : "Operational",
-          isPositive: storage?.status !== "offline",
+          value: isStorageOffline ? t("dashboard.offline") : (t("dashboard.online") || "Operational"),
+          isPositive: !isStorageOffline,
         },
-        chartData: [
-          { label: "Mon", value: Math.max(1, storageUsage * 0.92) },
-          { label: "Tue", value: Math.max(1, storageUsage * 0.94) },
-          { label: "Wed", value: Math.max(1, storageUsage * 0.96) },
-          { label: "Thu", value: Math.max(1, storageUsage * 0.97) },
-          { label: "Fri", value: Math.max(1, storageUsage * 0.98) },
-          { label: "Sat", value: Math.max(1, storageUsage * 0.99) },
-          { label: "Sun", value: storageUsage },
-        ],
+        chartData: storageChartData,
         unit: "%",
       },
     ];
-  }, [t, openTickets, invoices, storage]);
+  }, [t, openTickets, invoices, storage, financialStats, tenants, recentTickets, period]);
 
   const categories = useMemo(() => [
     { id: "overview", label: t("dashboard.systemOverview"), targetId: "section-overview" },
@@ -357,10 +428,10 @@ export function AdminDashboardView() {
         <ElevenDashboardHero
           workspaceName={user?.name ? `${user.name}'s Console` : "MSP Admin Console"}
           userName={user?.name?.split(" ")[0] || "Admin"}
-          statusText={openTickets === 0 ? "All system nodes operational" : `${openTickets} active tickets pending dispatch`}
-          statusType={openTickets === 0 ? "operational" : "warning"}
           categories={categories}
           metricTabs={metricTabs}
+          period={period}
+          onPeriodChange={setPeriod}
         />
 
         {/* Support Status, Maintenance, Backup Status, and Cloud Storage Card grid */}

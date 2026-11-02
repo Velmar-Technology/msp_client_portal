@@ -9,10 +9,12 @@ export function isPublicOrSystemRoute(path: string, originalUrl?: string): boole
   const publicPrefixes = [
     '/health',
     '/auth',
+    '/tenants',
     '/metrics',
     '/docs',
     '/swagger',
     '/agent-ws',
+    '/uploads',
     '/invoices/webhook',
     '/billing/invoices/webhook',
   ];

@@ -112,7 +112,21 @@ export class TenantRepository extends BaseRepository<Tenant> {
       .returning();
     return (results[0] as Tenant) || null;
   }
+
+  /**
+   * Retrieves all registered tenant organizations ordered alphabetically by name.
+   *
+   * @param limit - Maximum tenants to retrieve (default: 100)
+   * @returns Array of Tenant entities
+   */
+  async listAll(limit = 100): Promise<Tenant[]> {
+    const results = await db
+      .select()
+      .from(tenants)
+      .orderBy(tenants.name)
+      .limit(limit);
+    return results as Tenant[];
+  }
 }
 
 export const tenantRepository = new TenantRepository();
-

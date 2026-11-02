@@ -41,6 +41,8 @@ export interface ElevenDashboardHeroProps {
   metricTabs: TelemetryMetricTab[];
   activeTabId?: string;
   onTabChange?: (tabId: string) => void;
+  period?: "7d" | "30d" | "90d";
+  onPeriodChange?: (period: "7d" | "30d" | "90d") => void;
   defaultPeriod?: "7d" | "30d" | "90d";
   className?: string;
 }
@@ -86,7 +88,7 @@ function generateSmoothCurve(points: { x: number; y: number }[]): string {
 export function ElevenDashboardHero({
   workspaceName = "Estiven's Workspace",
   userName = "Estiven",
-  statusText = "All systems operational",
+  statusText,
   statusType = "operational",
   categories = [
     { id: "overview", label: "Overview", targetId: "section-overview" },
@@ -100,6 +102,8 @@ export function ElevenDashboardHero({
   metricTabs,
   activeTabId,
   onTabChange,
+  period: controlledPeriod,
+  onPeriodChange,
   defaultPeriod = "7d",
   className,
 }: ElevenDashboardHeroProps) {
@@ -109,9 +113,14 @@ export function ElevenDashboardHero({
   const [selectedTabId, setSelectedTabId] = useState<string>(
     activeTabId || (metricTabs[0]?.id ?? "")
   );
-  const [period, setPeriod] = useState<"7d" | "30d" | "90d">(defaultPeriod);
-  const [granularity, setGranularity] = useState<"hourly" | "daily">("daily");
+  const [internalPeriod, setInternalPeriod] = useState<"7d" | "30d" | "90d">(defaultPeriod);
+  const period = controlledPeriod !== undefined ? controlledPeriod : internalPeriod;
   const [scale, setScale] = useState<"linear" | "log">("linear");
+
+  const handlePeriodChange = (p: "7d" | "30d" | "90d") => {
+    setInternalPeriod(p);
+    onPeriodChange?.(p);
+  };
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -217,6 +226,7 @@ export function ElevenDashboardHero({
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pt-1">
         <div>
           {/* Live Pulse Pill */}
+          {statusText && (
           <div
             className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/80 backdrop-blur-md px-3 py-1 text-xs font-medium text-foreground shadow-xs mb-2.5 transition-colors"
             role="status"
@@ -244,6 +254,7 @@ export function ElevenDashboardHero({
               {statusText}
             </span>
           </div>
+          )}
 
           {/* Workspace subtle label */}
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">
@@ -378,7 +389,7 @@ export function ElevenDashboardHero({
                 <button
                   key={p}
                   type="button"
-                  onClick={() => setPeriod(p)}
+                  onClick={() => handlePeriodChange(p)}
                   className={cn(
                     "px-2 py-0.5 rounded-md transition-colors cursor-pointer",
                     period === p
@@ -389,34 +400,6 @@ export function ElevenDashboardHero({
                   {p}
                 </button>
               ))}
-            </div>
-
-            {/* Granularity Toggle */}
-            <div className="flex items-center rounded-lg border border-border/80 bg-background/50 p-0.5 text-[11px] font-medium">
-              <button
-                type="button"
-                onClick={() => setGranularity("hourly")}
-                className={cn(
-                  "px-2 py-0.5 rounded-md transition-colors cursor-pointer capitalize",
-                  granularity === "hourly"
-                    ? "bg-muted text-foreground font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Hourly
-              </button>
-              <button
-                type="button"
-                onClick={() => setGranularity("daily")}
-                className={cn(
-                  "px-2 py-0.5 rounded-md transition-colors cursor-pointer capitalize",
-                  granularity === "daily"
-                    ? "bg-muted text-foreground font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Daily
-              </button>
             </div>
 
             {/* Scale Toggle */}

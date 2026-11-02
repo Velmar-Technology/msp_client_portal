@@ -1,7 +1,10 @@
 import { useMemo, useEffect, useState, useCallback, useRef } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Fragment } from "react";
-import { ChevronDown, ChevronRight, HelpCircle, Lock, ChevronsUpDown, Search, Check } from "lucide-react";
+import { ChevronDown, ChevronRight, HelpCircle, Lock, ChevronsUpDown, Search, Check, Building2, Home } from "lucide-react";
+import { useWorkspaceStore } from "@/store/useWorkspaceStore";
+import { useTenants, type TenantSummary } from "@/features/auth";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import logoUrl from "@/assets/logo.png";
 import { useSidebar, type NavItem, type NavSubItem } from "@/hooks/useSidebar";
@@ -101,6 +104,39 @@ export function SidebarWorkspaceSwitcher({
   displaySubtitle,
   userRole,
 }: SidebarWorkspaceSwitcherProps) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const activeTenant = useWorkspaceStore((s) => s.activeTenant);
+  const setActiveTenant = useWorkspaceStore((s) => s.setActiveTenant);
+  const resetToHome = useWorkspaceStore((s) => s.resetToHome);
+
+  const isElevated = userRole === "ADMIN" || userRole === "TECHNICIAN";
+  const { data: tenantList = [], isLoading: isLoadingTenants } = useTenants();
+
+  const activeTitle = activeTenant?.name || displayTitle;
+  const activeSubtitle = activeTenant
+    ? (activeTenant.subdomain ? `@${activeTenant.subdomain}` : (t("sidebar.managedTenant") || "Client Organization"))
+    : displaySubtitle;
+
+  const handleSelectHome = () => {
+    if (activeTenant !== null) {
+      resetToHome();
+      queryClient.invalidateQueries();
+    }
+  };
+
+  const handleSelectTenant = (tenant: TenantSummary) => {
+    if (activeTenant?.id !== tenant.id) {
+      setActiveTenant({
+        id: tenant.id,
+        name: tenant.name,
+        subdomain: tenant.subdomain,
+        account_status: tenant.account_status,
+      });
+      queryClient.invalidateQueries();
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -118,46 +154,83 @@ export function SidebarWorkspaceSwitcher({
             />
           </div>
           <div className="flex flex-col overflow-hidden text-left group-data-[collapsible=icon]:hidden flex-1 min-w-0">
-            <span className="truncate text-xs font-semibold text-sidebar-foreground leading-tight">
-              {displayTitle}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="truncate text-xs font-semibold text-sidebar-foreground leading-tight">
+                {activeTitle}
+              </span>
+              {activeTenant && (
+                <span className="size-1.5 rounded-full bg-primary shrink-0" title="Switched Workspace" />
+              )}
+            </div>
             <span className="truncate text-[10px] text-muted-foreground font-medium">
-              {displaySubtitle}
+              {activeSubtitle}
             </span>
           </div>
           <ChevronsUpDown className="size-3.5 text-muted-foreground/60 shrink-0 ml-auto group-data-[collapsible=icon]:hidden" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="start" side="top">
+      <DropdownMenuContent className="w-60" align="start" side="top">
         <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
-          Workspaces
+          {t("sidebar.workspaces") || "Workspaces"}
         </DropdownMenuLabel>
-        <DropdownMenuItem className="flex items-center gap-2">
-          <span className="truncate font-medium">{displayTitle}</span>
-          <Check className="ml-auto size-3.5 text-foreground" />
+        
+        {/* Pinned Primary Workspace */}
+        <DropdownMenuItem
+          onClick={handleSelectHome}
+          className="flex items-center gap-2 cursor-pointer font-medium"
+        >
+          <Home className="size-3.5 text-muted-foreground shrink-0" />
+          <span className="truncate flex-1">{displayTitle}</span>
+          {!activeTenant && <Check className="ml-auto size-3.5 text-foreground shrink-0" />}
         </DropdownMenuItem>
-        {userRole === "ADMIN" && (
+
+        {/* Dynamic Registered Client Organizations for Elevated Roles */}
+        {isElevated && (
           <>
-            <DropdownMenuItem className="text-muted-foreground">
-              <span className="truncate">Acme Corporation</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-muted-foreground">
-              <span className="truncate">Beta Industries</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-muted-foreground">
-              <span className="truncate">Gamma Retail Group</span>
-            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
+              {t("sidebar.clientOrganizations") || "Client Organizations"}
+            </DropdownMenuLabel>
+            {isLoadingTenants ? (
+              <div className="py-2 px-2 text-xs text-muted-foreground text-center">
+                {t("sidebar.loadingWorkspaces") || "Loading organizations..."}
+              </div>
+            ) : tenantList.length === 0 ? (
+              <div className="py-2 px-2 text-xs text-muted-foreground text-center">
+                {t("sidebar.noOrganizations") || "No client organizations found"}
+              </div>
+            ) : (
+              <div className="max-h-56 overflow-y-auto space-y-0.5">
+                {tenantList.map((tenant) => {
+                  const isSelected = activeTenant?.id === tenant.id;
+                  return (
+                    <DropdownMenuItem
+                      key={tenant.id}
+                      onClick={() => handleSelectTenant(tenant)}
+                      className={`flex items-center gap-2 cursor-pointer ${
+                        isSelected ? "font-medium text-foreground bg-accent/60" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Building2 className="size-3.5 shrink-0 opacity-70" />
+                      <span className="truncate flex-1">{tenant.name}</span>
+                      {isSelected && <Check className="ml-auto size-3.5 text-foreground shrink-0" />}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </div>
+            )}
           </>
         )}
+
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <NavLink to="/plans" className="cursor-pointer">
-            Manage Subscriptions
+            {t("sidebar.manageSubscriptions") || "Manage Subscriptions"}
           </NavLink>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <NavLink to="/settings/ai" className="cursor-pointer">
-            AI Configuration
+            {t("sidebar.aiConfiguration") || "AI Configuration"}
           </NavLink>
         </DropdownMenuItem>
       </DropdownMenuContent>

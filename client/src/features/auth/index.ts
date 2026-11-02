@@ -9,6 +9,7 @@ export * from './routes';
 // Services & API Queries
 export * from './api/authService';
 export * from './api/useAuthQueries';
+export * from './api/useTenants';
 
 // Hooks
 export * from './hooks/useAuthFilters';

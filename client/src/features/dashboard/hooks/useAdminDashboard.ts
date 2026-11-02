@@ -1,20 +1,26 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { invoiceService, type Invoice } from "@/features/billing";
+import { invoiceService, type Invoice, type FinancialStatsResponse } from "@/features/billing";
 import { systemService, type StorageStatus } from "@/features/system";
 import { ticketService } from "@/features/tickets";
 import { maintenanceService, type DeviceMaintenance } from "@/features/rmm";
+import { fetchTenants, type TenantSummary } from "@/features/auth";
 
 /**
  * Custom hook providing overview metrics and aggregate data for the Admin Dashboard.
- * Loads recent invoices, system storage telemetry, ticket status summaries, and upcoming maintenance tasks.
+ * Loads recent invoices, financial analytics, registered tenants, system storage telemetry,
+ * ticket status summaries, and upcoming maintenance tasks.
  *
  * @returns Aggregated metrics, recent entity records, localized table columns, and loading indicators.
  */
 export function useAdminDashboard() {
   const { t, i18n } = useTranslation();
 
+  const [period, setPeriod] = useState<"7d" | "30d" | "90d">("7d");
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [financialStats, setFinancialStats] = useState<FinancialStatsResponse | null>(null);
+  const [tenants, setTenants] = useState<TenantSummary[]>([]);
+  const [recentTickets, setRecentTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [storage, setStorage] = useState<StorageStatus | null>(null);
   const [storageLoading, setStorageLoading] = useState(true);
@@ -27,10 +33,29 @@ export function useAdminDashboard() {
 
     async function loadInvoices() {
       try {
-        const invData = await invoiceService.getAll(1, 5);
+        const invData = await invoiceService.getAll(1, 10);
         if (isMounted) setInvoices(invData.data || []);
       } catch (err) {
         console.error("Failed to load recent invoices:", err);
+      }
+    }
+
+    async function loadFinancialStats() {
+      const range = period === "90d" ? "quarter" : "30_days";
+      try {
+        const stats = await invoiceService.getFinancialStats(range);
+        if (isMounted) setFinancialStats(stats);
+      } catch (err) {
+        console.error("Failed to load financial stats:", err);
+      }
+    }
+
+    async function loadTenants() {
+      try {
+        const tenantData = await fetchTenants();
+        if (isMounted) setTenants(tenantData || []);
+      } catch (err) {
+        console.error("Failed to load tenants:", err);
       }
     }
 
@@ -47,8 +72,14 @@ export function useAdminDashboard() {
 
     async function loadTickets() {
       try {
-        const summary = await ticketService.getStatusSummary();
-        if (isMounted) setTicketSummary(summary);
+        const [summary, ticketList] = await Promise.all([
+          ticketService.getStatusSummary(),
+          ticketService.getAll({ limit: 100 }),
+        ]);
+        if (isMounted) {
+          setTicketSummary(summary);
+          setRecentTickets(ticketList?.data || []);
+        }
       } catch (err) {
         console.error("Failed to load ticket summary/DB connection:", err);
       }
@@ -67,6 +98,8 @@ export function useAdminDashboard() {
 
     Promise.all([
       loadInvoices(),
+      loadFinancialStats(),
+      loadTenants(),
       loadTickets(),
       loadMaintenances(),
     ]).finally(() => {
@@ -78,7 +111,7 @@ export function useAdminDashboard() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [period]);
 
   // Derive values directly during render (React 19 compiler-friendly)
   const openTickets = (ticketSummary.OPEN || 0) + (ticketSummary.IN_PROGRESS || 0);
@@ -114,6 +147,9 @@ export function useAdminDashboard() {
     t,
     i18n,
     invoices,
+    financialStats,
+    tenants,
+    recentTickets,
     loading,
     storage,
     storageLoading,
@@ -123,5 +159,7 @@ export function useAdminDashboard() {
     maintenanceLoading,
     getStatusLabel,
     getStatusColorClass,
+    period,
+    setPeriod,
   };
 }
