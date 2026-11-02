@@ -88,7 +88,7 @@ export function AppLayout() {
       <SidebarInset className="flex flex-col min-h-screen bg-background">
         <TopNav />
         <main
-          className={`flex-1 w-full flex flex-col p-4 md:px-8 md:py-6 bg-background overflow-x-hidden ${isBlocked ? "items-center justify-center" : ""}`}
+          className={`flex-1 w-full flex flex-col p-4 md:px-6 md:py-5 bg-background overflow-x-hidden ${isBlocked ? "items-center justify-center" : ""}`}
         >
           {isBlocked ? (
             <BlockedPortalAlert onChoosePlan={() => navigate("/plans")} choosePlanLabel={t("layout.choosePlan")} />

@@ -77,6 +77,7 @@ export interface SidebarWorkspaceSwitcherProps {
   displayTitle: string;
   displaySubtitle: string;
   userRole?: string;
+  homeTenantId?: string;
 }
 
 export function SidebarWorkspaceSwitcher({
@@ -84,20 +85,42 @@ export function SidebarWorkspaceSwitcher({
   displayTitle,
   displaySubtitle,
   userRole,
+  homeTenantId,
 }: SidebarWorkspaceSwitcherProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const activeTenant = useWorkspaceStore((s) => s.activeTenant);
   const setActiveTenant = useWorkspaceStore((s) => s.setActiveTenant);
   const resetToHome = useWorkspaceStore((s) => s.resetToHome);
+  const [filterQuery, setFilterQuery] = useState("");
 
   const isElevated = userRole === "ADMIN" || userRole === "TECHNICIAN";
   const { data: tenantList = [], isLoading: isLoadingTenants } = useTenants();
 
-  const activeTitle = activeTenant?.name || displayTitle;
+  // Resolve verified organization name for the home tenant if available
+  const homeTenant = useMemo(
+    () => (homeTenantId ? tenantList.find((t) => t.id === homeTenantId) : null),
+    [tenantList, homeTenantId]
+  );
+  const resolvedHomeTitle = homeTenant?.name || displayTitle;
+
+  const activeTitle = activeTenant?.name || resolvedHomeTitle;
   const activeSubtitle = activeTenant
     ? (activeTenant.subdomain ? `@${activeTenant.subdomain}` : (t("sidebar.managedTenant") || "Client Organization"))
-    : displaySubtitle;
+    : (homeTenant?.subdomain ? `@${homeTenant.subdomain}` : displaySubtitle);
+
+  // Filter out the home tenant from the Client Organizations list to prevent duplicate entries
+  const availableTenants = useMemo(() => {
+    return tenantList.filter((tenant) => {
+      if (homeTenantId && tenant.id === homeTenantId) return false;
+      if (!filterQuery.trim()) return true;
+      const q = filterQuery.toLowerCase();
+      return (
+        tenant.name.toLowerCase().includes(q) ||
+        (tenant.subdomain && tenant.subdomain.toLowerCase().includes(q))
+      );
+    });
+  }, [tenantList, homeTenantId, filterQuery]);
 
   const handleSelectHome = () => {
     if (activeTenant !== null) {
@@ -150,7 +173,7 @@ export function SidebarWorkspaceSwitcher({
           <ChevronsUpDown className="size-3.5 text-muted-foreground/60 shrink-0 ml-auto group-data-[collapsible=icon]:hidden" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-60" align="start" side="top">
+      <DropdownMenuContent className="w-64" align="start" side="top">
         <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
           {t("sidebar.workspaces") || "Workspaces"}
         </DropdownMenuLabel>
@@ -161,7 +184,12 @@ export function SidebarWorkspaceSwitcher({
           className="flex items-center gap-2 cursor-pointer font-medium"
         >
           <Home className="size-3.5 text-muted-foreground shrink-0" />
-          <span className="truncate flex-1">{displayTitle}</span>
+          <span className="truncate flex-1">{resolvedHomeTitle}</span>
+          {homeTenant?.subdomain && (
+            <span className="text-[10px] font-mono text-muted-foreground/70 bg-muted/60 px-1 py-0.2 shrink-0 rounded">
+              @{homeTenant.subdomain}
+            </span>
+          )}
           {!activeTenant && <Check className="ml-auto size-3.5 text-foreground shrink-0" />}
         </DropdownMenuItem>
 
@@ -169,20 +197,41 @@ export function SidebarWorkspaceSwitcher({
         {isElevated && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
-              {t("sidebar.clientOrganizations") || "Client Organizations"}
-            </DropdownMenuLabel>
+            <div className="flex items-center justify-between px-2 pt-1 pb-1">
+              <DropdownMenuLabel className="p-0 text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                {t("sidebar.clientOrganizations") || "Client Organizations"}
+              </DropdownMenuLabel>
+              <span className="text-[10px] font-mono text-muted-foreground/60">
+                {availableTenants.length}
+              </span>
+            </div>
+
+            {/* Quick search input if there are > 5 organizations */}
+            {tenantList.length > 5 && (
+              <div className="px-1.5 pb-1.5">
+                <input
+                  type="text"
+                  value={filterQuery}
+                  onChange={(e) => setFilterQuery(e.target.value)}
+                  placeholder={t("common.search", "Search...")}
+                  className="w-full text-xs px-2 py-1 rounded-md bg-muted/40 border border-border/60 focus:outline-hidden focus:ring-1 focus:ring-ring"
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                />
+              </div>
+            )}
+
             {isLoadingTenants ? (
               <div className="py-2 px-2 text-xs text-muted-foreground text-center">
                 {t("sidebar.loadingWorkspaces") || "Loading organizations..."}
               </div>
-            ) : tenantList.length === 0 ? (
+            ) : availableTenants.length === 0 ? (
               <div className="py-2 px-2 text-xs text-muted-foreground text-center">
                 {t("sidebar.noOrganizations") || "No client organizations found"}
               </div>
             ) : (
               <div className="max-h-56 overflow-y-auto space-y-0.5">
-                {tenantList.map((tenant) => {
+                {availableTenants.map((tenant) => {
                   const isSelected = activeTenant?.id === tenant.id;
                   return (
                     <DropdownMenuItem
@@ -193,7 +242,14 @@ export function SidebarWorkspaceSwitcher({
                       }`}
                     >
                       <Building2 className="size-3.5 shrink-0 opacity-70" />
-                      <span className="truncate flex-1">{tenant.name}</span>
+                      <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                        <span className="truncate">{tenant.name}</span>
+                        {tenant.subdomain && (
+                          <span className="text-[10px] font-mono text-muted-foreground/70 bg-muted/60 px-1 py-0.2 shrink-0 rounded">
+                            @{tenant.subdomain}
+                          </span>
+                        )}
+                      </div>
                       {isSelected && <Check className="ml-auto size-3.5 text-foreground shrink-0" />}
                     </DropdownMenuItem>
                   );
@@ -629,6 +685,7 @@ export function AppSidebar() {
                 displayTitle={user?.name ? `${user.name}'s Workspace` : t("topNav.portal")}
                 displaySubtitle={groupedSubs[0]?.[0]?.service_name || t("nav.infrastructure")}
                 userRole={user?.role}
+                homeTenantId={user?.tenantId}
               />
             </div>
           )}

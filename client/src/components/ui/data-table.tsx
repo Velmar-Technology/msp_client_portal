@@ -359,8 +359,10 @@ export function DataTable<TData, TValue>({
                   const rawHeader = header.column.columnDef.header;
                   const isStringHeader = typeof rawHeader === "string";
 
+                  const columnMeta = header.column.columnDef.meta as { className?: string } | undefined;
+
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead key={header.id} className={columnMeta?.className}>
                       {header.isPlaceholder ? null : isStringHeader ? (
                         <DataTableColumnHeader column={header.column} title={rawHeader} />
                       ) : (
@@ -376,11 +378,14 @@ export function DataTable<TData, TValue>({
             {loading ? (
               Array.from({ length: 5 }).map((_, rowIndex) => (
                 <TableRow key={rowIndex}>
-                  {finalColumns.map((_, colIndex) => (
-                    <TableCell key={colIndex}>
-                      <Skeleton className="h-6 w-full" />
-                    </TableCell>
-                  ))}
+                  {finalColumns.map((col, colIndex) => {
+                    const colMeta = col.meta as { className?: string } | undefined;
+                    return (
+                      <TableCell key={colIndex} className={colMeta?.className}>
+                        <Skeleton className="h-6 w-full" />
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               ))
             ) : table.getRowModel().rows?.length ? (
@@ -391,9 +396,14 @@ export function DataTable<TData, TValue>({
                   onClick={() => onRowClick?.(row.original)}
                   className={onRowClick ? "cursor-pointer" : ""}
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                  ))}
+                  {row.getVisibleCells().map((cell) => {
+                    const cellMeta = cell.column.columnDef.meta as { className?: string } | undefined;
+                    return (
+                      <TableCell key={cell.id} className={cellMeta?.className}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               ))
             ) : (
