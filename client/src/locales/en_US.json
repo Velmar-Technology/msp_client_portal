@@ -58,7 +58,7 @@
     }
   },
   "spotlight": {
-    "trigger": "Search & create",
+    "trigger": "Search",
     "title": "Quick Navigation",
     "description": "Search across portal workspaces, tools, and actions",
     "placeholder": "Type a command or search...",

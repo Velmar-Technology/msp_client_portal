@@ -58,7 +58,7 @@
     }
   },
   "spotlight": {
-    "trigger": "Buscar y crear",
+    "trigger": "Buscar",
     "title": "Navegación Rápida",
     "description": "Buscar en espacios de trabajo, herramientas y acciones del portal",
     "placeholder": "Escriba un comando o busque...",

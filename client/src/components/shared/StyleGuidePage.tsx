@@ -45,7 +45,21 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { Info, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Info, AlertTriangle, CheckCircle2, Laptop, Cloud, MoreHorizontal } from 'lucide-react';
+import {
+  GlowCard,
+  GlowCardHeader,
+  GlowCardIcon,
+  GlowCardTitleGroup,
+  GlowCardTitle,
+  GlowCardStatus,
+  GlowCardStatusDot,
+  GlowCardAction,
+  GlowCardContent,
+  GlowCardDivider,
+  GlowCardFooter,
+  GlowCardBadge,
+} from '@/components/ui/glow-card';
 
 /**
  * Dev-only Live Style Guide component.
@@ -101,6 +115,135 @@ export const StyleGuidePage: React.FC = () => {
             lastEdited="3d ago"
             conversationCount={12}
           />
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold text-foreground">GlowCard Hardware & Telemetry Status Variants</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Emerald Variant: Online Hardware */}
+          <GlowCard variant="emerald">
+            <GlowCardHeader>
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <GlowCardIcon>
+                  <Laptop className="h-5 w-5" />
+                </GlowCardIcon>
+                <GlowCardTitleGroup>
+                  <GlowCardTitle>Workstation-PRO-01</GlowCardTitle>
+                  <GlowCardStatus>
+                    <GlowCardStatusDot color="emerald" pulse />
+                    <span className="font-semibold uppercase tracking-wider text-[11px]">ONLINE</span>
+                    <span>•</span>
+                    <span>Slot 1</span>
+                    <span>•</span>
+                    <span className="font-mono uppercase text-[10px]">MSP-ENT</span>
+                  </GlowCardStatus>
+                </GlowCardTitleGroup>
+              </div>
+              <GlowCardAction>
+                <button aria-label="Device actions" className="text-muted-foreground hover:text-foreground p-1 rounded-md cursor-pointer">
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+              </GlowCardAction>
+            </GlowCardHeader>
+            <GlowCardContent>
+              <div className="space-y-1.5 py-1">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-muted-foreground font-medium">Serial:</span>
+                  <span className="font-mono text-foreground font-semibold">DELL-SN-84920</span>
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-muted-foreground font-medium">Cloud Backup:</span>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                    <Cloud className="h-3 w-3" />
+                    Configured
+                  </span>
+                </div>
+              </div>
+            </GlowCardContent>
+            <GlowCardDivider />
+            <GlowCardFooter>
+              <GlowCardBadge>SLOT-1-ACTIVE</GlowCardBadge>
+              <span className="text-[11px] font-mono text-muted-foreground/80">Seen 1m ago</span>
+            </GlowCardFooter>
+          </GlowCard>
+
+          {/* Amber Variant: Pending Activation */}
+          <GlowCard variant="amber">
+            <GlowCardHeader>
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <GlowCardIcon>
+                  <Laptop className="h-5 w-5 text-amber-500" />
+                </GlowCardIcon>
+                <GlowCardTitleGroup>
+                  <GlowCardTitle>Pending Unbound Slot</GlowCardTitle>
+                  <GlowCardStatus>
+                    <GlowCardStatusDot color="amber" pulse />
+                    <span className="font-semibold uppercase tracking-wider text-[11px]">PENDING</span>
+                    <span>•</span>
+                    <span>Slot 2</span>
+                  </GlowCardStatus>
+                </GlowCardTitleGroup>
+              </div>
+              <GlowCardAction>
+                <button aria-label="Device actions" className="text-muted-foreground hover:text-foreground p-1 rounded-md cursor-pointer">
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+              </GlowCardAction>
+            </GlowCardHeader>
+            <GlowCardContent>
+              <p className="text-xs text-muted-foreground italic leading-relaxed py-1">
+                Available equipment slot waiting for one-time pairing OTP activation.
+              </p>
+            </GlowCardContent>
+            <GlowCardDivider />
+            <GlowCardFooter>
+              <GlowCardBadge className="text-amber-500 border-amber-500/30">Ready for OTP</GlowCardBadge>
+              <span className="text-[11px] font-mono text-muted-foreground/80">Available</span>
+            </GlowCardFooter>
+          </GlowCard>
+
+          {/* Rose Variant: Offline Alert */}
+          <GlowCard variant="rose">
+            <GlowCardHeader>
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <GlowCardIcon>
+                  <Laptop className="h-5 w-5 text-rose-500" />
+                </GlowCardIcon>
+                <GlowCardTitleGroup>
+                  <GlowCardTitle>Workstation-BACKUP-03</GlowCardTitle>
+                  <GlowCardStatus>
+                    <GlowCardStatusDot color="rose" pulse={false} />
+                    <span className="font-semibold uppercase tracking-wider text-[11px]">OFFLINE</span>
+                    <span>•</span>
+                    <span>Slot 3</span>
+                  </GlowCardStatus>
+                </GlowCardTitleGroup>
+              </div>
+              <GlowCardAction>
+                <button aria-label="Device actions" className="text-muted-foreground hover:text-foreground p-1 rounded-md cursor-pointer">
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+              </GlowCardAction>
+            </GlowCardHeader>
+            <GlowCardContent>
+              <div className="space-y-1.5 py-1">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-muted-foreground font-medium">Serial:</span>
+                  <span className="font-mono text-foreground font-semibold">LENOVO-SN-4921</span>
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-muted-foreground font-medium">Alert:</span>
+                  <span className="text-[10px] font-semibold text-rose-500">Agent Disconnected</span>
+                </div>
+              </div>
+            </GlowCardContent>
+            <GlowCardDivider />
+            <GlowCardFooter>
+              <GlowCardBadge className="text-rose-500 border-rose-500/30">DISCONNECTED</GlowCardBadge>
+              <span className="text-[11px] font-mono text-muted-foreground/80">Seen 2d ago</span>
+            </GlowCardFooter>
+          </GlowCard>
         </div>
       </section>
 

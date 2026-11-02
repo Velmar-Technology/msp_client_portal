@@ -40,6 +40,7 @@ export interface DeviceActionsCellProps {
   onDeployClient?: (equip: Partial<SubscriptionEquipment>) => void;
   onDeployAgent?: (equip: Partial<SubscriptionEquipment>) => void;
   onOpenRMMDashboard?: (equip: Partial<SubscriptionEquipment>) => void;
+  showPrimaryButton?: boolean;
 }
 
 /**
@@ -56,6 +57,7 @@ export const DeviceActionsCell = memo(function DeviceActionsCell({
   onDeployClient,
   onDeployAgent,
   onOpenRMMDashboard,
+  showPrimaryButton = true,
 }: DeviceActionsCellProps) {
   const { t } = useTranslation();
   const { hasPlanFeature } = useEntitlements();
@@ -65,31 +67,33 @@ export const DeviceActionsCell = memo(function DeviceActionsCell({
 
   return (
     <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-      {isActive ? (
-        <Button
-          type="button"
-          variant="outline"
-          title={t("maintenance.scheduleBtn")}
-          size="sm"
-          onClick={() => onOpenScheduleMaint(equip)}
-          className="h-7 px-2 text-xs font-semibold gap-1 cursor-pointer"
-        >
-          <ToolCase className="h-3 w-3" />
-          <ChevronRight className="h-3 w-3" />
-        </Button>
-      ) : (
-        equip.subscription_id !== undefined &&
-        equip.slot_index !== undefined && (
+      {showPrimaryButton && (
+        isActive ? (
           <Button
             type="button"
             variant="outline"
+            title={t("maintenance.scheduleBtn")}
             size="sm"
-            onClick={() => onOpenActivateWithOtp(equip.subscription_id!, equip.slot_index!)}
+            onClick={() => onOpenScheduleMaint(equip)}
             className="h-7 px-2 text-xs font-semibold gap-1 cursor-pointer"
           >
-            <span>{t("devices.activateDevice") || "Activate"}</span>
+            <ToolCase className="h-3 w-3" />
             <ChevronRight className="h-3 w-3" />
           </Button>
+        ) : (
+          equip.subscription_id !== undefined &&
+          equip.slot_index !== undefined && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onOpenActivateWithOtp(equip.subscription_id!, equip.slot_index!)}
+              className="h-7 px-2 text-xs font-semibold gap-1 cursor-pointer"
+            >
+              <span>{t("devices.activateDevice") || "Activate"}</span>
+              <ChevronRight className="h-3 w-3" />
+            </Button>
+          )
         )
       )}
 

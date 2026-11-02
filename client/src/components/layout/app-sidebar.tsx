@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useState, useCallback, useRef } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Fragment } from "react";
-import { ChevronDown, ChevronRight, HelpCircle, Lock, ChevronsUpDown, Search, Check, Building2, Home } from "lucide-react";
+import { ChevronDown, ChevronRight, HelpCircle, Lock, ChevronsUpDown, Check, Building2, Home } from "lucide-react";
 import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 import { useTenants, type TenantSummary } from "@/features/auth";
 import { useQueryClient } from "@tanstack/react-query";
@@ -47,19 +47,15 @@ const navGroupHeadingClass =
 interface SidebarBrandProps {
   logo: string;
   portalTitle: string;
-  onOpenSearch?: () => void;
 }
 
 export function SidebarBrand({
   logo,
   portalTitle,
-  onOpenSearch,
 }: SidebarBrandProps) {
-  const { t } = useTranslation();
-
   return (
-    <SidebarHeader className="border-b border-sidebar-border/50 p-3 bg-sidebar space-y-2.5">
-      {/* 1. ElevenLabs Brand Row */}
+    <SidebarHeader className="border-b border-sidebar-border/50 p-3 bg-sidebar">
+      {/* ElevenLabs Brand Row */}
       <div className="flex items-center gap-2.5 px-0.5">
         <div className="flex size-7 items-center justify-center rounded-lg border border-border/80 bg-background shrink-0 shadow-xs overflow-hidden">
           <img
@@ -72,20 +68,6 @@ export function SidebarBrand({
           {portalTitle}
         </span>
       </div>
-
-      {/* 2. ElevenLabs Quick Search & Create Trigger */}
-      <button
-        type="button"
-        onClick={onOpenSearch}
-        data-slot="sidebar-search-trigger"
-        className="relative flex h-8 w-full items-center justify-between rounded-xl border border-border/80 bg-background px-2.5 text-[13px] font-medium text-muted-foreground shadow-none hover:bg-muted/50 hover:text-foreground transition-colors group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8 cursor-pointer"
-        title={t("spotlight.trigger")}
-      >
-        <div className="flex items-center gap-2">
-          <Search className="size-3.5 shrink-0 text-muted-foreground/80" />
-          <span className="group-data-[collapsible=icon]:hidden truncate">{t("spotlight.trigger")}</span>
-        </div>
-      </button>
     </SidebarHeader>
   );
 }
@@ -564,7 +546,6 @@ export function AppSidebar() {
         <SidebarBrand
           logo={logoUrl}
           portalTitle={t("topNav.portal")}
-          onOpenSearch={() => setSearchOpen(true)}
         />
 
         <SidebarContent className="py-1 bg-sidebar">
