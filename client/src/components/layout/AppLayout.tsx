@@ -85,7 +85,7 @@ export function AppLayout() {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="flex flex-col min-h-screen bg-background">
+      <SidebarInset className="flex flex-col min-h-screen bg-background min-w-0">
         <TopNav />
         <main
           className={`flex-1 w-full flex flex-col p-4 md:px-6 md:py-5 bg-background overflow-x-hidden ${isBlocked ? "items-center justify-center" : ""}`}
