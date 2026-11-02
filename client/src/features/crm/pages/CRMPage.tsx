@@ -359,12 +359,12 @@ export function CRMPage() {
     >
       <Page.Header>
         <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-        <Page.HeaderRow>
+        <Page.HeaderRow className="flex-col sm:flex-col xl:flex-row items-start sm:items-start xl:items-center gap-3">
           <Page.TitleGroup>
             <Page.Title>{t("crm.title")}</Page.Title>
             <Page.Description>{t("crm.subtitle")}</Page.Description>
           </Page.TitleGroup>
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <div className="flex flex-wrap items-center gap-2.5 w-full xl:w-auto justify-between xl:justify-end">
             <Page.ViewSwitcher />
             <Page.Actions maxVisible={3}>
               <Button

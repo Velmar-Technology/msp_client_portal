@@ -2,10 +2,8 @@ import * as React from "react";
 import { Clock, User, Building } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { formatRelativeTime } from "@/lib/formatRelativeTime";
-import { priorityColor } from "@/constants/tickets";
 import { useTicketReadStore } from "@/store/useTicketReadStore";
 import type { TicketItem as Ticket } from "../api/ticketService";
 
@@ -128,7 +126,7 @@ export function TicketKanbanBoard({
             </div>
 
             {/* Column Cards List */}
-            <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[calc(100vh-280px)] pr-0.5">
+            <div className="flex flex-col gap-2.5 overflow-y-auto max-h-[calc(100vh-280px)] pr-0.5">
               {columnTickets.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center px-2">
                   <p className="text-xs text-muted-foreground italic">
@@ -140,31 +138,44 @@ export function TicketKanbanBoard({
                   const read = isTicketRead(ticket.id, userId);
 
                   return (
-                    <Card
+                    <div
                       key={ticket.id}
                       onClick={() => onTicketClick(ticket)}
                       className={cn(
-                        "p-2.5 cursor-pointer hover:border-primary/50 hover:shadow-xs transition-all bg-card border-border/70 space-y-1.5 text-left select-none",
+                        "p-3 rounded-xl border border-border/80 bg-card hover:bg-card/90 hover:border-primary/50 hover:shadow-xs transition-all cursor-pointer flex flex-col gap-2 text-left select-none",
                         !read && "border-l-4 border-l-primary"
                       )}
                     >
-                      {/* Top: Ticket Number & Priority */}
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-[10px] font-semibold text-muted-foreground uppercase">
-                          {ticket.id.slice(0, 8)}
-                        </span>
+                      {/* Top: Ticket Number, Category & Priority */}
+                      <div className="flex items-center justify-between gap-1.5">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="font-mono text-[10px] font-semibold text-muted-foreground uppercase">
+                            #{ticket.id.slice(0, 8)}
+                          </span>
+                          {ticket.category && (
+                            <span className="text-[9px] font-medium text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded border border-border/50 whitespace-nowrap">
+                              {t(`tickets.categories.${ticket.category}`, ticket.category)}
+                            </span>
+                          )}
+                        </div>
                         <span
                           className={cn(
-                            "text-[10px] uppercase font-bold tracking-wider",
-                            priorityColor[ticket.priority] || "text-muted-foreground"
+                            "text-[9px] uppercase font-mono font-bold px-1.5 py-0.5 rounded border shrink-0",
+                            ticket.priority === "CRITICAL"
+                              ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                              : ticket.priority === "HIGH"
+                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                                : ticket.priority === "MEDIUM"
+                                  ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
+                                  : "bg-muted text-muted-foreground border-border/60"
                           )}
                         >
-                          {ticket.priority}
+                          {t(`tickets.priorities.${ticket.priority}`, ticket.priority)}
                         </span>
                       </div>
 
                       {/* Title with Unread Indicator */}
-                      <div className="flex items-start gap-1.5">
+                      <div className="flex items-start gap-1.5 min-w-0">
                         {!read && (
                           <span
                             className="size-1.5 rounded-full bg-primary shrink-0 mt-1 inline-block animate-pulse"
@@ -182,28 +193,34 @@ export function TicketKanbanBoard({
                         </h4>
                       </div>
 
-                      {/* Metadata: Client / Assigned Tech / Relative Time (single row) */}
-                      <div className="pt-1 border-t border-border/40 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
-                        <div className="flex items-center gap-2 min-w-0">
-                          {ticket.client_name && (
-                            <div className="flex items-center gap-1 truncate">
+                      {/* Metadata: Client / Assigned Tech / Relative Time */}
+                      <div className="pt-2 border-t border-border/40 flex items-center justify-between gap-2 text-[10px] text-muted-foreground mt-0.5">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          {ticket.client_name ? (
+                            <div className="flex items-center gap-1 truncate" title={ticket.client_name}>
                               <Building className="size-3 shrink-0 text-muted-foreground/70" />
                               <span className="truncate">{ticket.client_name}</span>
                             </div>
+                          ) : ticket.device_name ? (
+                            <div className="flex items-center gap-1 truncate" title={ticket.device_name}>
+                              <span className="font-mono truncate">{ticket.device_name}</span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground/40 font-mono text-[9px]">�</span>
                           )}
                           {ticket.assigned_tech_name && (
-                            <div className="flex items-center gap-1 truncate">
+                            <div className="flex items-center gap-1 truncate" title={ticket.assigned_tech_name}>
                               <User className="size-3 shrink-0 text-muted-foreground/70" />
                               <span className="truncate">{ticket.assigned_tech_name}</span>
                             </div>
                           )}
                         </div>
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground/80 shrink-0">
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground/80 shrink-0 font-mono">
                           <Clock className="size-2.5 shrink-0" />
                           <span>{formatRelativeTime(ticket.created_at, i18n.language)}</span>
                         </div>
                       </div>
-                    </Card>
+                    </div>
                   );
                 })
               )}
