@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.13.5](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.13.4...v1.13.5) (2026-11-02)
+
+
+### Features
+
+* **dashboard:** align telemetry sparkline date labels, locale buckets, and client views ([804cdf2](https://github.com/Velmar-Technology/msp_client_portal/commit/804cdf2e2a8a5a1dcbc2c2b8bde69f98984c7616))
+* **infra:** add WireGuard routing and Stack 18 migration utility scripts ([2d50bf2](https://github.com/Velmar-Technology/msp_client_portal/commit/2d50bf23e2b62ff0b69613f916a3839173a619c3))
+* **tenant:** implement multi-tenant workspace switcher and dynamic context routing ([4eeba2e](https://github.com/Velmar-Technology/msp_client_portal/commit/4eeba2e252e34b2cce1e54863c2d2c2cec17fe51))
+* **ui:** implement ElevenLabs GlowCard primitive and modernize DeviceCard ([d66991e](https://github.com/Velmar-Technology/msp_client_portal/commit/d66991ebcdb5109da6109901d72f21686335a591))
+* **ui:** localize sidebar search and command trigger ([38d82fd](https://github.com/Velmar-Technology/msp_client_portal/commit/38d82fde7c6ca5750ec852f3ec20e82c3532002f))
+* **ui:** localize Spotlight command navigation and theme toggler ([9d0f727](https://github.com/Velmar-Technology/msp_client_portal/commit/9d0f7274f3b9901247dad05a80ef8332db0df221))
+
 ## [1.13.4](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.13.3...v1.13.4) (2026-10-28)
 
 
