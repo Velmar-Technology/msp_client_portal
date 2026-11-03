@@ -2,8 +2,9 @@ import { PermissionRepository, permissionRepository } from '../repositories/Perm
 import { cacheManager, CacheManager } from '@shared/utils/cache/CacheManager';
 import { UserRole } from '@shared/types';
 import { logger } from '@shared/utils/logger';
+import { registeredModuleManifests } from '@shared/registry/modules.generated';
 
-const ALL_SYSTEM_PERMISSIONS = [
+const BASE_SYSTEM_PERMISSIONS = [
   'users:read',
   'users:manage',
   'roles:manage',
@@ -15,8 +16,6 @@ const ALL_SYSTEM_PERMISSIONS = [
   'invoices:mark_paid',
   'devices:read',
   'devices:manage',
-  'assets:read',
-  'assets:manage',
   'tickets:read',
   'tickets:create',
   'tickets:manage',
@@ -26,27 +25,133 @@ const ALL_SYSTEM_PERMISSIONS = [
   'system:audit',
 ];
 
-const TECHNICIAN_DEFAULT_PERMISSIONS = [
+const BASE_TECHNICIAN_PERMISSIONS = [
   'tickets:read',
   'tickets:manage',
   'devices:read',
   'devices:manage',
-  'assets:read',
-  'assets:manage',
   'users:read',
   'invoices:read',
   'plans:read',
   'system:read',
 ];
 
-const CLIENT_DEFAULT_PERMISSIONS = [
+const BASE_CLIENT_PERMISSIONS = [
   'tickets:read',
   'tickets:create',
   'devices:read',
-  'assets:read',
   'invoices:read',
   'plans:read',
 ];
+
+const IMPLIED_ACTIONS: Record<string, ReadonlySet<string>> = {
+  '*': new Set(['*']),
+  manage: new Set(['manage', 'write', 'create', 'update', 'delete', 'read']),
+  write: new Set(['write', 'create', 'update', 'read']),
+  create: new Set(['create']),
+  update: new Set(['update']),
+  delete: new Set(['delete']),
+  read: new Set(['read']),
+};
+
+/**
+ * Evaluates whether a set of granted permissions satisfies a required permission
+ * using hierarchical RBAC rules (ADR-017):
+ * 1. Exact match or global `'*'` wildcard.
+ * 2. Namespace prefix wildcard (e.g., `'assets:*'` or `'crm:leads:*'`).
+ * 3. Action dominance (`manage` -> `write`/`create`/`update`/`delete`/`read`; `write` -> `create`/`update`/`read`)
+ *    across identical or parent-to-child scopes (e.g., `'assets:manage'` grants `'assets:consumables:read'`).
+ *
+ * @param grantedPermissions - Array of permission codes held by the user
+ * @param requiredPermission - Required permission code to verify
+ * @returns Boolean indicating whether the required permission is satisfied
+ */
+export function matchesHierarchicalPermission(
+  grantedPermissions: string[],
+  requiredPermission: string
+): boolean {
+  if (!requiredPermission) return false;
+
+  const reqParts = requiredPermission.split(':');
+  const reqAction = reqParts[reqParts.length - 1];
+  const reqScopeParts = reqParts.slice(0, -1);
+
+  for (const granted of grantedPermissions) {
+    if (granted === '*' || granted === requiredPermission) {
+      return true;
+    }
+
+    // Namespace wildcard: e.g. 'assets:*' or 'crm:leads:*'
+    if (granted.endsWith(':*')) {
+      const prefix = granted.slice(0, -1); // includes trailing ':'
+      if (requiredPermission.startsWith(prefix)) {
+        return true;
+      }
+    }
+
+    // Scope hierarchy + action implication: e.g. 'assets:manage' -> 'assets:consumables:read'
+    const grantParts = granted.split(':');
+    if (grantParts.length < 2 || reqScopeParts.length === 0) {
+      continue;
+    }
+
+    const grantAction = grantParts[grantParts.length - 1];
+    const grantScopeParts = grantParts.slice(0, -1);
+
+    if (grantScopeParts.length > reqScopeParts.length) {
+      continue;
+    }
+
+    const isScopePrefix = grantScopeParts.every(
+      (segment, idx) => segment === reqScopeParts[idx]
+    );
+    if (!isScopePrefix) {
+      continue;
+    }
+
+    const impliedSet = IMPLIED_ACTIONS[grantAction];
+    if (
+      grantAction === reqAction ||
+      impliedSet?.has('*') ||
+      impliedSet?.has(reqAction)
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function getAllSystemPermissions(): string[] {
+  return Array.from(
+    new Set([
+      ...BASE_SYSTEM_PERMISSIONS,
+      ...(registeredModuleManifests ?? []).flatMap((m) => [
+        ...(m.permissions?.admin ?? []),
+        ...(m.permissions?.technician ?? []),
+        ...(m.permissions?.client ?? []),
+      ]),
+    ])
+  );
+}
+
+function getTechnicianDefaultPermissions(): string[] {
+  return Array.from(
+    new Set([
+      ...BASE_TECHNICIAN_PERMISSIONS,
+      ...(registeredModuleManifests ?? []).flatMap((m) => m.permissions?.technician ?? []),
+    ])
+  );
+}
+
+function getClientDefaultPermissions(): string[] {
+  return Array.from(
+    new Set([
+      ...BASE_CLIENT_PERMISSIONS,
+      ...(registeredModuleManifests ?? []).flatMap((m) => m.permissions?.client ?? []),
+    ])
+  );
+}
 
 /**
  * Domain service managing dynamic capabilities, RBAC resolution, and Redis permission caching.
@@ -94,27 +199,27 @@ export class PermissionService {
           if (dbPerms.length > 0) {
             // If user is also ADMIN, ensure all capabilities are present
             if (legacyRole === UserRole.ADMIN || legacyRole === 'ADMIN') {
-              return Array.from(new Set([...dbPerms, ...ALL_SYSTEM_PERMISSIONS]));
+              return Array.from(new Set([...dbPerms, ...getAllSystemPermissions()]));
             }
             return dbPerms;
           }
 
           // Backwards-compatible fallback when relational rows haven't been backfilled yet
           if (legacyRole === UserRole.ADMIN || legacyRole === 'ADMIN') {
-            return ALL_SYSTEM_PERMISSIONS;
+            return getAllSystemPermissions();
           }
           if (legacyRole === UserRole.TECHNICIAN || legacyRole === 'TECHNICIAN') {
-            return TECHNICIAN_DEFAULT_PERMISSIONS;
+            return getTechnicianDefaultPermissions();
           }
           if (legacyRole === UserRole.CLIENT || legacyRole === 'CLIENT') {
-            return CLIENT_DEFAULT_PERMISSIONS;
+            return getClientDefaultPermissions();
           }
 
           return [];
         } catch (error) {
           logger.warn(`Failed to query permissions from DB for user ${userId}, falling back to role fallback:`, error);
           if (legacyRole === UserRole.ADMIN || legacyRole === 'ADMIN') {
-            return ALL_SYSTEM_PERMISSIONS;
+            return getAllSystemPermissions();
           }
           return [];
         }
@@ -123,11 +228,11 @@ export class PermissionService {
   }
 
   /**
-   * Verifies if a user possesses a specific permission capability.
+   * Verifies if a user possesses a specific permission capability (including hierarchical scopes).
    *
    * @param userId - User ID
    * @param tenantId - Tenant ID
-   * @param requiredPermission - Permission code to check (e.g. 'crm:leads:read')
+   * @param requiredPermission - Permission code to check (e.g. 'crm:leads:read' or 'assets:consumables:read')
    * @param legacyRole - Optional legacy role fallback
    * @returns Boolean indicating whether permission is granted
    */
@@ -138,11 +243,11 @@ export class PermissionService {
     legacyRole?: UserRole | string
   ): Promise<boolean> {
     const permissions = await this.getUserPermissions(userId, tenantId, legacyRole);
-    return permissions.includes(requiredPermission) || permissions.includes('*');
+    return matchesHierarchicalPermission(permissions, requiredPermission);
   }
 
   /**
-   * Verifies if a user possesses any of the specified permission capabilities.
+   * Verifies if a user possesses any of the specified permission capabilities (including hierarchical scopes).
    *
    * @param userId - User ID
    * @param tenantId - Tenant ID
@@ -157,7 +262,7 @@ export class PermissionService {
     legacyRole?: UserRole | string
   ): Promise<boolean> {
     const permissions = await this.getUserPermissions(userId, tenantId, legacyRole);
-    return requiredPermissions.some((p) => permissions.includes(p) || permissions.includes('*'));
+    return requiredPermissions.some((p) => matchesHierarchicalPermission(permissions, p));
   }
 
   /**

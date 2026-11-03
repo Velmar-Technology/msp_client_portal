@@ -12,14 +12,22 @@
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.js",
       "default": "./dist/cjs/index.js"
+    },
+    "./*": {
+      "types": "./dist/cjs/*.d.ts",
+      "import": "./dist/esm/*.js",
+      "require": "./dist/cjs/*.js",
+      "default": "./dist/cjs/*.js"
     }
   },
   "scripts": {
+    "sync": "node scripts/sync-barrel.js",
     "clean": "node -e \"const fs = require('fs'); fs.rmSync('dist', { recursive: true, force: true });\"",
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:cjs": "tsc -p tsconfig.cjs.json",
     "postbuild": "node scripts/postbuild.js",
-    "build": "npm run clean && npm run build:esm && npm run build:cjs && npm run postbuild",
+    "build": "npm run sync && npm run clean && npm run build:esm && npm run build:cjs && npm run postbuild",
+    "pretest": "npm run sync",
     "test": "vitest run",
     "test:watch": "vitest"
   },

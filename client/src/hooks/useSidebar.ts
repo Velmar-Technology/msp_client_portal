@@ -16,13 +16,13 @@ import {
   Target,
   KeyRound,
   Sparkles,
-  Boxes,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEntitlements } from "@/hooks/useEntitlements";
 import { subscriptionService, planService, type Plan, type Subscription } from "@/features/subscriptions";
 import { FEATURE_CODES } from "@/constants/subscriptions";
+import { mergeFeatureNavItems } from "@/routes/featureRegistry";
 import type { NavKey } from "@shared/contracts";
 
 export interface NavSubItem {
@@ -36,25 +36,26 @@ export interface NavItem {
   icon: LucideIcon;
   labelKey: string;
   groupLabelKey?: string;
+  order?: number;
   items?: NavSubItem[];
   requiredFeature?: string;
   counterKey?: NavKey;
 }
 
-const clientNavItems: NavItem[] = [
-  { to: "/dashboard", icon: LayoutDashboard, labelKey: "dashboard", groupLabelKey: "sidebar.groups.operations" },
-  { to: "/devices", icon: Laptop, labelKey: "devices", requiredFeature: FEATURE_CODES.RMM_PATCH_MANAGEMENT, counterKey: "devices" },
-  { to: "/assets", icon: Boxes, labelKey: "assets", requiredFeature: FEATURE_CODES.ASSET_LIFECYCLE },
-  { to: "/resources", icon: Download, labelKey: "resources", requiredFeature: FEATURE_CODES.CLOUD_STORAGE },
-  { to: "/password-manager", icon: KeyRound, labelKey: "passwordManager", requiredFeature: FEATURE_CODES.PASSWORD_MANAGER },
-  { to: "/settings/ai", icon: Sparkles, labelKey: "cafAiSettings", requiredFeature: FEATURE_CODES.CAF_EDUCATION_AGENT },
-  { to: "/maintenance", icon: Calendar, labelKey: "maintenance", requiredFeature: FEATURE_CODES.RMM_PATCH_MANAGEMENT, counterKey: "maintenance" },
-  { to: "/tickets", icon: Ticket, labelKey: "myTickets", counterKey: "tickets" },
+const baseClientNavItems: NavItem[] = [
+  { to: "/dashboard", icon: LayoutDashboard, labelKey: "dashboard", groupLabelKey: "sidebar.groups.operations", order: 10 },
+  { to: "/devices", icon: Laptop, labelKey: "devices", requiredFeature: FEATURE_CODES.RMM_PATCH_MANAGEMENT, counterKey: "devices", order: 20 },
+  { to: "/resources", icon: Download, labelKey: "resources", requiredFeature: FEATURE_CODES.CLOUD_STORAGE, order: 30 },
+  { to: "/password-manager", icon: KeyRound, labelKey: "passwordManager", requiredFeature: FEATURE_CODES.PASSWORD_MANAGER, order: 40 },
+  { to: "/settings/ai", icon: Sparkles, labelKey: "cafAiSettings", requiredFeature: FEATURE_CODES.CAF_EDUCATION_AGENT, order: 50 },
+  { to: "/maintenance", icon: Calendar, labelKey: "maintenance", requiredFeature: FEATURE_CODES.RMM_PATCH_MANAGEMENT, counterKey: "maintenance", order: 60 },
+  { to: "/tickets", icon: Ticket, labelKey: "myTickets", counterKey: "tickets", order: 70 },
   {
     to: "/account-group",
     icon: User,
     labelKey: "account",
     groupLabelKey: "sidebar.groups.account",
+    order: 100,
     items: [
       { to: "/profile", labelKey: "profile" },
       { to: "/notifications/preferences", labelKey: "notificationPreferences" },
@@ -64,15 +65,16 @@ const clientNavItems: NavItem[] = [
   },
 ];
 
-const techNavItems: NavItem[] = [
-  { to: "/tech/dashboard", icon: LayoutDashboard, labelKey: "dashboard", groupLabelKey: "sidebar.groups.operations" },
-  { to: "/maintenance", icon: Calendar, labelKey: "maintenance", counterKey: "maintenance" },
-  { to: "/tickets", icon: Ticket, labelKey: "myTickets", counterKey: "tickets" },
+const baseTechNavItems: NavItem[] = [
+  { to: "/tech/dashboard", icon: LayoutDashboard, labelKey: "dashboard", groupLabelKey: "sidebar.groups.operations", order: 10 },
+  { to: "/maintenance", icon: Calendar, labelKey: "maintenance", counterKey: "maintenance", order: 60 },
+  { to: "/tickets", icon: Ticket, labelKey: "myTickets", counterKey: "tickets", order: 70 },
   {
     to: "/account-group",
     icon: User,
     labelKey: "account",
     groupLabelKey: "sidebar.groups.account",
+    order: 100,
     items: [
       { to: "/profile", labelKey: "profile" },
       { to: "/notifications/preferences", labelKey: "notificationPreferences" },
@@ -80,24 +82,24 @@ const techNavItems: NavItem[] = [
   },
 ];
 
-const adminNavItems: NavItem[] = [
-  { to: "/dashboard", icon: Shield, labelKey: "adminDashboard", groupLabelKey: "sidebar.groups.management" },
-  { to: "/crm", icon: Target, labelKey: "crm", counterKey: "crm" },
-  { to: "/financial", icon: Landmark, labelKey: "financial" },
-  { to: "/admin/users", icon: Users, labelKey: "userManagement" },
-  { to: "/admin/api-status", icon: Activity, labelKey: "apiStatus" },
-  { to: "/devices", icon: Laptop, labelKey: "devices", groupLabelKey: "sidebar.groups.operations", counterKey: "devices" },
-  { to: "/assets", icon: Boxes, labelKey: "assets" },
-  { to: "/resources", icon: Download, labelKey: "resources" },
-  { to: "/password-manager", icon: KeyRound, labelKey: "passwordManager" },
-  { to: "/settings/ai", icon: Sparkles, labelKey: "cafAiSettings" },
-  { to: "/maintenance", icon: Calendar, labelKey: "maintenance", counterKey: "maintenance" },
-  { to: "/tickets", icon: Ticket, labelKey: "allTickets", counterKey: "tickets" },
+const baseAdminNavItems: NavItem[] = [
+  { to: "/dashboard", icon: Shield, labelKey: "adminDashboard", groupLabelKey: "sidebar.groups.management", order: 10 },
+  { to: "/crm", icon: Target, labelKey: "crm", counterKey: "crm", order: 20 },
+  { to: "/financial", icon: Landmark, labelKey: "financial", order: 30 },
+  { to: "/admin/users", icon: Users, labelKey: "userManagement", order: 40 },
+  { to: "/admin/api-status", icon: Activity, labelKey: "apiStatus", order: 50 },
+  { to: "/devices", icon: Laptop, labelKey: "devices", groupLabelKey: "sidebar.groups.operations", counterKey: "devices", order: 20 },
+  { to: "/resources", icon: Download, labelKey: "resources", order: 30 },
+  { to: "/password-manager", icon: KeyRound, labelKey: "passwordManager", order: 40 },
+  { to: "/settings/ai", icon: Sparkles, labelKey: "cafAiSettings", order: 50 },
+  { to: "/maintenance", icon: Calendar, labelKey: "maintenance", counterKey: "maintenance", order: 60 },
+  { to: "/tickets", icon: Ticket, labelKey: "allTickets", counterKey: "tickets", order: 70 },
   {
     to: "/settings-group",
     icon: Settings,
     labelKey: "settings",
     groupLabelKey: "sidebar.groups.account",
+    order: 100,
     items: [
       { to: "/profile", labelKey: "profile" },
       { to: "/notifications/preferences", labelKey: "notificationPreferences" },
@@ -106,6 +108,10 @@ const adminNavItems: NavItem[] = [
     ],
   },
 ];
+
+const clientNavItems: NavItem[] = mergeFeatureNavItems(baseClientNavItems, "CLIENT");
+const techNavItems: NavItem[] = mergeFeatureNavItems(baseTechNavItems, "TECHNICIAN");
+const adminNavItems: NavItem[] = mergeFeatureNavItems(baseAdminNavItems, "ADMIN");
 
 export function useSidebar() {
   const { user } = useAuth();

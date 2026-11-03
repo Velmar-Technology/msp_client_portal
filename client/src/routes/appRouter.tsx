@@ -5,13 +5,13 @@ import { RouteSuspenseWrapper, ContentPageSkeleton } from "@/components/skeleton
 import { RouteGuard } from "./routeUtils";
 import { DocumentTitle } from "./useDocumentTitle";
 import { publicRoutes } from "./publicRoutes";
+import { getDiscoveredFeatureRoutes } from "./featureRegistry";
 import { authRoutes } from "@/features/auth";
 import { dashboardRoutes } from "@/features/dashboard";
 import { ticketRoutes } from "@/features/tickets";
 import { billingRoutes } from "@/features/billing";
 import { subscriptionRoutes } from "@/features/subscriptions";
 import { equipmentRoutes } from "@/features/equipment";
-import { assetsRoutes } from "@/features/assets";
 import { rmmRoutes } from "@/features/rmm";
 import { crmRoutes } from "@/features/crm";
 import { financialRoutes } from "@/features/financial";
@@ -60,13 +60,13 @@ const protectedFeatureRoutes: RouteObject[] = applyGuards([
   ...billingRoutes,
   ...subscriptionRoutes,
   ...equipmentRoutes,
-  ...assetsRoutes,
   ...rmmRoutes,
   ...crmRoutes,
   ...financialRoutes,
   ...usersRoutes,
   ...settingsRoutes,
   ...systemRoutes,
+  ...getDiscoveredFeatureRoutes(),
 ]);
 
 /**

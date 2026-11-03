@@ -60,3 +60,6 @@ graphify-out/
 
 # MCP Local Configuration
 .agents/mcp_config.json
+
+# Auto-generated domain registries (zero-touch feature discovery)
+*.generated.ts

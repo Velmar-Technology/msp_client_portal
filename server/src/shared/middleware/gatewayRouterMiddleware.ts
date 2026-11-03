@@ -9,7 +9,8 @@ import { systemRoutes } from '@modules/system';
 import { notificationRoutes, notificationPreferenceRoutes } from '@modules/notifications';
 import { crmRoutes } from '@modules/crm';
 import { navRoutes } from '@modules/nav';
-import { assetRoutes } from '@modules/assets';
+import { registeredModuleManifests } from '@shared/registry/modules.generated';
+import { resolveModuleRouteMounts } from '@shared/registry/moduleManifest.types';
 
 /**
  * Express router acting as the API Gateway Layer Cluster Dispatcher.
@@ -47,8 +48,11 @@ gatewayClusterRouter.use('/rmm', rmmRoutes);
 gatewayClusterRouter.use('/crm', crmRoutes);
 gatewayClusterRouter.use('/nav', navRoutes);
 gatewayClusterRouter.use('/authz', authzRoutes);
-gatewayClusterRouter.use('/assets', assetRoutes);
 
+// 4. Auto-discovered flat & hierarchical module manifests (`server/src/modules/**/manifest.ts`)
+for (const mount of resolveModuleRouteMounts(registeredModuleManifests)) {
+  gatewayClusterRouter.use(mount.prefix, mount.router);
+}
 
 /**
  * Middleware ensuring standard Gateway Header (`X-User-Id`, `X-Tenant-Id`) propagation on all cluster requests.

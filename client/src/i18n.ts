@@ -9,6 +9,64 @@ export type SupportedLanguage = 'en_US' | 'es_DO';
 
 export const SUPPORTED_LANGUAGES: SupportedLanguage[] = ['en_US', 'es_DO'];
 
+type TranslationDict = Record<string, unknown>;
+
+const featureLocaleModules = import.meta.glob<TranslationDict>(
+  '@/features/**/locales/*.json',
+  { eager: true, import: 'default' }
+);
+
+/**
+ * Recursively merges source translation keys into target dictionary without mutating inputs.
+ *
+ * @param target - Base translation dictionary
+ * @param source - Feature-scoped translation dictionary to merge
+ * @returns Deep-merged translation dictionary
+ */
+function deepMergeTranslations(target: TranslationDict, source: TranslationDict): TranslationDict {
+  const output: TranslationDict = { ...target };
+  for (const [key, value] of Object.entries(source)) {
+    const existing = output[key];
+    if (
+      value &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      existing &&
+      typeof existing === 'object' &&
+      !Array.isArray(existing)
+    ) {
+      output[key] = deepMergeTranslations(
+        existing as TranslationDict,
+        value as TranslationDict
+      );
+    } else {
+      output[key] = value;
+    }
+  }
+  return output;
+}
+
+/**
+ * Builds the complete translation dictionary for a locale by merging base `src/locales/<lang>.json`
+ * with all colocated `src/features/<domain>/locales/<lang>.json` files.
+ *
+ * @param lang - Target supported language code
+ * @param baseDict - Root locale JSON object
+ * @returns Merged translation dictionary
+ */
+function buildLocaleResources(lang: SupportedLanguage, baseDict: TranslationDict): TranslationDict {
+  let merged: TranslationDict = { ...baseDict };
+  const suffix = `/locales/${lang}.json`;
+
+  for (const [filePath, mod] of Object.entries(featureLocaleModules)) {
+    if (filePath.endsWith(suffix) && mod && typeof mod === 'object') {
+      merged = deepMergeTranslations(merged, mod);
+    }
+  }
+
+  return merged;
+}
+
 /**
  * Normalizes any language tag or code into a supported application language key ('en_US' | 'es_DO').
  */
@@ -94,10 +152,10 @@ i18n
   .init({
     resources: {
       en_US: {
-        translation: enUS,
+        translation: buildLocaleResources('en_US', enUS as TranslationDict),
       },
       es_DO: {
-        translation: esDO,
+        translation: buildLocaleResources('es_DO', esDO as TranslationDict),
       },
     },
     lng: getInitialLanguage(),

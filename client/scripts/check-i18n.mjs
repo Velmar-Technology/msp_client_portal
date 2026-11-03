@@ -7,6 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const CLIENT_DIR = path.resolve(__dirname, '..');
 const LOCALES_DIR = path.join(CLIENT_DIR, 'src', 'locales');
+const FEATURES_DIR = path.join(CLIENT_DIR, 'src', 'features');
 const SRC_DIR = path.join(CLIENT_DIR, 'src');
 
 /**
@@ -23,6 +24,46 @@ function extractKeys(obj, prefix = '') {
       keys.push(fullKey);
     }
   }
+  return keys;
+}
+
+/**
+ * Recursively collects all `locales/<lang>.json` files inside `src/features/`.
+ */
+function findFeatureLocaleFiles(dir, lang) {
+  let results = [];
+  if (!fs.existsSync(dir)) return results;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === 'locales') {
+        const candidate = path.join(fullPath, `${lang}.json`);
+        if (fs.existsSync(candidate)) {
+          results.push(candidate);
+        }
+      } else {
+        results = results.concat(findFeatureLocaleFiles(fullPath, lang));
+      }
+    }
+  }
+  return results;
+}
+
+/**
+ * Loads all keys for a locale across root `src/locales/<lang>.json` and
+ * colocated `src/features/<domain>/locales/<lang>.json` (ADR-017).
+ */
+function loadLocaleKeys(lang) {
+  const rootPath = path.join(LOCALES_DIR, `${lang}.json`);
+  const keys = new Set(extractKeys(JSON.parse(fs.readFileSync(rootPath, 'utf8'))));
+
+  for (const featureLocalePath of findFeatureLocaleFiles(FEATURES_DIR, lang)) {
+    const featureData = JSON.parse(fs.readFileSync(featureLocalePath, 'utf8'));
+    for (const k of extractKeys(featureData)) {
+      keys.add(k);
+    }
+  }
+
   return keys;
 }
 
@@ -54,7 +95,7 @@ function findSourceFiles(dir) {
 
 console.log('🔍 Running i18n Verification Suite...\n');
 
-// 1. Read locale dictionaries
+// 1. Read locale dictionaries (root + colocated feature locales)
 const enPath = path.join(LOCALES_DIR, 'en_US.json');
 const esPath = path.join(LOCALES_DIR, 'es_DO.json');
 
@@ -63,11 +104,8 @@ if (!fs.existsSync(enPath) || !fs.existsSync(esPath)) {
   process.exit(1);
 }
 
-const enData = JSON.parse(fs.readFileSync(enPath, 'utf8'));
-const esData = JSON.parse(fs.readFileSync(esPath, 'utf8'));
-
-const enKeys = new Set(extractKeys(enData));
-const esKeys = new Set(extractKeys(esData));
+const enKeys = loadLocaleKeys('en_US');
+const esKeys = loadLocaleKeys('es_DO');
 
 let hasErrors = false;
 

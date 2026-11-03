@@ -3,8 +3,9 @@
  * Only public hooks, components, routes, and ephemeral UI types should be exported here.
  */
 
-// Routes
+// Routes & Manifest
 export * from './routes';
+export * from './manifest';
 
 // Components
 export * from './components/AssetsTable';

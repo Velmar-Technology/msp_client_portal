@@ -1,4 +1,9 @@
 import { defineConfig } from 'tsup';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const { syncServerRegistry } = require('./scripts/sync-registry.cjs');
+syncServerRegistry();
 
 export default defineConfig({
   entry: {

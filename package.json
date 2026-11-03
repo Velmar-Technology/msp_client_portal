@@ -7,6 +7,7 @@
     "packages/*"
   ],
   "scripts": {
+    "gen:module": "node scripts/gen-module.mjs",
     "build:packages": "npm -w packages/errors run build && npm -w packages/contracts run build && npm -w packages/mcp-server run build",
     "build:installer": "powershell -ExecutionPolicy Bypass -File scripts/build-suite-msi.ps1",
     "build:tray": "npm --prefix packages/msp-tray run build",

@@ -1,0 +1,140 @@
+{
+  "nav": {
+    "assets": "Assets"
+  },
+  "assets": {
+    "title": "Asset Inventory",
+    "description": "Track and manage hardware, network appliances, and software licenses.",
+    "newAsset": "New Asset",
+    "searchPlaceholder": "Search by name, model, serial...",
+    "statusFilter": "Status",
+    "metrics": {
+      "total": "Total Assets",
+      "active": "Active & Deployed",
+      "maintenance": "Under Maintenance"
+    },
+    "tabs": {
+      "all": "All",
+      "hardware": "Hardware",
+      "network": "Network",
+      "software": "Software",
+      "peripheral": "Peripherals",
+      "itAssets": "IT Assets",
+      "consumables": "Consumables & Supplies"
+    },
+    "status": {
+      "all": "All Statuses",
+      "active": "Active",
+      "maintenance": "Maintenance",
+      "inStorage": "In Storage",
+      "decommissioned": "Decommissioned"
+    },
+    "headers": {
+      "name": "Asset",
+      "type": "Type",
+      "status": "Status",
+      "makeModel": "Make / Model",
+      "serial": "Serial Number",
+      "assigned": "Assigned To"
+    },
+    "empty": {
+      "title": "No IT assets found",
+      "description": "Get started by registering hardware, software, or network assets."
+    },
+    "modal": {
+      "createTitle": "Register New IT Asset",
+      "editTitle": "Edit IT Asset"
+    },
+    "fields": {
+      "name": "Asset Name",
+      "type": "Type",
+      "status": "Status",
+      "manufacturer": "Manufacturer",
+      "model": "Model",
+      "serialNumber": "Serial / Tag",
+      "notes": "Notes & Runbook"
+    },
+    "placeholders": {
+      "name": "e.g., Core Router, Dev Laptop",
+      "notes": "Optional deployment details or locations"
+    },
+    "messages": {
+      "createSuccess": "Asset registered successfully",
+      "updateSuccess": "Asset updated successfully",
+      "deleteSuccess": "Asset deleted successfully",
+      "deleteError": "Failed to delete asset",
+      "error": "Failed to save asset. Please try again."
+    },
+    "deleteConfirm": {
+      "title": "Delete Asset?",
+      "description": "This will soft-delete {{name}} from the active inventory. Linked device mappings will be detached."
+    },
+    "consumables": {
+      "newConsumable": "Add Consumable",
+      "kpiTotal": "Total Inventory Items",
+      "kpiLowStock": "Low Stock Alerts",
+      "kpiOutOfStock": "Out of Stock",
+      "searchPlaceholder": "Search consumables by name, category, SKU, model...",
+      "emptyList": "No consumable items found.",
+      "outOfStock": "Out of Stock",
+      "lowStock": "Low Stock",
+      "inStock": "In Stock",
+      "afterCheckout": "After Checkout:",
+      "currentStock": "Current Stock:",
+      "newStock": "New Stock Level:",
+      "colItem": "Item / Name",
+      "colCategory": "Category",
+      "colStock": "Stock Level",
+      "colStatus": "Status",
+      "colLocation": "Location",
+      "colCost": "Unit Cost",
+      "checkoutBtn": "Checkout",
+      "restockBtn": "Restock",
+      "viewHistory": "Checkout History",
+      "createTitle": "Add Consumable & Supply",
+      "editTitle": "Edit Consumable",
+      "nameLabel": "Item Name *",
+      "categoryLabel": "Category *",
+      "selectCategory": "Select Category",
+      "manufacturerLabel": "Manufacturer",
+      "modelLabel": "Model Number",
+      "skuLabel": "SKU / Item #",
+      "quantityLabel": "Stock Quantity *",
+      "minQuantityLabel": "Min Alert Threshold *",
+      "locationLabel": "Storage Location",
+      "costLabel": "Unit Cost ($)",
+      "addButton": "Add Item",
+      "checkoutTitle": "Checkout Consumable",
+      "notesLabel": "Notes / Recipient",
+      "checkoutNotesPlaceholder": "e.g. Dispensed to Sarah for Marketing printer",
+      "insufficientStock": "Cannot checkout more than available stock",
+      "checkoutConfirm": "Confirm Checkout",
+      "checkoutSuccess": "Successfully checked out {{count}} units",
+      "checkoutError": "Failed to check out consumable",
+      "restockTitle": "Restock Consumable",
+      "quantityToAdd": "Quantity to Add *",
+      "poLabel": "PO / Invoice #",
+      "restockNotesPlaceholder": "e.g. Received from Amazon Business batch #44",
+      "confirmRestock": "Confirm Restock",
+      "restockSuccess": "Restocked {{count}} units. New total: {{total}}",
+      "restockError": "Failed to restock consumable",
+      "historyTitle": "Checkout History",
+      "noHistory": "No checkouts recorded yet for this item.",
+      "deleteConfirmTitle": "Delete Consumable Item?",
+      "deleteConfirmDesc": "This will remove \"{{name}}\" from the active consumable inventory. Checkout history will be retained.",
+      "createdSuccess": "Consumable item registered",
+      "updatedSuccess": "Consumable item updated",
+      "deletedSuccess": "Consumable item deleted",
+      "actionError": "Failed to save consumable",
+      "categories": {
+        "toner": "Toner & Ink",
+        "cables": "Cables & Adapters",
+        "peripherals": "Peripherals",
+        "batteries": "Batteries",
+        "paper": "Paper & Media",
+        "tools": "Tools & Cleaning",
+        "other": "Other"
+      }
+    }
+  }
+}
