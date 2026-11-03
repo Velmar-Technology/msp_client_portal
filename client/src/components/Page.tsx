@@ -25,6 +25,13 @@ import {
   PageDashboardSection,
 } from "./page/PageDashboard";
 import { PageCalendar } from "./page/PageCalendar";
+import { PageActionGrid, PageActionCard } from "./page/PageActionCard";
+import { PageDocsLink } from "./page/PageDocsLink";
+import { PageSearchInput } from "./page/PageSearchInput";
+import { PageFilterPill } from "./page/PageFilterPill";
+import { PageTogglePill } from "./page/PageTogglePill";
+import { PageContentCard } from "./page/PageContentCard";
+import { PageEmptyState } from "./page/PageEmptyState";
 import { PageGraph } from "./page/PageGraph";
 import {
   PageHeader,
@@ -226,6 +233,14 @@ export const Page = Object.assign(PageRoot, {
   Calendar: PageCalendar,
   Date: PageCalendar,
   Graph: PageGraph,
+  ActionGrid: PageActionGrid,
+  ActionCard: PageActionCard,
+  DocsLink: PageDocsLink,
+  SearchInput: PageSearchInput,
+  FilterPill: PageFilterPill,
+  TogglePill: PageTogglePill,
+  ContentCard: PageContentCard,
+  EmptyState: PageEmptyState,
   Provider: PageProvider,
   usePageContext,
   usePageView,

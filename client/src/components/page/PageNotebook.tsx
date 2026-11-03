@@ -140,10 +140,12 @@ export function PageNotebook({
 
       <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
         <TabsList
-          variant={variant}
+          variant={variant === "line" ? "line" : "default"}
           className={cn(
             variant === "line"
               ? "border-b border-border/60 w-full justify-start rounded-none bg-transparent p-0 h-9 gap-2"
+              : variant === "pill"
+              ? "inline-flex h-8 bg-muted/60 p-0.5 rounded-xl border border-border/40 gap-0.5"
               : "h-8 bg-muted p-0.5 rounded-md",
             tabsListClassName
           )}
@@ -163,6 +165,8 @@ export function PageNotebook({
                 className={cn(
                   variant === "line"
                     ? "h-8 px-3 text-xs font-semibold rounded-none border-b-2 border-transparent transition-all data-active:border-primary data-active:text-primary data-active:bg-transparent hover:text-foreground cursor-pointer select-none"
+                    : variant === "pill"
+                    ? "h-7 px-3 text-xs font-medium rounded-lg transition-all cursor-pointer select-none text-muted-foreground hover:text-foreground data-active:bg-background data-active:text-foreground data-active:shadow-2xs data-active:font-semibold"
                     : "h-7 px-3 text-xs font-semibold rounded-sm transition-all cursor-pointer select-none"
                 )}
               >
