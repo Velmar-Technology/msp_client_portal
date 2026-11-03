@@ -492,18 +492,19 @@ export function ApiStatusPage() {
   }, [activeSection, filteredServices, filteredEnvVariables, t]);
 
   // Latency health distribution data
+  const services = data?.services;
   const latencyHistogramData = useMemo(() => {
-    if (!data?.services) return [];
-    const under50 = data.services.filter((s) => s.latencyMs < 50).length;
-    const between50and200 = data.services.filter((s) => s.latencyMs >= 50 && s.latencyMs <= 200).length;
-    const over200 = data.services.filter((s) => s.latencyMs > 200).length;
+    if (!services) return [];
+    const under50 = services.filter((s) => s.latencyMs < 50).length;
+    const between50and200 = services.filter((s) => s.latencyMs >= 50 && s.latencyMs <= 200).length;
+    const over200 = services.filter((s) => s.latencyMs > 200).length;
 
     return [
       { label: "< 50ms (Optimal)", value: under50, color: "hsl(142.1 76.2% 36.3%)" },
       { label: "50-200ms (Normal)", value: between50and200, color: "hsl(38 92% 50%)" },
       { label: "> 200ms (Degraded)", value: over200, color: "hsl(346.8 77.2% 49.8%)" },
     ];
-  }, [data?.services]);
+  }, [services]);
 
   return (
     <Page isLoading={isLoading}>
