@@ -83,6 +83,17 @@ Settings pages compose rows using `<Page.SettingRow>` inside a `divide-y divide-
 
 ---
 
+### 3. The 1–3 Page Consolidation Rule (In-Page Tabs vs Sidebar Sprawl)
+
+To prevent sidebar bloat and navigation fragmentation across the portal:
+* **Threshold**: If a feature module or sub-domain has **1 to 3 distinct sub-views** (e.g. `Equipos TI` and `Consumibles`), do **NOT** split them into separate sidebar sub-routes or collapsible sidebar accordions.
+* **Single Route with In-Page Tabs**: Consolidate the views into a single canonical top-level route (e.g. `/assets`) using `<Page.Tabs>` (variant `"bubble"`).
+* **URL State Synchronization**: Synchronize tab state with the URL using `useUrlState({ getParam, setParam })` (e.g. `/assets?tab=consumables`). This preserves deep linking, bookmarking, and browser back/forward navigation without route duplication.
+* **Contextual Action Header**: The primary page action button (e.g. `<Page.Actions>`) dynamically responds to the active tab (e.g. `+ Nuevo Activo` on `it_assets` vs `+ Agregar Consumible` on `consumables`).
+* **Flat Sidebar Manifest**: The domain manifest (`manifest.ts`) registers a single flat `navItem` without nested `items`, eliminating unnecessary chevron dropdowns.
+
+---
+
 ## Consequences
 
 ### Positive

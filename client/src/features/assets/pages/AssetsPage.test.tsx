@@ -169,4 +169,45 @@ describe('AssetsPage', () => {
       expect(screen.getAllByText(/Low Stock/i).length).toBeGreaterThanOrEqual(1);
     });
   });
+
+  it('renders consumables tab directly when ?tab=consumables URL query parameter is present', async () => {
+    vi.mocked(assetsService.getAssets).mockResolvedValue(mockResponse);
+    vi.mocked(assetsService.getConsumables).mockResolvedValue({
+      consumables: [
+        {
+          id: 'c0000000-0000-0000-0000-000000000001',
+          tenantId: 'b0000000-0000-0000-0000-000000000002',
+          name: 'Direct URL Toner',
+          category: 'Toner / Ink',
+          modelNumber: 'CF258A',
+          itemNumber: 'SKU-58A',
+          manufacturer: 'HP',
+          totalQuantity: 5,
+          minQuantity: 5,
+          location: 'Supply Closet B',
+          purchaseCost: 89.99,
+          alertState: 'NORMAL',
+          createdAt: '2026-02-01T00:00:00Z',
+          updatedAt: '2026-02-01T00:00:00Z',
+          deletedAt: null,
+        },
+      ],
+      total: 1,
+      lowStockCount: 0,
+      outOfStockCount: 0,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/assets?tab=consumables']}>
+        <QueryClientProvider client={queryClient}>
+          <AssetsPage />
+        </QueryClientProvider>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Direct URL Toner')).toBeInTheDocument();
+    });
+    expect(screen.getByRole('button', { name: /Add Consumable/i })).toBeInTheDocument();
+  });
 });

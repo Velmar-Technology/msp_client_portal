@@ -5,8 +5,7 @@ import { assetsRoutes } from './routes';
 
 /**
  * Self-registering Feature Manifest for the IT Assets domain (ADR-017).
- * Automatically discovered by `featureRegistry.ts` for router and sidebar integration.
- * Houses child sub-modules such as `assets.consumables`.
+ * Consolidated single-page view with in-page tabs for IT Assets and Consumables (ADR-016).
  */
 export const featureManifest: FeatureManifest = {
   id: 'assets',
@@ -22,14 +21,6 @@ export const featureManifest: FeatureManifest = {
       requiredPermission: 'assets:read',
       requiredFeature: FEATURE_CODES.ASSET_LIFECYCLE,
       featureGatedRoles: ['CLIENT'],
-      items: [
-        {
-          to: '/assets',
-          labelKey: 'itAssets',
-          order: 10,
-          requiredPermission: 'assets:read',
-        },
-      ],
     },
   ],
 };

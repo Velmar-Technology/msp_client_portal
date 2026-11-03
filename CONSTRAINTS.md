@@ -20,6 +20,7 @@ Last reviewed: 2026-09-01
 | Backend Tests | 100% test suite pass (70+ test files) | `npm -w server run test` | task end, CI |
 | Frontend Tests | 100% test suite pass (34+ test files) | `npm -w client run test:run` | task end, CI |
 | Architecture | Strict Dependency Inversion & Gateway Boundaries | Import linter / code review | review, CI |
+| UI Hierarchy | 1–3 Page Consolidation (ADR-016): modules with 1–3 sub-views must use `<Page.Tabs>` + `useUrlState` on a single route; flat sidebar without chevron | Manifest & route review | review, CI |
 
 ## Measured, Hold the Line
 

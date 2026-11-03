@@ -10,6 +10,7 @@ import {
   Package,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useUrlState } from '@/hooks/useUrlState';
 import { Page } from '@/components/Page';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -50,7 +51,14 @@ import { ConsumableHistoryModal } from '../components/ConsumableHistoryModal';
 
 export function AssetsPage() {
   const { t } = useTranslation();
-  const [activeMainTab, setActiveMainTab] = useState<'it_assets' | 'consumables'>('it_assets');
+  const { getParam, setParam } = useUrlState();
+  const rawTab = getParam('tab', 'it_assets');
+  const activeMainTab: 'it_assets' | 'consumables' =
+    rawTab === 'consumables' ? 'consumables' : 'it_assets';
+
+  const handleMainTabChange = (id: string) => {
+    setParam('tab', id === 'it_assets' ? null : id);
+  };
 
   // IT Assets state
   const { search, type, status, setSearch, setType, setStatus } = useAssetsFilters();
@@ -147,7 +155,7 @@ export function AssetsPage() {
           <Page.Tabs
             tabs={mainTabs}
             activeTab={activeMainTab}
-            onTabChange={(id) => setActiveMainTab(id as 'it_assets' | 'consumables')}
+            onTabChange={handleMainTabChange}
             variant="bubble"
           />
         </div>
