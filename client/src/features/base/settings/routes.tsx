@@ -32,4 +32,8 @@ export const settingsRoutes: AppRouteObject[] = [
     path: "/profile",
     element: <Navigate to="/settings?tab=profile" replace />,
   },
+  {
+    path: "/notifications/preferences",
+    element: <Navigate to="/settings?tab=notifications" replace />,
+  },
 ];

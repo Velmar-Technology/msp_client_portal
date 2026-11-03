@@ -3,10 +3,8 @@ import { useLocation } from "react-router-dom";
 import i18n from "i18next";
 import {
   LayoutDashboard,
-  User,
   Users,
   Shield,
-  Settings,
   Laptop,
   Landmark,
   Calendar,
@@ -15,6 +13,8 @@ import {
   Target,
   KeyRound,
   Sparkles,
+  Package,
+  Receipt,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -48,61 +48,28 @@ const baseClientNavItems: NavItem[] = [
   { to: "/password-manager", icon: KeyRound, labelKey: "passwordManager", requiredFeature: FEATURE_CODES.PASSWORD_MANAGER, order: 40 },
   { to: "/settings/ai", icon: Sparkles, labelKey: "cafAiSettings", requiredFeature: FEATURE_CODES.CAF_EDUCATION_AGENT, order: 50 },
   { to: "/maintenance", icon: Calendar, labelKey: "maintenance", requiredFeature: FEATURE_CODES.RMM_PATCH_MANAGEMENT, counterKey: "maintenance", order: 60 },
-  {
-    to: "/account-group",
-    icon: User,
-    labelKey: "account",
-    groupLabelKey: "sidebar.groups.account",
-    order: 100,
-    items: [
-      { to: "/profile", labelKey: "profile" },
-      { to: "/notifications/preferences", labelKey: "notificationPreferences" },
-      { to: "/plans", labelKey: "plans" },
-      { to: "/billing", labelKey: "billing", counterKey: "billing" },
-    ],
-  },
+  { to: "/plans", icon: Package, labelKey: "plans", groupLabelKey: "sidebar.groups.account", order: 80 },
+  { to: "/billing", icon: Receipt, labelKey: "billing", counterKey: "billing", order: 90 },
 ];
 
 const baseTechNavItems: NavItem[] = [
   { to: "/tech/dashboard", icon: LayoutDashboard, labelKey: "dashboard", groupLabelKey: "sidebar.groups.operations", order: 10 },
   { to: "/maintenance", icon: Calendar, labelKey: "maintenance", counterKey: "maintenance", order: 60 },
-  {
-    to: "/account-group",
-    icon: User,
-    labelKey: "account",
-    groupLabelKey: "sidebar.groups.account",
-    order: 100,
-    items: [
-      { to: "/profile", labelKey: "profile" },
-      { to: "/notifications/preferences", labelKey: "notificationPreferences" },
-    ],
-  },
 ];
 
 const baseAdminNavItems: NavItem[] = [
   { to: "/dashboard", icon: Shield, labelKey: "adminDashboard", groupLabelKey: "sidebar.groups.management", order: 10 },
   { to: "/crm", icon: Target, labelKey: "crm", counterKey: "crm", order: 20 },
   { to: "/financial", icon: Landmark, labelKey: "financial", order: 30 },
-  { to: "/admin/users", icon: Users, labelKey: "userManagement", order: 40 },
+  { to: "/users", icon: Users, labelKey: "userManagement", order: 40 },
   { to: "/admin/api-status", icon: Activity, labelKey: "apiStatus", order: 50 },
   { to: "/devices", icon: Laptop, labelKey: "devices", groupLabelKey: "sidebar.groups.operations", counterKey: "devices", order: 20 },
   { to: "/resources", icon: Download, labelKey: "resources", order: 30 },
   { to: "/password-manager", icon: KeyRound, labelKey: "passwordManager", order: 40 },
   { to: "/settings/ai", icon: Sparkles, labelKey: "cafAiSettings", order: 50 },
   { to: "/maintenance", icon: Calendar, labelKey: "maintenance", counterKey: "maintenance", order: 60 },
-  {
-    to: "/settings-group",
-    icon: Settings,
-    labelKey: "settings",
-    groupLabelKey: "sidebar.groups.account",
-    order: 100,
-    items: [
-      { to: "/profile", labelKey: "profile" },
-      { to: "/notifications/preferences", labelKey: "notificationPreferences" },
-      { to: "/plans", labelKey: "plans" },
-      { to: "/billing", labelKey: "billing", counterKey: "billing" },
-    ],
-  },
+  { to: "/plans", icon: Package, labelKey: "plans", groupLabelKey: "sidebar.groups.account", order: 80 },
+  { to: "/billing", icon: Receipt, labelKey: "billing", counterKey: "billing", order: 90 },
 ];
 
 const clientNavItems: NavItem[] = mergeFeatureNavItems(baseClientNavItems, "CLIENT");

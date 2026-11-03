@@ -6,6 +6,7 @@ import { usersRoutes } from "@/features/users";
  * Self-registering child manifest for Base Users (ADR-017 / ADR-018).
  * Mounts protected user management routes and attaches Dynamic RBAC sidebar entry.
  *
+ * @see ADR-014
  * @see ADR-017
  * @see ADR-018
  */
@@ -15,7 +16,7 @@ export const featureManifest: FeatureManifest = {
   routes: usersRoutes,
   navItems: [
     {
-      to: "/admin/users",
+      to: "/users",
       icon: Users,
       labelKey: "userManagement",
       group: "management",
