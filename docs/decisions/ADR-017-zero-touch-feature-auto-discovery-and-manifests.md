@@ -87,9 +87,10 @@ export const featureManifest: FeatureManifest = {
 * **Dynamic RBAC Primary Check (`BL-302` / `ADR-014`):**
   * When `user.permissions` is hydrated and `requiredPermission` is declared (`string | string[]`), both `mergeFeatureNavItems` and `RouteGuard` evaluate **`hasFrontendPermission(user.permissions, requiredPermission)` as the sole authorization decision**—never blocking a user based on legacy `roles` / `allowedRoles` arrays.
   * Granting a capability (e.g., `assets:read` or `helpdesk:tickets:read`) to any custom role in PostgreSQL immediately unlocks the sidebar item and route.
+  * **Guest User Experience (`GUEST` Role):** Users with the `GUEST` role navigate within the standard `AppLayout` shell. ADR-017 Dynamic RBAC empty container pruning ensures all unauthorized routes and navigation sections are completely hidden. Guests landing on `/dashboard` are seamlessly routed to their first authorized feature or a minimal guest welcome card.
 * **Sidebar Sub-Item Injection (`parentTo`) & Empty Container Pruning:**
   * When a `FeatureNavEntry` specifies `parentTo` (e.g., `'/helpdesk'`, `'/assets'`, `'/settings-group'`), `mergeFeatureNavItems` attaches it into that parent item's collapsible `items` sub-menu sorted by numeric `order`.
-  * If all child sub-items under a parent container are filtered out by Dynamic RBAC permissions, `mergeFeatureNavItems` automatically omits the empty parent container from the sidebar.
+  * If all child sub-items under a parent container are filtered out by Dynamic RBAC permissions, `mergeFeatureNavItems` automatically omits the empty parent container from the sidebar. Supported `SidebarRole` identifiers include `'ADMIN' | 'TECHNICIAN' | 'CLIENT' | 'GUEST'`.
 * **Route Prefix & Breadcrumb Chaining (`parentId` & `mountInsideParentOutlet`):**
   * When `parentId` is specified, `resolveFeatureRoutes` automatically prefixes relative child route paths with the parent's primary path (`/helpdesk/tickets`, `/helpdesk/kb`) and chains the parent's `handle.crumb` before the child's.
   * Setting `mountInsideParentOutlet: true` mounts the child routes directly inside the parent route's React Router `children` (`<Outlet />`).
@@ -133,25 +134,27 @@ Inspired by Odoo's `ir.model.access.csv`, each module defines its atomic capabil
 
 ```csv
 code,module,description,roles
-helpdesk:tickets:read,helpdesk,View support tickets and timelines,ADMIN|TECHNICIAN|CLIENT
-helpdesk:tickets:create,helpdesk,Create support tickets and responses,ADMIN|TECHNICIAN|CLIENT
+helpdesk:tickets:read,helpdesk,View support tickets and timelines,ADMIN|TECHNICIAN|CLIENT|GUEST
+helpdesk:tickets:create,helpdesk,Create support tickets and responses,ADMIN|TECHNICIAN|CLIENT|GUEST
 helpdesk:tickets:update,helpdesk,Update ticket status and assign technicians,ADMIN|TECHNICIAN
 helpdesk:tickets:delete,helpdesk,Delete support tickets,ADMIN
 helpdesk:tickets:manage,helpdesk,Full management of helpdesk tickets,ADMIN
 ```
 
 * **Compile-Time Parsing & Type Emission (`sync-registry.cjs`):** `parseSecurityCsv` reads every `server/src/modules/**/security.csv` and emits:
-  1. `server/src/shared/registry/permissions.generated.ts` containing `registeredSecurityRules`, `registeredModulePermissions`, and `ALL_SYSTEM_PERMISSION_CODES`.
+  1. `server/src/shared/registry/permissions.generated.ts` containing `registeredSecurityRules`, `registeredModulePermissions` (with typed buckets for `admin`, `technician`, `client`, and `guest`), and `ALL_SYSTEM_PERMISSION_CODES`.
   2. `packages/contracts/src/auth/permissions.generated.ts` exporting `SystemPermissionCode` union types and `packages/contracts/src/auth/permissions.contract.ts` exporting `PermissionRequirement`.
   3. This ensures express middleware (`requirePermission(...)`) and client manifests (`requiredPermission: '...'`) have 100% compile-time autocomplete and typo protection.
 * **Idempotent PostgreSQL Synchronization (`PermissionService.syncPermissionCatalog()`):**
   1. Upserts all `(code, module, description)` rows into `permissions` (`ON CONFLICT (code) DO NOTHING`).
-  2. Calls `PermissionRepository.seedRolePermissions` to ensure default system roles exist and inserts `(role_id, permission_id)` into `role_permissions` (`ON CONFLICT DO NOTHING` so custom Admin edits in PostgreSQL are never overwritten).
+  2. Calls `PermissionRepository.seedRolePermissions` to ensure default system roles (`ADMIN`, `TECHNICIAN`, `CLIENT`, `GUEST`) exist and inserts `(role_id, permission_id)` into `role_permissions` (`ON CONFLICT DO NOTHING` so custom Admin edits in PostgreSQL are never overwritten).
 
 #### C. Principle of Least Privilege (`BL-302` / `ADR-014`)
-1. **Atomic CRUD Capabilities & Deny-by-Default Scaffolding:** `npm run gen:module <path>` automatically scaffolds `server/src/modules/<path>/security.csv` with atomic `:read`, `:create`, `:update`, `:delete` rows and defaults to **Deny-by-Default** (`ADMIN` only unless `--roles=CLIENT,TECHNICIAN,ADMIN` is explicitly passed). Passing `--container` (`--is-group`) scaffolds a pure parent container without dummy DB tables or CRUD routes.
-2. **Explicit Sub-Module Scopes (No Implicit Parent Leakage):** In `matchesHierarchicalPermission` (`PermissionService.ts`) and `hasFrontendPermission` (`routeUtils.tsx`), a parent capability (`helpdesk:read` or `helpdesk:manage`) does **NOT** implicitly grant access to child sub-modules (`helpdesk:tickets:read`). Child sub-modules require their own explicit capability or an explicit namespace wildcard (`helpdesk:*`).
-3. **Same-Scope Action Dominance:** Within the **exact same module scope**, `manage` $\supset$ `{write, create, update, delete, read}` and `write` $\supset$ `{create, update, read}` (e.g., `helpdesk:tickets:manage` satisfies `helpdesk:tickets:read` and `helpdesk:tickets:create`).
+1. **Atomic CRUD Capabilities & Deny-by-Default Scaffolding:** `npm run gen:module <path>` automatically scaffolds `server/src/modules/<path>/security.csv` with atomic `:read`, `:create`, `:update`, `:delete` rows and defaults to **Deny-by-Default** (`ADMIN` only unless `--roles=CLIENT,TECHNICIAN,ADMIN` or `GUEST` is explicitly passed). Passing `--container` (`--is-group`) scaffolds a pure parent container without dummy DB tables or CRUD routes.
+2. **Zero-by-Default Baseline for `GUEST`:** Unlike `ADMIN` or `CLIENT`, the `GUEST` role is initialized with **zero default capabilities**. A capability is granted to a guest strictly when explicitly authored into `security.csv` (`roles: ...|GUEST`) or granted dynamically in the database.
+3. **Cross-Tenant Guest Scoping:** `GUEST` users operate under a cross-tenant invitation model. They can accept invitations to multiple client tenants and switch tenant context via the standard API gateway header `X-Tenant-Id` (verified against active guest tenant memberships).
+4. **Explicit Sub-Module Scopes (No Implicit Parent Leakage):** In `matchesHierarchicalPermission` (`PermissionService.ts`) and `hasFrontendPermission` (`routeUtils.tsx`), a parent capability (`helpdesk:read` or `helpdesk:manage`) does **NOT** implicitly grant access to child sub-modules (`helpdesk:tickets:read`). Child sub-modules require their own explicit capability or an explicit namespace wildcard (`helpdesk:*`).
+5. **Same-Scope Action Dominance:** Within the **exact same module scope**, `manage` $\supset$ `{write, create, update, delete, read}` and `write` $\supset$ `{create, update, read}` (e.g., `helpdesk:tickets:manage` satisfies `helpdesk:tickets:read` and `helpdesk:tickets:create`).
 
 ---
 
