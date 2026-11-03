@@ -2,6 +2,52 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.13.6](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.13.5...v1.13.6) (2026-11-03)
+
+
+### Features
+
+* **client:** add PageBanner and PageSettingRow primitives, refactor Profile and ApiStatus pages ([91fd212](https://github.com/Velmar-Technology/msp_client_portal/commit/91fd21267189e71246aa33105ca0007abb3fcc3f))
+* **i18n:** add translations for page filter clearing and empty states ([b6dc144](https://github.com/Velmar-Technology/msp_client_portal/commit/b6dc144db9e6a3d2de4572dedfe322184ff64b49))
+* **i18n:** add translations for ticket filter clearing and empty states ([eb1bffc](https://github.com/Velmar-Technology/msp_client_portal/commit/eb1bffc9a24fab460471fd7f86e7204217e6a450))
+* **i18n:** add translations for TopNav actions, feedback, and copilot ([e9dc339](https://github.com/Velmar-Technology/msp_client_portal/commit/e9dc3399803edadeed2b6224c140870315c87a4f))
+* **i18n:** add type-safe i18n tooling, parity checks, and complete profile localization ([b6c5b3a](https://github.com/Velmar-Technology/msp_client_portal/commit/b6c5b3a033d1fe413b6ca518bf99f482b060346a))
+* **layout:** add AiCopilotDrawer slide-over sheet for IT triage ([7bf9e18](https://github.com/Velmar-Technology/msp_client_portal/commit/7bf9e18f3a739d3f037131fc0aaacfa067c71b54))
+* **layout:** add FeedbackDialog component for user feedback and bug reports ([40840ae](https://github.com/Velmar-Technology/msp_client_portal/commit/40840ae6989151a48f613900774b2ff03f9d43cc))
+* **layout:** add FolderMenu quick-access and Cmd+K shortcut listener ([ff18bfd](https://github.com/Velmar-Technology/msp_client_portal/commit/ff18bfd0c4c59a29b1aef90a4ae52521d756e074))
+* **layout:** add TopNavCommandPalette modal for keyboard-first navigation ([3c65926](https://github.com/Velmar-Technology/msp_client_portal/commit/3c65926e38f08b5b34475f69c4a23551181ae3a9))
+* **layout:** enforce bubble tabs universal standard, ADR-016 governance, and architecture tests ([4e07297](https://github.com/Velmar-Technology/msp_client_portal/commit/4e072977600212a4713fc36306e05225849814eb))
+* **layout:** modernize TopNav header layout with action pills and presence avatar ([e934eeb](https://github.com/Velmar-Technology/msp_client_portal/commit/e934eeb1eeaa8647452344a81b1f3ff5fd3da9ae))
+* **layout:** unify breadcrumb trail into TopNav header ([57789d1](https://github.com/Velmar-Technology/msp_client_portal/commit/57789d1a873ab3e3f235c979f884c84a1096e47f))
+* **page:** add PageEmptyState compound component ([d9ec208](https://github.com/Velmar-Technology/msp_client_portal/commit/d9ec208f2f9b44f74aec4b435041d57483b707bb))
+* **page:** add PageFilterPill compound component ([072263e](https://github.com/Velmar-Technology/msp_client_portal/commit/072263e02f239f39d1b9a4d6cd4e9954603096b0))
+* **page:** attach ElevenLabs compound primitives to Page and update types ([88221f9](https://github.com/Velmar-Technology/msp_client_portal/commit/88221f9249875d833607386c8134698ca830f54c))
+* **page:** introduce PageContentCard and PageSearchInput compound components ([0b9375d](https://github.com/Velmar-Technology/msp_client_portal/commit/0b9375dc55f66c43b3a2da1b89477168e851b707))
+* **resources:** modernize ResourcesPage with ElevenLabs search and filter primitives ([78cdfc7](https://github.com/Velmar-Technology/msp_client_portal/commit/78cdfc78ae3f1a34de57bbe3c2815fb815e50b81))
+* **styleguide:** showcase Page compound primitives and interactive filters ([4c8d43b](https://github.com/Velmar-Technology/msp_client_portal/commit/4c8d43b8eb0c6e2630a5c9198259ce5032c2f39d))
+* **telemetry:** add live connection status hook and notification bell indicator ([99f0553](https://github.com/Velmar-Technology/msp_client_portal/commit/99f0553eb22a3e2b82c0d6a39466e0e886c605b8))
+* **tickets:** modernize TicketDetailPage with side-by-side layout and comments ([3e1161b](https://github.com/Velmar-Technology/msp_client_portal/commit/3e1161ba0f43a088031492a5af151f605069e719))
+* **tickets:** modernize TicketsPage with Page compound primitives, search, and toggle filters ([badeb63](https://github.com/Velmar-Technology/msp_client_portal/commit/badeb63e3cb7c88b2a1f06e323a3cec30d18bd0e))
+* **ui:** add PageActionCard component for quick navigation and actions ([5bc238b](https://github.com/Velmar-Technology/msp_client_portal/commit/5bc238bf1a0592b49575af0806b5f3ecf206d17c))
+* **ui:** add PageContentCard container and PageFilterPill unit tests ([ec412f4](https://github.com/Velmar-Technology/msp_client_portal/commit/ec412f4b1bd98dbdac6c98650a74b68a3367ec92))
+* **ui:** add PageDocsLink external documentation trigger and unit tests ([0bdeff8](https://github.com/Velmar-Technology/msp_client_portal/commit/0bdeff883fc6e8e4c2c0de92101ed0bc041e3357))
+* **ui:** add PageEmptyState component and unit tests ([4ec517c](https://github.com/Velmar-Technology/msp_client_portal/commit/4ec517c80edbe7b6ac5c2e8a400170ed5dcb33d0))
+* **ui:** add PageFilterPill component with popover selection ([a90cef7](https://github.com/Velmar-Technology/msp_client_portal/commit/a90cef755b10bc02430809ffafd3c2dc4cac7808))
+* **ui:** add PageSearchInput component and unit tests ([d62abe7](https://github.com/Velmar-Technology/msp_client_portal/commit/d62abe73a753c1e3d88014928d58e120e2e980cd))
+* **ui:** add PageTogglePill toggle state filter primitive ([1645cf9](https://github.com/Velmar-Technology/msp_client_portal/commit/1645cf9c3a2ed4ba77c2517606ef1ee122d9b707))
+* **ui:** add UserPresenceAvatar component with real-time status ring ([9f9941d](https://github.com/Velmar-Technology/msp_client_portal/commit/9f9941dbe8e63c676936f1e113fce8481d8f92c7))
+* **ui:** modernize TicketKanbanBoard cards and align toolbar filters ([117e0f9](https://github.com/Velmar-Technology/msp_client_portal/commit/117e0f941b9018f0d2f1b04c507e8f77ce26b613))
+* **ui:** refine responsive layouts, CRM data table responsiveness, and workspace switcher search ([8b9fd09](https://github.com/Velmar-Technology/msp_client_portal/commit/8b9fd0992f43e1881dfaa40bee400f3d1b333b17))
+* **users:** modernize UserManagementPage with search, filter pills, and unified content card ([7d9e3fb](https://github.com/Velmar-Technology/msp_client_portal/commit/7d9e3fb7c08749d5e835a25b78efa3d73afff647))
+
+
+### Bug Fixes
+
+* **client:** center ChunkErrorBoundary and enhance attachment upload validation ([a7b9321](https://github.com/Velmar-Technology/msp_client_portal/commit/a7b93213a3f757b5ae1989a72c3c25c1e35a216f))
+* **client:** resolve React compiler preserve-manual-memoization eslint error in ApiStatusPage ([14710bd](https://github.com/Velmar-Technology/msp_client_portal/commit/14710bdfc5559c70674a5cd4c57574dfbde8e8a8))
+* **infra:** extend server and mcp healthcheck start_period and retries ([603a65f](https://github.com/Velmar-Technology/msp_client_portal/commit/603a65f7dcc9bd6aa3121204433f68242814585f))
+* **tickets:** use programmatic ref to trigger attachment upload ([9b330fc](https://github.com/Velmar-Technology/msp_client_portal/commit/9b330fce8e227b428fc70dec60cf84e5d1fb3a14))
+
 ## [1.13.5](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.13.4...v1.13.5) (2026-11-02)
 
 
