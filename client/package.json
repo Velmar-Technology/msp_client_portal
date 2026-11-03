@@ -14,7 +14,8 @@
     "test:a11y": "vitest run tests/a11y",
     "test:arch": "vitest run tests/arch",
     "test:ui": "vitest --ui",
-    "gen:feature": "node scripts/gen-feature.mjs"
+    "gen:feature": "node scripts/gen-feature.mjs",
+    "i18n:check": "node scripts/check-i18n.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

@@ -22,7 +22,26 @@
       "selectRow": "Select row",
       "clearSearch": "Clear search",
       "resetFilters": "Reset filters"
-    }
+    },
+    "search": "Search...",
+    "clear": "Clear search",
+    "clearFilters": "Clear all filters",
+    "error": "Error",
+    "success": "Success",
+    "info": "Info",
+    "back": "Back",
+    "add": "Add",
+    "refresh": "Refresh",
+    "export": "Export",
+    "deleting": "Deleting...",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "pagination": "Pagination",
+    "viewDocumentation": "View documentation",
+    "copiedToClipboard": "Copied to clipboard",
+    "clickToCopy": "Click to copy",
+    "active": "Active",
+    "ready": "Ready"
   },
   "layout": {
     "blockedTitle": "Active Plan Required",
@@ -139,7 +158,8 @@
     "loadingWorkspaces": "Loading organizations...",
     "noOrganizations": "No client organizations found",
     "manageSubscriptions": "Manage Subscriptions",
-    "aiConfiguration": "AI Configuration"
+    "aiConfiguration": "AI Configuration",
+    "daysRemaining": "{{count}} days remaining"
   },
   "featureLocked": {
     "badge": "Plan Upgrade Required",
@@ -385,7 +405,55 @@
     "apiKeyCancel": "Cancel",
     "close": "Close",
     "apiKeyDescriptionCol": "Description",
-    "apiKeyExpiresCol": "Expires"
+    "apiKeyExpiresCol": "Expires",
+    "settingsTitle": "Settings",
+    "settingsSubtitle": "Manage your profile, credentials, and account preferences.",
+    "tabProfile": "Profile",
+    "tabSecurity": "Security & Password",
+    "tabApiKeys": "API Keys",
+    "avatarTitle": "Profile Picture & Identity",
+    "updatePicture": "Update Picture",
+    "emailVerified": "Verified",
+    "updateName": "Update Name",
+    "currentPlan": "Current Plan",
+    "standardPlan": "Standard",
+    "manageSubscription": "Manage Subscription",
+    "notConfigured": "Not configured",
+    "updatePhone": "Update Phone",
+    "updateRnc": "Update RNC",
+    "signOutAllDevices": "Sign out of all devices",
+    "signOutAllDevicesDesc": "Sign out of all active sessions and refresh tokens across your devices.",
+    "signOut": "Sign out",
+    "deleteAccount": "Delete Entire Account",
+    "deleteAccountDesc": "Permanently delete your entire account across all workspaces. This action cannot be reversed.",
+    "deleteAccountBtn": "Delete Account",
+    "passwordTitle": "Account Password",
+    "passwordDesc": "Ensure your account is protected with a strong, rotating password.",
+    "passwordSubtitle": "Ensure your account is protected with a secure password.",
+    "twoFactor": "Two-Factor Authentication (2FA)",
+    "twoFactorDesc": "Enforce high-assurance TOTP authenticator verification on login.",
+    "twoFactorManaged": "Managed via IdP",
+    "activeSession": "Active Session & Security Log",
+    "sessionActive": "Current Session",
+    "ipAddress": "IP",
+    "apiKeyBannerDesc": "Generate cryptographic bearer keys to integrate with external CI/CD, backup daemons, and internal scripts.",
+    "noApiKeys": "No API keys found. Generate one to get started.",
+    "updateNameTitle": "Update Full Name",
+    "updateNameDesc": "Enter your legal full name or display name.",
+    "updatePhoneTitle": "Update Phone Number",
+    "updatePhoneDesc": "Enter your mobile contact or WhatsApp support number.",
+    "updateRncTitle": "Update Tax ID (RNC / Cédula)",
+    "updateRncDesc": "Required for official DGII Dominican B01 Tax Invoices.",
+    "deleteAccountConfirmTitle": "Delete Entire Account",
+    "deleteAccountWarning": "This action is permanent and cannot be undone. All personal settings, session tokens, and workspace ties will be erased.",
+    "deleteAccountBlocked": "Self-service account deletion is governed by organization policy. Please contact your administrator.",
+    "confirmDelete": "I understand, delete my account",
+    "apiKeyViewTitle": "API Key Created",
+    "deleteApiKeyConfirm": "Are you sure you want to delete this API key? This action cannot be undone.",
+    "apiKeyDeleted": "API key deleted successfully",
+    "apiKeyDeleteError": "Failed to delete API key",
+    "apiKeyListError": "Failed to load API keys",
+    "apiKeyCreatedCol": "Created"
   },
   "dashboard": {
     "greetingMorning": "Good morning",
@@ -451,7 +519,8 @@
     "tableRenewal": "Renewal",
     "tableInvoiceNo": "Invoice No.",
     "tableDate": "Date",
-    "tableAmount": "Amount"
+    "tableAmount": "Amount",
+    "activeSlots": "Monitored Devices"
   },
   "home": {
     "title": "Velmar Technology",
@@ -698,7 +767,10 @@
     "noActiveDevices": "No active device slots found. Please activate an equipment slot first.",
     "deviceQuotaRemaining": "{{remaining}}/{{total}} tickets left this month",
     "deviceQuotaReached": "Limit reached ({{used}}/{{total}} this month)",
-    "deviceUnlimitedQuota": "Unlimited tickets"
+    "deviceUnlimitedQuota": "Unlimited tickets",
+    "kanban": "Kanban",
+    "kanbanBoard": "Tickets Kanban Board",
+    "noTicketsInStatus": "No tickets"
   },
   "ticketDetail": {
     "invalidTicketId": "Ticket ID Invalid",
@@ -1211,7 +1283,10 @@
       "saveFailedTitle": "Save Failed",
       "saveFailedMsg": "Failed to save plan.",
       "deleteFailedMsg": "Failed to soft delete plan."
-    }
+    },
+    "confirm": "Confirm",
+    "selectBank": "Our Bank Accounts (Dominican Republic)",
+    "customFeatureLabel": "Custom Feature (Free-form text)"
   },
   "devices": {
     "title": "Devices",
@@ -1376,7 +1451,12 @@
       "statusSubtitle": "Active, pending activation, and locked endpoint breakdown",
       "osDistribution": "Operating System Distribution",
       "osSubtitle": "Workstation and server platform distribution across fleet"
-    }
+    },
+    "deployCommandGenerating": "Generating secure deployment token...",
+    "deviceName": "Device",
+    "serialNumber": "Serial Number",
+    "scanning": "Scanning...",
+    "noSlotsFoundDesc": "No devices or slots match your search criteria."
   },
   "resources": {
     "title": "Resources",
@@ -1524,7 +1604,10 @@
     "emergencyGraceActivatedToast": "Emergency 24-hour grace activated successfully.",
     "emergencyGraceExhausted": "Emergency 24-hour grace extension has already been used for this billing cycle.",
     "payOverdueBalanceBtn": "Pay Overdue Invoices",
-    "activate24hAccess": "Activate 24h Access"
+    "activate24hAccess": "Activate 24h Access",
+    "paymentFailed": "Payment capture failed",
+    "payInvoiceModalTitle": "Pay Invoice {{number}}",
+    "totalDue": "Total Due"
   },
   "help": {
     "title": "Help & Documentation",
@@ -1556,7 +1639,8 @@
     "pleaseNote": "Plain Language Summary",
     "termsAlertText": "This document contains the rules for using our cloud infrastructure, technical support, and maintenance services. By contracting or using our platform, you accept these conditions. Our human support hours are strictly Monday through Friday, 9:00 AM to 4:00 PM (Dominican time).",
     "privacyAlertTitle": "Secure Infrastructure:",
-    "privacyAlertText": "We encrypt all server monitoring credentials, log files, and tickets using industry standard {{securityStandard}} protocols."
+    "privacyAlertText": "We encrypt all server monitoring credentials, log files, and tickets using industry standard {{securityStandard}} protocols.",
+    "bindingAgreement": "Binding Legal Agreement"
   },
   "footer": {
     "copyright": "© 2026 {{company}}. All rights reserved.",
@@ -1800,7 +1884,8 @@
     "markCancelled": "Mark as Cancelled",
     "noMaintenancesFound": "No scheduled maintenance items found",
     "typeCustomDate": "Custom Date",
-    "typePredefined": "Predefined Period"
+    "typePredefined": "Predefined Period",
+    "noMaintenancesFoundDesc": "No maintenance windows found."
   },
   "notFound": {
     "title": "Page Not Found",
@@ -1895,7 +1980,9 @@
     "toastPatchLoadError": "Failed to load device patch inventory",
     "toastPatchUpdateTriggered": "Triggering RMM patch update for {{count}} package(s)...",
     "toastPatchUpdateSuccess": "Security patches installed successfully via RMM agent!",
-    "toastPatchUpdateError": "Failed to apply security patches"
+    "toastPatchUpdateError": "Failed to apply security patches",
+    "tableScanAction": "Scan Telemetry",
+    "tablePendingPatchesBadge": "{{count}} Pending Patches"
   },
   "apiStatus": {
     "title": "API & System Status",
@@ -1967,7 +2054,21 @@
     "publicValueTooltip": "Configured public setting",
     "unitMs": "ms",
     "unitPercent": "%",
-    "dash": "—"
+    "dash": "—",
+    "secretOnly": "Secret / Masked",
+    "publicOnly": "Public / Exposed",
+    "exportServicesSuccess": "Services exported successfully",
+    "exportEnvSuccess": "Environment variables exported successfully",
+    "latencyDistribution": "Microservice Latency Distribution",
+    "latencyDistributionDesc": "Endpoint response speed and service health breakdown",
+    "noServicesFoundDesc": "Try adjusting your search query, status, or latency filter.",
+    "envSearchPlaceholder": "Search environment variable key, category, or description...",
+    "tableSensitivity": "Sensitivity",
+    "envKpiTotal": "Total Variables",
+    "envKpiConfigured": "Configured",
+    "envKpiPlaceholder": "Placeholders",
+    "envKpiMissing": "Missing",
+    "noEnvVarsFoundDesc": "Try adjusting your search query, configuration status, or category filter."
   },
   "crm": {
     "title": "CRM & Sales Pipeline",
@@ -2083,7 +2184,8 @@
       "qualified": "Qualified",
       "proposition": "Proposition",
       "won": "Won",
-      "lost": "Lost"
+      "lost": "Lost",
+      "negotiation": "Negotiation"
     },
     "priorities": {
       "low": "Low",
@@ -2217,8 +2319,12 @@
       "validation": {
         "nameRequired": "Plan name is required",
         "pricePositive": "Base price must be a non-negative number"
-      }
-    }
+      },
+      "applyToLead": "Attach to Lead",
+      "savePlan": "Create Custom Plan"
+    },
+    "totalRecords": "records",
+    "customPlans": "Custom Plans"
   },
   "passwordManager": {
     "pageTitle": "Password Manager",
@@ -2305,6 +2411,11 @@
       "resetSuccessTitle": "Reset Link Generated",
       "resetSuccessDesc": "Fresh master password activation token generated. You can now set a new password for this workstation.",
       "resetError": "Failed to reset device vault."
+    },
+    "upgrade": {
+      "successTitle": "Agent Upgrade Initiated",
+      "successDesc": "Agent upgrade command sent.",
+      "error": "Failed to initiate agent upgrade."
     }
   },
   "presence": {

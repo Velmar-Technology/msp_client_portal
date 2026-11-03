@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   User,
   ShieldCheck,
@@ -66,6 +67,7 @@ function UpdateFieldModal({
   onClose,
   onSave,
 }: UpdateFieldModalProps) {
+  const { t } = useTranslation();
   const [val, setVal] = useState(initialValue);
 
   React.useEffect(() => {
@@ -100,11 +102,11 @@ function UpdateFieldModal({
           </div>
           <AlertDialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
-              Cancel
+              {t("common.cancel", "Cancel")}
             </Button>
             <Button type="submit" disabled={saving} className="flex items-center gap-2">
               {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              Save Changes
+              {t("profile.saveChanges", "Save Changes")}
             </Button>
           </AlertDialogFooter>
         </form>
@@ -209,6 +211,11 @@ function ChangePasswordModal({ open, onClose, hook }: ChangePasswordModalProps) 
 
 /* --- Main Profile Page --- */
 
+/**
+ * Profile and user account settings page.
+ * Displays profile details, security preferences, and admin API keys.
+ * @returns ProfilePage component.
+ */
 export function ProfilePage() {
   const navigate = useNavigate();
   const profileHook = useProfile();
@@ -218,6 +225,7 @@ export function ProfilePage() {
     activeTab,
     setActiveTab,
     lastLoginText,
+    currentLocale,
     uploadingAvatar,
     fileInputRef,
     handleAvatarClick,
@@ -406,7 +414,7 @@ export function ProfilePage() {
               label={t("profile.currentPlan", "Current Plan")}
               description={
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="font-medium text-foreground">{user?.clientType || "Standard"}</span>
+                  <span className="font-medium text-foreground">{user?.clientType || t("profile.standardPlan", "Standard")}</span>
                   <Badge variant="outline" className="text-[10px] text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
                     {user?.accountStatus || "ACTIVE"}
                   </Badge>
@@ -464,8 +472,8 @@ export function ProfilePage() {
               label={t("profile.languageSetting", "Application language")}
               description={
                 user?.language === "es_DO"
-                  ? "Español (República Dominicana)"
-                  : "English (United States)"
+                  ? t("profile.languages.es_DO", "Español (República Dominicana)")
+                  : t("profile.languages.en_US", "English (United States)")
               }
               action={
                 <Select
@@ -476,8 +484,8 @@ export function ProfilePage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="en_US">🇺🇸 English (US)</SelectItem>
-                    <SelectItem value="es_DO">🇩🇴 Español (DO)</SelectItem>
+                    <SelectItem value="en_US">🇺🇸 {t("profile.languages.en_US", "English (United States)")}</SelectItem>
+                    <SelectItem value="es_DO">🇩🇴 {t("profile.languages.es_DO", "Español (República Dominicana)")}</SelectItem>
                   </SelectContent>
                 </Select>
               }
@@ -571,7 +579,7 @@ export function ProfilePage() {
               label={t("profile.activeSession", "Active Session & Security Log")}
               description={
                 <span className="font-mono text-xs">
-                  IP: {user?.lastLoginIp || "127.0.0.1"} • {lastLoginText}
+                  {t("profile.ipAddress", "IP")}: {user?.lastLoginIp || "127.0.0.1"} • {lastLoginText}
                 </span>
               }
               action={
@@ -629,16 +637,16 @@ export function ProfilePage() {
                   },
                   {
                     accessorKey: "createdAt",
-                    header: "Created",
+                    header: t("profile.apiKeyCreatedCol", "Created"),
                     cell: ({ row }) => (
                       <span className="text-xs text-muted-foreground font-mono">
-                        {new Date(row.original.createdAt).toLocaleDateString()}
+                        {new Date(row.original.createdAt).toLocaleDateString(currentLocale)}
                       </span>
                     ),
                   },
                   {
                     accessorKey: "actions",
-                    header: "Actions",
+                    header: t("common.actions", "Actions"),
                     cell: ({ row }) => (
                       <Button
                         variant="ghost"

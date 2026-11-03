@@ -22,7 +22,26 @@
       "selectRow": "Seleccionar fila",
       "clearSearch": "Limpiar búsqueda",
       "resetFilters": "Restablecer filtros"
-    }
+    },
+    "search": "Buscar...",
+    "clear": "Limpiar búsqueda",
+    "clearFilters": "Limpiar todos los filtros",
+    "error": "Error",
+    "success": "Éxito",
+    "info": "Información",
+    "back": "Volver",
+    "add": "Agregar",
+    "refresh": "Actualizar",
+    "export": "Exportar",
+    "deleting": "Eliminando...",
+    "previousPage": "Página anterior",
+    "nextPage": "Página siguiente",
+    "pagination": "Paginación",
+    "viewDocumentation": "Ver documentación",
+    "copiedToClipboard": "Copiado al portapapeles",
+    "clickToCopy": "Haga clic para copiar",
+    "active": "Activo",
+    "ready": "Listo"
   },
   "layout": {
     "blockedTitle": "Plan Activo Requerido",
@@ -139,7 +158,8 @@
     "loadingWorkspaces": "Cargando organizaciones...",
     "noOrganizations": "No se encontraron organizaciones",
     "manageSubscriptions": "Gestionar suscripciones",
-    "aiConfiguration": "Configuración de IA"
+    "aiConfiguration": "Configuración de IA",
+    "daysRemaining": "{{count}} días restantes"
   },
   "featureLocked": {
     "badge": "Requiere Plan Superior",
@@ -385,7 +405,55 @@
     "apiKeyCancel": "Cancelar",
     "close": "Cerrar",
     "apiKeyDescriptionCol": "Descripción",
-    "apiKeyExpiresCol": "Vence"
+    "apiKeyExpiresCol": "Vence",
+    "settingsTitle": "Configuración",
+    "settingsSubtitle": "Administre su perfil, credenciales y preferencias de cuenta.",
+    "tabProfile": "Perfil",
+    "tabSecurity": "Seguridad y Contraseña",
+    "tabApiKeys": "Claves de API",
+    "avatarTitle": "Foto de perfil e identidad",
+    "updatePicture": "Actualizar Foto",
+    "emailVerified": "Verificado",
+    "updateName": "Actualizar Nombre",
+    "currentPlan": "Plan Actual",
+    "standardPlan": "Estándar",
+    "manageSubscription": "Gestionar Suscripción",
+    "notConfigured": "No configurado",
+    "updatePhone": "Actualizar Teléfono",
+    "updateRnc": "Actualizar RNC",
+    "signOutAllDevices": "Cerrar sesión en todos los dispositivos",
+    "signOutAllDevicesDesc": "Cierre sesión en todos los dispositivos y revoque tokens de sesión activos.",
+    "signOut": "Cerrar sesión",
+    "deleteAccount": "Eliminar Cuenta Completa",
+    "deleteAccountDesc": "Elimine permanentemente su cuenta en todos los espacios de trabajo. Esta acción no se puede revertir.",
+    "deleteAccountBtn": "Eliminar Cuenta",
+    "passwordTitle": "Contraseña de la Cuenta",
+    "passwordDesc": "Asegúrese de que su cuenta esté protegida con una contraseña segura.",
+    "passwordSubtitle": "Asegúrese de que su cuenta esté protegida con una contraseña segura.",
+    "twoFactor": "Autenticación de Dos Factores (2FA)",
+    "twoFactorDesc": "Exigir verificación mediante autenticador TOTP al iniciar sesión.",
+    "twoFactorManaged": "Gestionado por el IdP",
+    "activeSession": "Sesión Activa y Registro de Seguridad",
+    "sessionActive": "Sesión Actual",
+    "ipAddress": "IP",
+    "apiKeyBannerDesc": "Genere claves de portador criptográficas para integrarse con CI/CD externo, demonios de respaldo y scripts internos.",
+    "noApiKeys": "No se encontraron claves de API. Genere una para comenzar.",
+    "updateNameTitle": "Actualizar Nombre Completo",
+    "updateNameDesc": "Ingrese su nombre legal completo o nombre para mostrar.",
+    "updatePhoneTitle": "Actualizar Número de Teléfono",
+    "updatePhoneDesc": "Ingrese su número de contacto móvil o soporte por WhatsApp.",
+    "updateRncTitle": "Actualizar Identificación Fiscal (RNC / Cédula)",
+    "updateRncDesc": "Requerido para comprobantes fiscales oficiales DGII B01.",
+    "deleteAccountConfirmTitle": "Eliminar Cuenta Completa",
+    "deleteAccountWarning": "Esta acción es permanente y no se puede deshacer. Se borrarán todas las configuraciones personales, tokens de sesión y vínculos de espacio de trabajo.",
+    "deleteAccountBlocked": "La eliminación de cuentas de autoservicio está regulada por la política de la organización. Comuníquese con su administrador.",
+    "confirmDelete": "Entiendo, eliminar mi cuenta",
+    "apiKeyViewTitle": "Clave de API Creada",
+    "deleteApiKeyConfirm": "¿Está seguro de que desea eliminar esta clave de API? Esta acción no se puede deshacer.",
+    "apiKeyDeleted": "Clave de API eliminada exitosamente",
+    "apiKeyDeleteError": "Error al eliminar la clave de API",
+    "apiKeyListError": "Error al cargar las claves de API",
+    "apiKeyCreatedCol": "Creado"
   },
   "dashboard": {
     "greetingMorning": "Buenos días",
@@ -451,7 +519,8 @@
     "tableRenewal": "Renovación",
     "tableInvoiceNo": "Núm. Factura",
     "tableDate": "Fecha",
-    "tableAmount": "Monto"
+    "tableAmount": "Monto",
+    "activeSlots": "Dispositivos Monitoreados"
   },
   "home": {
     "title": "Velmar Technology IT Services",
@@ -698,7 +767,10 @@
     "noActiveDevices": "No se encontraron dispositivos activos. Por favor active un slot primero.",
     "deviceQuotaRemaining": "{{remaining}}/{{total}} tickets restantes este mes",
     "deviceQuotaReached": "Límite alcanzado ({{used}}/{{total}} este mes)",
-    "deviceUnlimitedQuota": "Tickets ilimitados"
+    "deviceUnlimitedQuota": "Tickets ilimitados",
+    "kanban": "Kanban",
+    "kanbanBoard": "Tablero Kanban de Tickets",
+    "noTicketsInStatus": "Sin tickets"
   },
   "ticketDetail": {
     "invalidTicketId": "ID de Ticket Inválido",
@@ -1211,7 +1283,10 @@
       "saveFailedTitle": "Fallo al Guardar",
       "saveFailedMsg": "No se pudo guardar el plan.",
       "deleteFailedMsg": "No se pudo desactivar el plan."
-    }
+    },
+    "confirm": "Confirmar",
+    "selectBank": "Nuestras Cuentas Bancarias (República Dominicana)",
+    "customFeatureLabel": "Característica Personalizada (Texto libre)"
   },
   "devices": {
     "title": "Dispositivos",
@@ -1286,7 +1361,11 @@
     "nextcloudLoading": "Cargando detalles del respaldo...",
     "nextcloudError": "Error al cargar los detalles de Nextcloud.",
     "nextcloudAccount": "Credenciales de Cuenta Nextcloud",
+    "copyUsername": "Copiar nombre de usuario",
+    "copyPassword": "Copiar contraseña",
     "storageUsage": "Uso de Almacenamiento en Vivo",
+    "percentUsed": "{{percentage}}% en uso",
+    "storageUnavailable": "Estadísticas de almacenamiento no disponibles",
     "wizardStep3DeviceName": "Nombre del Dispositivo:",
     "wizardStep3SerialNumber": "Número de Serie:",
     "wizardStep3User": "Usuario:",
@@ -1372,7 +1451,12 @@
       "statusSubtitle": "Desglose de terminales activos, pendientes y bloqueados",
       "osDistribution": "Distribución por Sistema Operativo",
       "osSubtitle": "Distribución de plataformas de estaciones de trabajo y servidores"
-    }
+    },
+    "deployCommandGenerating": "Generando token de despliegue seguro...",
+    "deviceName": "Dispositivo",
+    "serialNumber": "Número de Serie",
+    "scanning": "Escaneando...",
+    "noSlotsFoundDesc": "No se encontraron dispositivos o ranuras que coincidan con la búsqueda."
   },
   "resources": {
     "title": "Recursos",
@@ -1520,7 +1604,10 @@
     "emergencyGraceActivatedToast": "Gracia de emergencia de 24 horas activada exitosamente.",
     "emergencyGraceExhausted": "La extensión de emergencia de 24 horas ya ha sido utilizada en este ciclo de facturación.",
     "payOverdueBalanceBtn": "Pagar Facturas Vencidas",
-    "activate24hAccess": "Activar Acceso 24h"
+    "activate24hAccess": "Activar Acceso 24h",
+    "paymentFailed": "Falló la captura del pago",
+    "payInvoiceModalTitle": "Pagar Factura {{number}}",
+    "totalDue": "Total a Pagar"
   },
   "help": {
     "title": "Ayuda y Documentación",
@@ -1549,9 +1636,11 @@
     "effectiveText": "Vigente",
     "compliantText": "Estándar de Cumplimiento",
     "tableOfContents": "Tabla de Contenidos",
+    "pleaseNote": "Resumen en lenguaje claro",
     "termsAlertText": "Este documento contiene las reglas de uso de nuestros servicios de infraestructura en la nube, soporte técnico y mantenimiento. Al contratar o usar nuestra plataforma, aceptas estas condiciones. Nuestro horario de atención humana es únicamente de Lunes a Viernes, de 9:00 AM a 4:00 PM (hora dominicana).",
     "privacyAlertTitle": "Infraestructura Segura:",
-    "privacyAlertText": "Encriptamos todas las credenciales de monitoreo de servidores, archivos de registro y tickets utilizando protocolos {{securityStandard}} estándar de la industria."
+    "privacyAlertText": "Encriptamos todas las credenciales de monitoreo de servidores, archivos de registro y tickets utilizando protocolos {{securityStandard}} estándar de la industria.",
+    "bindingAgreement": "Acuerdo Legal Vinculante"
   },
   "footer": {
     "copyright": "© 2026 {{company}}. Todos los derechos reservados.",
@@ -1795,7 +1884,8 @@
     "markCancelled": "Marcar Cancelado",
     "noMaintenancesFound": "No se encontraron elementos de mantenimiento programados",
     "typeCustomDate": "Fecha Personalizada",
-    "typePredefined": "Período Predefinido"
+    "typePredefined": "Período Predefinido",
+    "noMaintenancesFoundDesc": "No se encontraron ventanas de mantenimiento."
   },
   "notFound": {
     "title": "Página no encontrada",
@@ -1825,6 +1915,7 @@
     "agentOffline": "FUERA DE LÍNEA",
     "agentUnknown": "DESCONOCIDO",
     "telemetryNA": "N/D",
+    "lastSynced": "Sincronizado: {{time}}",
     "uptime": "Activo: {{time}}",
     "tableLastChecked": "Última Comprobación",
     "tableTelemetry": "Telemetría (CPU / RAM / Disco)",
@@ -1889,7 +1980,9 @@
     "toastPatchLoadError": "Error al cargar el inventario de parches del dispositivo",
     "toastPatchUpdateTriggered": "Iniciando actualización de parches RMM para {{count}} paquete(s)...",
     "toastPatchUpdateSuccess": "¡Parches de seguridad instalados con éxito mediante el agente RMM!",
-    "toastPatchUpdateError": "Error al aplicar los parches de seguridad"
+    "toastPatchUpdateError": "Error al aplicar los parches de seguridad",
+    "tableScanAction": "Escanear Telemetría",
+    "tablePendingPatchesBadge": "{{count}} Parches Pendientes"
   },
   "apiStatus": {
     "title": "Estado de API y Sistema",
@@ -1961,7 +2054,21 @@
     "publicValueTooltip": "Configuración pública",
     "unitMs": "ms",
     "unitPercent": "%",
-    "dash": "—"
+    "dash": "—",
+    "secretOnly": "Secreto / Enmascarado",
+    "publicOnly": "Público / Expuesto",
+    "exportServicesSuccess": "Servicios exportados exitosamente",
+    "exportEnvSuccess": "Variables de entorno exportadas exitosamente",
+    "latencyDistribution": "Distribución de Latencia de Microservicios",
+    "latencyDistributionDesc": "Velocidad de respuesta y desglose de salud de servicios",
+    "noServicesFoundDesc": "Intente ajustar su búsqueda, estado o filtro de latencia.",
+    "envSearchPlaceholder": "Buscar variable de entorno por clave, categoría o descripción...",
+    "tableSensitivity": "Sensibilidad",
+    "envKpiTotal": "Variables Totales",
+    "envKpiConfigured": "Configuradas",
+    "envKpiPlaceholder": "Marcadores de Posición",
+    "envKpiMissing": "Faltantes",
+    "noEnvVarsFoundDesc": "Intente ajustar su búsqueda, estado o filtro de categoría."
   },
   "crm": {
     "title": "CRM y Pipeline de Ventas",
@@ -2077,7 +2184,8 @@
       "qualified": "Calificado",
       "proposition": "Propuesta",
       "won": "Ganado",
-      "lost": "Perdido"
+      "lost": "Perdido",
+      "negotiation": "Negociación"
     },
     "priorities": {
       "low": "Baja",
@@ -2211,8 +2319,12 @@
       "validation": {
         "nameRequired": "El nombre del plan es obligatorio",
         "pricePositive": "El precio base debe ser un número no negativo"
-      }
-    }
+      },
+      "applyToLead": "Vincular a Prospecto",
+      "savePlan": "Crear Plan Personalizado"
+    },
+    "totalRecords": "registros",
+    "customPlans": "Planes Personalizados"
   },
   "passwordManager": {
     "pageTitle": "Gestor de Contraseñas",
@@ -2299,6 +2411,11 @@
       "resetSuccessTitle": "Enlace de Restablecimiento Generado",
       "resetSuccessDesc": "Se ha generado un nuevo token criptográfico. Ahora puedes asignar una nueva contraseña para esta estación de trabajo.",
       "resetError": "Error al restablecer la bóveda del dispositivo."
+    },
+    "upgrade": {
+      "successTitle": "Actualización de Agente Iniciada",
+      "successDesc": "Comando de actualización de agente enviado.",
+      "error": "Error al iniciar la actualización del agente."
     }
   },
   "presence": {
