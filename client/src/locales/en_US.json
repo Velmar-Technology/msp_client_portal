@@ -190,7 +190,38 @@
     "faqs": "FAQs",
     "noResults": "No results found for",
     "navigation": "Navigation Page",
-    "quickLink": "Quick Action"
+    "quickLink": "Quick Action",
+    "searchPlaceholder": "Search everything...",
+    "home": "Home",
+    "feedback": "Feedback",
+    "docs": "Docs",
+    "ask": "Ask",
+    "documents": "Documents",
+    "feedbackTitle": "Send Feedback",
+    "feedbackDescription": "Share your thoughts or report an issue with the portal.",
+    "feedbackCategory": "Category",
+    "feedbackCategoryIdea": "Suggestion / Idea",
+    "feedbackCategoryBug": "Bug / Issue",
+    "feedbackCategoryGeneral": "General Feedback",
+    "feedbackMessage": "Message",
+    "feedbackMessagePlaceholder": "Tell us what you love or what we could improve...",
+    "feedbackSubmit": "Submit Feedback",
+    "feedbackSubmitting": "Submitting...",
+    "feedbackSuccess": "Thank you for your feedback! Our team will review it shortly.",
+    "aiCopilotTitle": "Velmar AI Copilot",
+    "aiCopilotDescription": "Ask questions about tickets, IT infrastructure, or portal features.",
+    "aiCopilotPromptPlaceholder": "Ask a question or describe an issue...",
+    "aiCopilotSuggestedPrompt1": "How do I create an urgent ticket?",
+    "aiCopilotSuggestedPrompt2": "Where do I find my recent invoices?",
+    "aiCopilotSuggestedPrompt3": "How are device passwords managed?",
+    "aiCopilotCreateTicket": "Open a Support Ticket",
+    "docsMenuInvoices": "Invoices & Receipts",
+    "docsMenuVault": "Device Vault & Passwords",
+    "docsMenuKnowledge": "Knowledge Base & FAQs",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System"
   },
   "notifications": {
     "title": "Notifications",
@@ -2268,5 +2299,13 @@
       "resetSuccessDesc": "Fresh master password activation token generated. You can now set a new password for this workstation.",
       "resetError": "Failed to reset device vault."
     }
+  },
+  "presence": {
+    "online": "Live Connection: Online",
+    "reconnecting": "Live Sync: Reconnecting...",
+    "offline": "Connection: Offline",
+    "syncActive": "Real-time sync active",
+    "syncReconnecting": "Attempting live reconnection",
+    "syncOffline": "Real-time sync disconnected"
   }
 }

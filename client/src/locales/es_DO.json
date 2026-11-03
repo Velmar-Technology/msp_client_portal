@@ -190,7 +190,38 @@
     "faqs": "Preguntas Frecuentes",
     "noResults": "No se encontraron resultados para",
     "navigation": "Página de Navegación",
-    "quickLink": "Acción Rápida"
+    "quickLink": "Acción Rápida",
+    "searchPlaceholder": "Buscar todo...",
+    "home": "Inicio",
+    "feedback": "Comentarios",
+    "docs": "Documentación",
+    "ask": "Preguntar",
+    "documents": "Documentos",
+    "feedbackTitle": "Enviar Comentarios",
+    "feedbackDescription": "Comparte tus ideas o reporta un problema con el portal.",
+    "feedbackCategory": "Categoría",
+    "feedbackCategoryIdea": "Sugerencia / Idea",
+    "feedbackCategoryBug": "Error / Problema",
+    "feedbackCategoryGeneral": "Comentario General",
+    "feedbackMessage": "Mensaje",
+    "feedbackMessagePlaceholder": "Cuéntanos qué te gusta o qué podríamos mejorar...",
+    "feedbackSubmit": "Enviar Comentarios",
+    "feedbackSubmitting": "Enviando...",
+    "feedbackSuccess": "¡Gracias por tus comentarios! Nuestro equipo los revisará en breve.",
+    "aiCopilotTitle": "Copiloto IA Velmar",
+    "aiCopilotDescription": "Haz preguntas sobre tickets, infraestructura de TI o funciones del portal.",
+    "aiCopilotPromptPlaceholder": "Haz una pregunta o describe un problema...",
+    "aiCopilotSuggestedPrompt1": "¿Cómo creo un ticket urgente?",
+    "aiCopilotSuggestedPrompt2": "¿Dónde encuentro mis facturas recientes?",
+    "aiCopilotSuggestedPrompt3": "¿Cómo se gestionan las contraseñas de dispositivos?",
+    "aiCopilotCreateTicket": "Abrir un Ticket de Soporte",
+    "docsMenuInvoices": "Facturas y Recibos",
+    "docsMenuVault": "Bóveda de Dispositivos y Credenciales",
+    "docsMenuKnowledge": "Base de Conocimientos y FAQs",
+    "theme": "Tema",
+    "themeLight": "Claro",
+    "themeDark": "Oscuro",
+    "themeSystem": "Sistema"
   },
   "notifications": {
     "title": "Notificaciones",
@@ -2262,5 +2293,13 @@
       "resetSuccessDesc": "Se ha generado un nuevo token criptográfico. Ahora puedes asignar una nueva contraseña para esta estación de trabajo.",
       "resetError": "Error al restablecer la bóveda del dispositivo."
     }
+  },
+  "presence": {
+    "online": "Conexión en Vivo: En línea",
+    "reconnecting": "Sincronización: Reconectando...",
+    "offline": "Conexión: Desconectado",
+    "syncActive": "Sincronización en tiempo real activa",
+    "syncReconnecting": "Intentando reconexión en vivo",
+    "syncOffline": "Sincronización en tiempo real desconectada"
   }
 }
