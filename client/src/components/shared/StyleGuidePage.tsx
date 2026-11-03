@@ -45,7 +45,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { Info, AlertTriangle, CheckCircle2, Laptop, Cloud, MoreHorizontal } from 'lucide-react';
+import { Info, AlertTriangle, CheckCircle2, Laptop, Cloud, MoreHorizontal, Users, PlayCircle } from 'lucide-react';
 import {
   GlowCard,
   GlowCardHeader,
@@ -86,6 +86,97 @@ export const StyleGuidePage: React.FC = () => {
           </Page.Actions>
         </Page.HeaderRow>
       </Page.Header>
+
+      {/* ElevenLabs Compound Layout Pattern */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold text-foreground">ElevenLabs Page Layout Compounds</h2>
+          <p className="text-xs text-muted-foreground">Action cards, wide search, filter pills, content card, and empty states.</p>
+        </div>
+
+        <Page.ActionGrid>
+          <Page.ActionCard
+            icon={Laptop}
+            title="Add webhook tool"
+            description="Trigger HTTP actions on lifecycle events"
+            onClick={() => {}}
+          />
+          <Page.ActionCard
+            icon={Cloud}
+            title="Add client tool"
+            description="Run client-side functions in browser"
+            onClick={() => {}}
+          />
+          <Page.ActionCard
+            icon={Info}
+            title="Add integration tool"
+            description="Sync with external API services"
+            onClick={() => {}}
+          />
+        </Page.ActionGrid>
+
+        <Page.SearchInput
+          value=""
+          onChange={() => {}}
+          placeholder="Search tools..."
+        />
+
+        {/* Pill Segmented Tabs */}
+        <Page.Tabs variant="pill" defaultTab="all">
+          <Page.Tab id="all" label="All Tests">
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Page.TogglePill
+                  icon={Users}
+                  label="Shared with me"
+                  active={false}
+                  onToggle={() => {}}
+                />
+                <Page.FilterPill
+                  label="Type"
+                  value=""
+                  options={[
+                    { value: "webhook", label: "Webhook" },
+                    { value: "client", label: "Client" },
+                  ]}
+                  onChange={() => {}}
+                  onClear={() => {}}
+                />
+                <Page.FilterPill
+                  label="Creator"
+                  value="me"
+                  options={[
+                    { value: "me", label: "Created by me" },
+                    { value: "team", label: "Created by team" },
+                  ]}
+                  onChange={() => {}}
+                  onClear={() => {}}
+                />
+              </div>
+
+              <Page.ContentCard>
+                <Page.EmptyState
+                  icon={Laptop}
+                  title="No tests found"
+                  description="You have not created any tests yet. Get started by creating your first automated test."
+                  primaryAction={{
+                    label: "Create your first test",
+                    onClick: () => {},
+                  }}
+                  secondaryAction={{
+                    label: "Learn how",
+                    icon: PlayCircle,
+                    href: "https://docs.example.com",
+                  }}
+                />
+              </Page.ContentCard>
+            </div>
+          </Page.Tab>
+          <Page.Tab id="past" label="Past Run Analysis">
+            <div className="p-4 text-xs text-muted-foreground">Historical run diagnostics and traces</div>
+          </Page.Tab>
+        </Page.Tabs>
+      </section>
 
       <section className="space-y-4">
         <h2 className="text-xl font-semibold text-foreground">ElevenLabs Conversational AI Agents</h2>
