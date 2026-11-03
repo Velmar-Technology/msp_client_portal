@@ -239,6 +239,33 @@ export const StyleGuidePage: React.FC = () => {
       </section>
 
       <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold text-foreground">ElevenLabs Setting Rows & Layout Primitives (ADR-016)</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Card-less row layouts with hairline dividers (<code className="text-xs bg-muted px-1 py-0.5 rounded">divide-y divide-border/50</code>), text-first minimalist labels, and flat danger zones.
+          </p>
+        </div>
+        <div className="max-w-3xl divide-y divide-border/50 rounded-xl border border-border/40 p-6 bg-card/40">
+          <Page.SettingRow
+            label="Full Legal Name"
+            description="Estiven Polanco"
+            action={<Button variant="outline" size="sm" className="h-8 text-xs font-medium">Update Name</Button>}
+          />
+          <Page.SettingRow
+            label="Two-Factor Authentication"
+            description="Enforce high-assurance TOTP authenticator verification on login."
+            action={<Button variant="outline" size="sm" className="h-8 text-xs font-medium">Configure 2FA</Button>}
+          />
+          <Page.SettingRow
+            danger
+            label="Delete Entire Account"
+            description="Permanently delete your entire account across all workspaces. This action cannot be reversed."
+            action={<Button variant="outline" size="sm" className="h-8 text-xs font-medium border-destructive/40 text-destructive hover:bg-destructive/10">Delete Account</Button>}
+          />
+        </div>
+      </section>
+
+      <section className="space-y-4">
         <h2 className="text-xl font-semibold text-foreground">ElevenLabs Conversational AI Agents</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <AgentCard

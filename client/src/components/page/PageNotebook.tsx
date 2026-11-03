@@ -64,7 +64,7 @@ export function PageNotebook({
   onChange,
   syncUrl = false,
   paramKey = "tab",
-  variant = "line",
+  variant = "bubble",
   tabs: tabsProp,
   tabsListClassName,
   children,
@@ -149,7 +149,7 @@ export function PageNotebook({
               : variant === "pill"
               ? "inline-flex h-8 bg-muted/60 p-0.5 rounded-xl border border-border/40 gap-0.5"
               : variant === "bubble"
-              ? "inline-flex h-auto bg-transparent p-0 gap-1.5 border-0 w-auto justify-start self-start"
+              ? "inline-flex h-auto bg-transparent p-0 gap-1.5 border-0 w-auto justify-start self-start overflow-x-auto no-scrollbar scroll-smooth max-w-full py-0.5"
               : "h-8 bg-muted p-0.5 rounded-md",
             tabsListClassName
           )}

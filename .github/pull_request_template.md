@@ -48,5 +48,6 @@
 - [ ] I have tested these changes locally and verified all edge cases.
 - [ ] I have added or updated tests, and the test suite passes (`npm -w server run test` / `npm -w client run test:run`).
 - [ ] Adheres to `CONSTRAINTS.md` (Zero new `@ts-ignore` / `eslint-disable` suppressions; test counts held or increased).
+- [ ] Adheres to Modern Compound Layout Standards (ADR-016: `<Page.Tabs>` bubble default, `<Page.SettingRow>` cardless list).
 - [ ] Clean compilation with zero TypeScript errors (`npm -w server run build` / `npm -w client run build`).
 - [ ] I have reviewed the [Contributing Guide](CONTRIBUTING.md) and [PR Protocol](docs/guidelines/pull-request-protocol.md).
