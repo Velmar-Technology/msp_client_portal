@@ -2,6 +2,157 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [1.13.5](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.13.4...v1.13.5) (2026-11-02)
+
+
+### Features
+
+* **dashboard:** align telemetry sparkline date labels, locale buckets, and client views ([804cdf2](https://github.com/Velmar-Technology/msp_client_portal/commit/804cdf2e2a8a5a1dcbc2c2b8bde69f98984c7616))
+* **infra:** add WireGuard routing and Stack 18 migration utility scripts ([2d50bf2](https://github.com/Velmar-Technology/msp_client_portal/commit/2d50bf23e2b62ff0b69613f916a3839173a619c3))
+* **tenant:** implement multi-tenant workspace switcher and dynamic context routing ([4eeba2e](https://github.com/Velmar-Technology/msp_client_portal/commit/4eeba2e252e34b2cce1e54863c2d2c2cec17fe51))
+* **ui:** implement ElevenLabs GlowCard primitive and modernize DeviceCard ([d66991e](https://github.com/Velmar-Technology/msp_client_portal/commit/d66991ebcdb5109da6109901d72f21686335a591))
+* **ui:** localize sidebar search and command trigger ([38d82fd](https://github.com/Velmar-Technology/msp_client_portal/commit/38d82fde7c6ca5750ec852f3ec20e82c3532002f))
+* **ui:** localize Spotlight command navigation and theme toggler ([9d0f727](https://github.com/Velmar-Technology/msp_client_portal/commit/9d0f7274f3b9901247dad05a80ef8332db0df221))
+
+## [1.13.4](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.13.3...v1.13.4) (2026-10-28)
+
+
+### Features
+
+* **ui:** adapt ElevenLabs hero header and segmented telemetry layout ([20ec5ff](https://github.com/Velmar-Technology/msp_client_portal/commit/20ec5ff7eaa59510ab0414fa5d52c9f97a157e70))
+* **ui:** adapt exact ElevenLabs sidebar structure and geometry ([989430f](https://github.com/Velmar-Technology/msp_client_portal/commit/989430fae76ccb12ce626f2356ab2062a92d5b3c))
+* **ui:** apply ElevenLabs showcase elevation and primitives ([fc1a594](https://github.com/Velmar-Technology/msp_client_portal/commit/fc1a594de81a578a75c5e4f5fa896fe9c0c2ee7e))
+* **ui:** implement live ElevenLabs card elevation and telemetry header ([568355a](https://github.com/Velmar-Technology/msp_client_portal/commit/568355adc4d95b455d78e3d4119fc64f931b1a2e))
+* **ui:** modernize design system, spotlight search, and agent cards ([b87eb86](https://github.com/Velmar-Technology/msp_client_portal/commit/b87eb86496796b59c177015d65dab9bdb5203448))
+
+## [1.13.3](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.13.2...v1.13.3) (2026-10-08)
+
+
+### Features
+
+* **rmm:** replace hardcoded patches with OSINT threat advisory and KEV correlation ([6fa07ab](https://github.com/Velmar-Technology/msp_client_portal/commit/6fa07abb3044b80f53604001643307db64c23994))
+
+## [1.13.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.13.1...v1.13.2) (2026-10-08)
+
+
+### Features
+
+* **crm:** color-code client type badges and localize plan names across leads table and board ([e61d376](https://github.com/Velmar-Technology/msp_client_portal/commit/e61d3765e411ea6cfaa0f06771ede3401291e756))
+
+
+### Bug Fixes
+
+* **rmm:** bridge live agent diagnostics and enable dual slot lookup ([4c2ce70](https://github.com/Velmar-Technology/msp_client_portal/commit/4c2ce70a7605d7bf893a0ab8a7b01e8984b37514))
+* **subscriptions:** allow admin query by tenantId and grant write/exec tools to sentinel agent ([84e3837](https://github.com/Velmar-Technology/msp_client_portal/commit/84e3837f924a31d76069fac8b9cdad420afe8298))
+* **tray:** static-link CRT and resolve light/dark theme contrast ([710b9d0](https://github.com/Velmar-Technology/msp_client_portal/commit/710b9d0fa19afe9f16a4b1a5642cd9cbcf0fe8aa)), closes [#d6d8](https://github.com/Velmar-Technology/msp_client_portal/issues/d6d8)
+
+## [1.13.1](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.13.0...v1.13.1) (2026-10-07)
+
+
+### Features
+
+* **crm:** add EDUCATOR client type segment across architecture and sync PL-005 leads ([6fcd324](https://github.com/Velmar-Technology/msp_client_portal/commit/6fcd32456043a2cf02f015b996a8fc6d7218ecc1))
+
+
+### Bug Fixes
+
+* **crm:** align sentinel pipeline checker with drizzle schema and sync PL-005 pricing ([f1f4997](https://github.com/Velmar-Technology/msp_client_portal/commit/f1f4997bd5ebde863e659bea7239297a5355f070))
+
+## [1.13.0](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.12.4...v1.13.0) (2026-10-06)
+
+
+### Features
+
+* **agents:** register caf-quality agent so Antigravity can discover it ([6d4b930](https://github.com/Velmar-Technology/msp_client_portal/commit/6d4b930db3b30cb1078f7c1342250147368d40fb))
+* **auth:** implement dynamic database-driven rbac engine ([31e578c](https://github.com/Velmar-Technology/msp_client_portal/commit/31e578cb3109ccd96b9bce6005a2a64546432719))
+* **crm:** add explicit client_type segmentation for leads ([4c2cce9](https://github.com/Velmar-Technology/msp_client_portal/commit/4c2cce9c3feebae9b65f697259ea8b7793aab8b4))
+* **crm:** import educator leads and register outreach strategy via sentinel-ops ([5b926ca](https://github.com/Velmar-Technology/msp_client_portal/commit/5b926ca0dca0bf585256ab989ee5cd656566c08a))
+* **subscriptions:** adapt PL-005 for Education & Faculty Suite, device lending and AI agent support ([7baf3a2](https://github.com/Velmar-Technology/msp_client_portal/commit/7baf3a272ccc7259c648530bcca632b7b9d5264a))
+
+
+### Bug Fixes
+
+* **mcp:** extend remote execution timeout and support dynamic duration ([5be8b2b](https://github.com/Velmar-Technology/msp_client_portal/commit/5be8b2b16ee8140aee4d3928021b38a7cb164e51))
+* **rmm:** resolve session 0 screenshot capture permissions and unwrap response envelopes ([650ddc5](https://github.com/Velmar-Technology/msp_client_portal/commit/650ddc50eecdc9649a24e423e453fd92c27c62aa))
+* **sentinel:** include e.a.polanco.robles@gmail.com and assign ADMIN dynamic role in admin:align ([58ecaa2](https://github.com/Velmar-Technology/msp_client_portal/commit/58ecaa2455a5057763d41ffa38ac5dabb3ec53e4))
+* **sentinel:** populate leads across all admin workspaces on VPS ([b452fdb](https://github.com/Velmar-Technology/msp_client_portal/commit/b452fdb63ca2fea1a29ced646155f78da5cfd84d))
+* **tenant:** align victor and estiven to provider tenant ef010203-0405-0607-0809-0a0b0c0d0e0f ([dce44da](https://github.com/Velmar-Technology/msp_client_portal/commit/dce44dac8e0fe749c527f1799e291b06df081b89))
+
+## [1.12.4](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.12.3...v1.12.4) (2026-09-28)
+
+
+### Features
+
+* **mcp:** add OAuth 2.0 protocol support for Google Gemini ([30b45c4](https://github.com/Velmar-Technology/msp_client_portal/commit/30b45c461fb7f25e5c2d64b57314995c143740fd))
+* **rmm:** implement multi-screen screenshot capture for msp-agent ([8c8801d](https://github.com/Velmar-Technology/msp_client_portal/commit/8c8801d6c8032dd2297e3abc07ca87cf96aa9811))
+* **rmm:** segregate agent rate limits and implement backoff circuit breaker ([356103d](https://github.com/Velmar-Technology/msp_client_portal/commit/356103d93844794c48ca62f3d8fc9133b2852633))
+
+## [1.12.3](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.12.2...v1.12.3) (2026-09-21)
+
+
+### Features
+
+* **equipment:** display live agent online/offline status alongside slot activation ([12c3e28](https://github.com/Velmar-Technology/msp_client_portal/commit/12c3e28d39e4fd114b2b97ab62ac317a8d5e4f21))
+* **sentinel:** add ticket:purge operation to SequenceSentinel operations engine ([16b5e83](https://github.com/Velmar-Technology/msp_client_portal/commit/16b5e830513206c12dcfe0b6e58546f7dd525de9))
+
+
+### Bug Fixes
+
+* **billing:** exclude complimentary subscriptions from MRR KPI (BL-703) ([ba9b0b6](https://github.com/Velmar-Technology/msp_client_portal/commit/ba9b0b68e9320ddec260614ddcdfa52671d0ac63))
+* **ci:** package WebView2Loader.dll with tray artifact for suite MSI build ([68b3c91](https://github.com/Velmar-Technology/msp_client_portal/commit/68b3c91c44a5398d57d601c443871a8a9e114ba6))
+
+## [1.12.2](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.12.1...v1.12.2) (2026-09-21)
+
+
+### Features
+
+* **byok:** add Google Gemini as first-class BYOK provider ([b03e046](https://github.com/Velmar-Technology/msp_client_portal/commit/b03e0465d53eddf1050d91cbce8b1e1f89dd9352))
+* **client:** add document titles for crm and vaultwarden routes ([a11d486](https://github.com/Velmar-Technology/msp_client_portal/commit/a11d486a1f1187e88247d5df6f4f0a60dba958c0))
+* **client:** implement unified compound slot architecture for Page header and actions ([e584d0e](https://github.com/Velmar-Technology/msp_client_portal/commit/e584d0ef48cbf0b3cd9276f921403d427d495558))
+* **client:** migrate DevicesPage and ResourcesPage to Page view modes architecture ([4dcb444](https://github.com/Velmar-Technology/msp_client_portal/commit/4dcb44477d65b70e1fd7fe7b4ccc4b6aa65e8e34))
+* **client:** set dynamic document title as page name plus Portal suffix ([66150cb](https://github.com/Velmar-Technology/msp_client_portal/commit/66150cbfdf05e3266409556e0b2d8768107b4c61))
+* **client:** switch sidebar to icon-only collapsed mode ([059c329](https://github.com/Velmar-Technology/msp_client_portal/commit/059c3291eb65b8becfea9f6b8f24c23c8b950ce2))
+* **crm:** migrate CRM pipeline to Page multi-view architecture with calendar and analytics views ([0afc600](https://github.com/Velmar-Technology/msp_client_portal/commit/0afc6005dd1e148365817e721751153539916845))
+* **equipment:** add device RMM modal with telemetry and patch management ([ae1bfc7](https://github.com/Velmar-Technology/msp_client_portal/commit/ae1bfc71686c7b2d23e9f6ba60ea7fd56f9db4a1))
+* **equipment:** launch device RMM dashboard from actions menu and card ([ad87f4c](https://github.com/Velmar-Technology/msp_client_portal/commit/ad87f4c408e8548408c054e7f2c70b54820f3c8d))
+* **financial:** migrate finance page to Page multi-view with ledger and analytics ([efb4feb](https://github.com/Velmar-Technology/msp_client_portal/commit/efb4feb683f6c996390e74734c1eb30e2de2534d))
+* **nav:** add cross-device sidebar nav counters with live SSE updates ([51519c4](https://github.com/Velmar-Technology/msp_client_portal/commit/51519c4f788f47a4333bad6d5b5f9cf38e352a99))
+* **nav:** refine ticket counter into actionable unread attention model ([9d0100d](https://github.com/Velmar-Technology/msp_client_portal/commit/9d0100d5ee6cbb89de2b55862588bb4a49bc78e7))
+* **nav:** refine ticket counter into actionable unread attention model ([7e18420](https://github.com/Velmar-Technology/msp_client_portal/commit/7e1842026efe12baf446b5f940795c89dfa1d556))
+* **tickets:** migrate ticket filters to Page header toolbar and compact kanban cards ([26f8590](https://github.com/Velmar-Technology/msp_client_portal/commit/26f8590b1f83cbc29006c102e2672107d5eacd28))
+
+
+### Bug Fixes
+
+* **client:** call useNavigate unconditionally in PageBack ([b2138aa](https://github.com/Velmar-Technology/msp_client_portal/commit/b2138aac80cf96c9d13be2e6ab107a4fab42d1c0))
+* **client:** center sidebar nav and footer icons in collapsed icon mode ([a821569](https://github.com/Velmar-Technology/msp_client_portal/commit/a821569da5d176e45e7ab90dc55c014b2a0c54b8))
+* **infra:** add trailing slash redirect for vaultwarden in traefik and harden nginx static fallback ([3701959](https://github.com/Velmar-Technology/msp_client_portal/commit/370195985b348abd09ca3655f6002f6443d0ed3f))
+* **nav:** remove restricted raw db imports from NavCounterService ([e69b3f1](https://github.com/Velmar-Technology/msp_client_portal/commit/e69b3f107fe6ec7eaa068e81478bb53f35735bb9))
+* **settings:** restore zero-knowledge notice on password manager page ([e6b2365](https://github.com/Velmar-Technology/msp_client_portal/commit/e6b2365aa926bdb39c8c155e79a94b4bbee54117))
+* **tickets:** prevent recurring escalation sweep loops and notification spam ([23e87bb](https://github.com/Velmar-Technology/msp_client_portal/commit/23e87bb9ce13442c31c21179fd2bc5f2544b90b4))
+* **tickets:** resolve circular dependency between TicketStatusService and TechnicianEarningsService ([bf0eaba](https://github.com/Velmar-Technology/msp_client_portal/commit/bf0eaba1b23044e07925ee4dd095b8e1950d1360))
+
+## [1.12.1](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.12.0...v1.12.1) (2026-09-18)
+
+
+### Features
+
+* **client:** add first-class tab navigation support to Page component ([ba62d19](https://github.com/Velmar-Technology/msp_client_portal/commit/ba62d19045cf6a11d310e64ee24df4e978da8215))
+* **client:** force Page content to take whole width by default ([3624823](https://github.com/Velmar-Technology/msp_client_portal/commit/362482366d91ae5fb2a5eeaa88b64cda0b74ee10))
+* **client:** introduce dashboard, calendar, and graph views to Page ([ed07e14](https://github.com/Velmar-Technology/msp_client_portal/commit/ed07e145b5e75e9dead90340077bda2388eed1e6))
+* **client:** introduce odoo-style form view and kanban board architecture ([65eaf50](https://github.com/Velmar-Technology/msp_client_portal/commit/65eaf50123d72a1ce451597a3824aac8f32dbea6))
+* **client:** introduce odoo-style view architecture to Page component ([93cbd99](https://github.com/Velmar-Technology/msp_client_portal/commit/93cbd99aa4761b511f98db2010ca0b61a334bfd3))
+* **financial:** migrate FinancialPage to use Page.Dashboard view architecture ([e8677b0](https://github.com/Velmar-Technology/msp_client_portal/commit/e8677b054ec91fc63cc3dad1fcdb971a902635d1))
+* **rmm:** migrate MaintenancePage to Page Date view architecture ([167d909](https://github.com/Velmar-Technology/msp_client_portal/commit/167d909f01eb76bf2f96500465205bf42f45c403))
+* **scripts:** add npm commands to reconstruct and query knowledge graph ([7a7f72d](https://github.com/Velmar-Technology/msp_client_portal/commit/7a7f72dafd38938aa749df934c56c321a0632340))
+* **sentinel:** integrate graphify topological intelligence and blast radius workflows ([da04b1a](https://github.com/Velmar-Technology/msp_client_portal/commit/da04b1a54e2c248c4291704ceae17f229cfa11a8))
+* **ui:** ensure all pages and layouts span full container width ([47e61c8](https://github.com/Velmar-Technology/msp_client_portal/commit/47e61c85953566e528f2ed5c1f4698f9a4c1c429))
+
+
+### Bug Fixes
+
+* **client:** resolve PageStatBoxProps empty interface and PageGraph render lint errors ([1dad647](https://github.com/Velmar-Technology/msp_client_portal/commit/1dad6472e4f02733f58e7535a9296ad0435b73f2))
+
 ## [1.12.0](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.12...v1.12.0) (2026-09-16)
 
 ## [1.11.12](https://github.com/Velmar-Technology/msp_client_portal/compare/v1.11.11...v1.11.12) (2026-09-16)
