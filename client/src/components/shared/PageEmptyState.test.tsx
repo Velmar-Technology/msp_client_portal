@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
+import { PlayCircle } from "lucide-react";
 import { PageEmptyState } from "./PageEmptyState";
 
 describe("PageEmptyState", () => {
@@ -30,5 +31,34 @@ describe("PageEmptyState", () => {
     expect(actionBtn).toBeInTheDocument();
     fireEvent.click(actionBtn);
     expect(onAction).toHaveBeenCalled();
+  });
+
+  it("renders dual actions with primary button and secondary guide link", () => {
+    const handlePrimary = vi.fn();
+    render(
+      <PageEmptyState
+        title="No tests found"
+        description="You have not created any tests yet."
+        primaryAction={{
+          label: "Create your first test",
+          onClick: handlePrimary,
+        }}
+        secondaryAction={{
+          label: "Learn how",
+          icon: PlayCircle,
+          href: "https://docs.example.com",
+        }}
+      />
+    );
+
+    const primaryBtn = screen.getByRole("button", { name: "Create your first test" });
+    expect(primaryBtn).toBeInTheDocument();
+    fireEvent.click(primaryBtn);
+    expect(handlePrimary).toHaveBeenCalledTimes(1);
+
+    const secondaryLink = screen.getByRole("link", { name: "Learn how" });
+    expect(secondaryLink).toBeInTheDocument();
+    expect(secondaryLink).toHaveAttribute("href", "https://docs.example.com");
+    expect(secondaryLink).toHaveAttribute("target", "_blank");
   });
 });
