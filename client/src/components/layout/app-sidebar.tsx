@@ -402,6 +402,7 @@ export function SidebarNavList({
   counters,
 }: SidebarNavListProps) {
   const { t } = useTranslation();
+  const location = useLocation();
 
   return (
     <SidebarMenu className="gap-0.5 px-1 group-data-[collapsible=icon]:px-2">
@@ -443,7 +444,9 @@ export function SidebarNavList({
                   <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-1 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1">
                     <SidebarMenuSub className="ml-3 border-l border-sidebar-border/50 py-0.5 space-y-0.5 pl-1.5">
                       {item.items.map((sub) => {
-                        const isSubActive = checkIsActive(sub.to);
+                        const isSubActive =
+                          location.pathname === sub.to ||
+                          (sub.to !== item.to && location.pathname.startsWith(`${sub.to}/`));
                         return (
                           <SidebarMenuSubItem key={sub.to}>
                             <SidebarMenuSubButton
@@ -453,6 +456,7 @@ export function SidebarNavList({
                             >
                               <NavLink
                                 to={sub.to}
+                                end
                                 className="w-full truncate flex items-center"
                                 onMouseEnter={() => preloadRoute(sub.to)}
                                 onFocus={() => preloadRoute(sub.to)}
