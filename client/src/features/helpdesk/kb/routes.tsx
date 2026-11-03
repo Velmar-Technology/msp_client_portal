@@ -23,7 +23,6 @@ export const kbRoutes: AppRouteObject[] = [
         { label: t("nav.helpdesk", { defaultValue: "Helpdesk" }), to: "/helpdesk/tickets" },
         { label: t("nav.help"), to: "/helpdesk/kb" },
       ],
-      allowedRoles: ["CLIENT", "TECHNICIAN", "ADMIN"],
       requiredPermission: ["helpdesk:kb:read", "tickets:read"],
     },
   },

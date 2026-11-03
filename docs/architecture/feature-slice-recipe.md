@@ -9,13 +9,16 @@ This document defines the standard, high-velocity engineering recipe for adding 
 Run `npm run gen:module` from the workspace root to scaffold the entire vertical slice across `packages/contracts`, `server`, and `client` (including unit tests, Drizzle schema, RBAC permissions, routes, sidebar nav items, and bilingual `en_US`/`es_DO` locales):
 
 ```bash
-# 1. Scaffold a top-level full-stack feature (contracts + server + client + tests)
+# 1. Scaffold a top-level full-stack feature (contracts + server + client + security.csv + tests)
 npm run gen:module warranties
 
-# 2. Scaffold a hierarchical child sub-feature under an existing parent ('assets')
-npm run gen:module -- assets/warranties
+# 2. Scaffold a pure parent container group (e.g. 'helpdesk')
+npm run gen:module -- helpdesk --container --order=70
 
-# 3. Optional flags
+# 3. Scaffold a hierarchical child sub-feature under an existing parent ('helpdesk/tickets')
+npm run gen:module -- helpdesk/tickets --roles=CLIENT,TECHNICIAN,ADMIN
+
+# 4. Optional flags
 npm run gen:module -- assets/warranties --with-repo
 npm run gen:module -- reports --client-only --group=management --order=45
 npm run gen:module -- webhooks --server-only
@@ -73,7 +76,8 @@ Every backend module encapsulates its Drizzle schema, service, controller, Expre
 ```
 server/src/modules/<domain>/
 ├── <domain>.schema.ts          # Drizzle pgTable definitions (auto-merged into @shared/db)
-├── manifest.ts                 # ServerModuleManifest (Gateway route prefix + RBAC permissions)
+├── security.csv                # Odoo-style Dynamic RBAC matrix (code,module,description,roles)
+├── manifest.ts                 # ServerModuleManifest (Gateway route prefix + hierarchy parentId)
 ├── controllers/
 │   └── <Domain>Controller.ts   # Express 5 async HTTP handlers (no try/catch boilerplate)
 ├── services/
@@ -87,32 +91,37 @@ server/src/modules/<domain>/
 #### 2.1 Colocated Drizzle Schema (`<domain>.schema.ts`)
 Define your tables in `server/src/modules/<path>/<name>.schema.ts`. Both `@shared/db` and `drizzle.config.ts` automatically discover `*.schema.ts` files across all modules—do **not** edit `server/src/shared/db/schema.ts`.
 
-#### 2.2 Self-Registering Backend Manifest (`manifest.ts`)
-Export `moduleManifest` from `server/src/modules/<path>/manifest.ts`:
+#### 2.2 Colocated Dynamic RBAC Matrix (`security.csv`) & Backend Manifest (`manifest.ts`)
+Declare atomic CRUD capabilities and default role grants in `server/src/modules/<path>/security.csv`:
+
+```csv
+code,module,description,roles
+helpdesk:tickets:read,helpdesk,View support tickets and timelines,ADMIN|TECHNICIAN|CLIENT
+helpdesk:tickets:create,helpdesk,Create support tickets and responses,ADMIN|TECHNICIAN|CLIENT
+helpdesk:tickets:update,helpdesk,Update ticket status and assign technicians,ADMIN|TECHNICIAN
+helpdesk:tickets:delete,helpdesk,Delete support tickets,ADMIN
+```
+
+And export a clean `moduleManifest` from `server/src/modules/<path>/manifest.ts`:
 
 ```typescript
-// server/src/modules/assets/manifest.ts
+// server/src/modules/helpdesk/tickets/manifest.ts
 import type { ServerModuleManifest } from '@shared/registry/moduleManifest.types';
-import assetRoutes from './routes/asset.routes';
+import ticketRoutes from './routes/ticket.routes';
 
 export const moduleManifest: ServerModuleManifest = {
-  id: 'assets',
-  // Optional for child sub-modules:
-  // parentId: 'assets', // Prefixes routes under parent (e.g. '/consumables' -> '/assets/consumables')
+  id: 'helpdesk.tickets',
+  parentId: 'helpdesk', // Prefixes routes under parent ('/tickets' -> '/helpdesk/tickets')
   routes: [
-    { prefix: '/assets', router: assetRoutes },
+    { prefix: '/tickets', router: ticketRoutes },
   ],
-  permissions: {
-    admin: ['assets:read', 'assets:manage'],
-    technician: ['assets:read', 'assets:manage'],
-    client: ['assets:read'],
-  },
 };
 ```
 
-> **Hierarchical RBAC Inheritance:** `PermissionService` automatically cascades parent permissions to child scopes:
-> - Namespace wildcards (`assets:*`) grant any child capability (`assets:consumables:manage`).
-> - Action dominance (`manage` $\supset$ `write` $\supset$ `read`) cascades from parent to child: holding `assets:manage` automatically grants `assets:consumables:manage` and `assets:consumables:read`; holding `assets:read` automatically grants `assets:consumables:read`.
+> **Least Privilege & Dynamic RBAC (`BL-302` / `ADR-014` / `ADR-017`):**
+> - `sync-registry.cjs` compiles all `security.csv` files into `permissions.generated.ts`, and `PermissionService.syncPermissionCatalog()` idempotently seeds both `permissions` and `role_permissions` in PostgreSQL.
+> - Parent capabilities (`helpdesk:read` or `helpdesk:manage`) do **not** implicitly leak into child sub-modules (`helpdesk:tickets:*`). Child sub-modules require their own explicit capability or an explicit namespace wildcard (`helpdesk:*`).
+> - Action dominance (`manage` $\supset$ `{write, create, update, delete, read}`) applies strictly within the **exact same module scope**.
 
 ---
 
@@ -163,7 +172,7 @@ export const featureManifest: FeatureManifest = {
       labelKey: 'assets',
       group: 'operations', // 'management' | 'operations' | 'account'
       order: 25,           // Numeric position within the sidebar group
-      roles: ['CLIENT', 'ADMIN'],
+      requiredPermission: 'assets:read',
       requiredFeature: FEATURE_CODES.ASSET_LIFECYCLE,
       featureGatedRoles: ['CLIENT'],
     },

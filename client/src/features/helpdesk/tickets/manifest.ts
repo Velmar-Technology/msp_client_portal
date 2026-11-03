@@ -19,7 +19,6 @@ export const featureManifest: FeatureManifest = {
       group: "operations",
       order: 10,
       counterKey: "tickets",
-      roles: ["CLIENT", "TECHNICIAN", "ADMIN"],
       requiredPermission: ["helpdesk:tickets:read", "tickets:read"],
     },
   ],

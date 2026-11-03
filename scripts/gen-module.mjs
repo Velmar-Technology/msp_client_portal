@@ -153,7 +153,6 @@ export const ${leafCamel}Routes: AppRouteObject[] = [
     path: '${clientRoutePath}',
     handle: {
       crumb: (t) => ({ label: t('nav.${leafCamel}'), to: '${fullUrlPath}' }),
-      allowedRoles: ${rolesLiteral},
     },
   },
 ];
@@ -178,7 +177,6 @@ export const featureManifest: FeatureManifest = {
       labelKey: '${leafCamel}',
       group: '${navGroup}',
       order: ${navOrder},
-      roles: ${rolesLiteral},
     },
   ],
 };
@@ -594,6 +592,21 @@ export default router;
 `
   );
 
+  // Declarative Dynamic RBAC Matrix (security.csv)
+  const readRoles = allowedRoles.join('|');
+  const writeRoles = allowedRoles.filter((r) => r === 'ADMIN' || r === 'TECHNICIAN').join('|') || 'ADMIN';
+  const topModuleName = segments[0];
+
+  writeGeneratedFile(
+    path.join(serverTargetDir, 'security.csv'),
+    `code,module,description,roles
+${permScope}:read,${topModuleName},View ${leafPascal} records,${readRoles}
+${permScope}:create,${topModuleName},Create ${leafPascal} records,${writeRoles}
+${permScope}:update,${topModuleName},Update ${leafPascal} records,${writeRoles}
+${permScope}:delete,${topModuleName},Delete ${leafPascal} records,ADMIN
+`
+  );
+
   // Manifest
   writeGeneratedFile(
     path.join(serverTargetDir, 'manifest.ts'),
@@ -602,7 +615,7 @@ import ${leafCamel}Routes from './routes/${leafCamel}.routes';
 
 /**
  * Self-registering backend manifest for ${leafPascal} (ADR-017 / BL-302).
- * Enforces Least Privilege atomic CRUD capabilities and Deny-by-Default role grants.
+ * Permissions and default role bindings are declared in \`./security.csv\`.
  */
 export const moduleManifest: ServerModuleManifest = {
   id: '${manifestId}',${parentId ? `\n  parentId: '${parentId}',` : ''}
@@ -612,16 +625,6 @@ export const moduleManifest: ServerModuleManifest = {
       router: ${leafCamel}Routes,
     },
   ],
-  permissions: {
-    admin: [
-      '${permScope}:read',
-      '${permScope}:create',
-      '${permScope}:update',
-      '${permScope}:delete',
-    ],
-    technician: ${techPermsLiteral},
-    client: ${clientPermsLiteral},
-  },
 };
 `
   );
@@ -713,7 +716,6 @@ export const ${leafCamel}Routes: AppRouteObject[] = [
     ),
     handle: {
       crumb: (t) => ({ label: t('nav.${leafCamel}'), to: '${fullUrlPath}' }),
-      allowedRoles: ${rolesLiteral},
       requiredPermission: '${permScope}:read',
     },
   },
@@ -739,7 +741,6 @@ export const featureManifest: FeatureManifest = {
       to: '${fullUrlPath}',${parentTo ? `\n      parentTo: '${parentTo}',` : `\n      icon: Boxes,\n      group: '${navGroup}',`}
       labelKey: '${leafCamel}',
       order: ${navOrder},
-      roles: ${rolesLiteral},
       requiredPermission: '${permScope}:read',
     },
   ],

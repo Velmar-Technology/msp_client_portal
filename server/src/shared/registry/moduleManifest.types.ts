@@ -11,15 +11,42 @@ export interface ModuleRouteMount {
 }
 
 /**
- * Default RBAC permission capabilities declared by a domain module.
- * Automatically merged into `PermissionService` role capability sets.
+ * Optional fallback role capability grants used only when a tenant/user has no
+ * custom dynamic RBAC roles assigned in PostgreSQL (`user_roles` / `role_permissions`).
  */
 export interface ModulePermissionConfig {
-  /** Capabilities granted to ADMIN (and registered in ALL_SYSTEM_PERMISSIONS) */
+  /** Capabilities granted to ADMIN fallback */
   admin?: string[];
-  /** Default capabilities granted to TECHNICIAN role */
+  /** Default capabilities granted to TECHNICIAN fallback */
   technician?: string[];
-  /** Default capabilities granted to CLIENT role */
+  /** Default capabilities granted to CLIENT fallback */
+  client?: string[];
+}
+
+/**
+ * Declarative Dynamic RBAC rule parsed from a module's colocated `security.csv` file (`ADR-017` / `BL-302`).
+ * Maps 1:1 to the `permissions` (`code`, `module`, `description`) and `role_permissions` (`roles`) tables.
+ */
+export interface SecurityRuleDefinition {
+  /** Atomic capability code (e.g. 'helpdesk:tickets:read') */
+  code: string;
+  /** Top-level or domain module name (e.g. 'helpdesk') */
+  module: string;
+  /** Human-readable capability description for the Admin RBAC matrix */
+  description: string;
+  /** Default role names granted this capability on initial DB seed (e.g. ['ADMIN', 'TECHNICIAN', 'CLIENT']) */
+  roles: string[];
+}
+
+/**
+ * Extracted static permission registration record generated into `permissions.generated.ts`.
+ */
+export interface ServerModulePermissions {
+  /** Atomic capability codes declared by the module for the Dynamic RBAC catalog (`permissions` table) */
+  catalog?: string[];
+  /** Optional fallback role grants for initial DB seeding / unmigrated sessions */
+  admin?: string[];
+  technician?: string[];
   client?: string[];
 }
 
@@ -40,8 +67,17 @@ export interface ServerModuleManifest {
   basePrefix?: string;
   /** Gateway routes to mount automatically */
   routes?: ModuleRouteMount[];
-  /** Default RBAC permissions to register automatically */
-  permissions?: ModulePermissionConfig;
+  /**
+   * Atomic Dynamic RBAC permission catalog declared by this module
+   * (e.g. `['helpdesk:kb:read', 'helpdesk:kb:create', 'helpdesk:kb:update', 'helpdesk:kb:delete']`).
+   * Also accepts legacy `ModulePermissionConfig` object for backwards compatibility.
+   */
+  permissions?: string[] | ModulePermissionConfig;
+  /**
+   * Optional default role capability grants used only as seed/fallback defaults
+   * when no custom DB role assignments exist for a user.
+   */
+  defaultRoleGrants?: ModulePermissionConfig;
 }
 
 /**

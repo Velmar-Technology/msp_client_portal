@@ -3,6 +3,8 @@ import kbRoutes from './routes/kb.routes';
 
 /**
  * Self-registering backend manifest for Helpdesk Knowledge Base (ADR-017 / BL-302).
+ * Mounts under parent 'helpdesk' at '/helpdesk/kb'.
+ * Permissions and default role bindings are declared in `./security.csv`.
  */
 export const moduleManifest: ServerModuleManifest = {
   id: 'helpdesk.kb',
@@ -13,14 +15,4 @@ export const moduleManifest: ServerModuleManifest = {
       router: kbRoutes,
     },
   ],
-  permissions: {
-    admin: [
-      'helpdesk:kb:read',
-      'helpdesk:kb:create',
-      'helpdesk:kb:update',
-      'helpdesk:kb:delete',
-    ],
-    technician: ['helpdesk:kb:read', 'helpdesk:kb:create', 'helpdesk:kb:update'],
-    client: ['helpdesk:kb:read'],
-  },
 };

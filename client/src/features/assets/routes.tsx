@@ -20,7 +20,6 @@ export const assetsRoutes: AppRouteObject[] = [
     ),
     handle: {
       crumb: (t) => ({ label: t('nav.assets'), to: '/assets' }),
-      allowedRoles: ['CLIENT', 'ADMIN', 'TECHNICIAN'],
       requiredPermission: 'assets:read',
       requiredFeature: FEATURE_CODES.ASSET_LIFECYCLE,
     },

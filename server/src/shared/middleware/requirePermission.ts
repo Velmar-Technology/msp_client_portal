@@ -19,8 +19,9 @@ import { UnauthorizedError, ForbiddenError } from '@shared/errors';
  * @see BL-302
  */
 export function requirePermission(
-  ...permissions: string[]
+  ...permissions: Array<string | string[]>
 ) {
+  const flatPermissions = permissions.flat();
   return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     if (!req.user) {
       throw new UnauthorizedError('Authentication required');
@@ -33,7 +34,7 @@ export function requirePermission(
     // Save resolved permissions on request context
     req.user.permissions = userPerms;
 
-    const missing = permissions.filter((p) => !matchesHierarchicalPermission(userPerms, p));
+    const missing = flatPermissions.filter((p) => !matchesHierarchicalPermission(userPerms, p));
     if (missing.length > 0) {
       throw new ForbiddenError(
         `Access denied. Missing required capability: ${missing.join(', ')}`
@@ -54,15 +55,16 @@ export function requirePermission(
  * router.get('/telemetry', requireAnyPermission('devices:read', 'system:read'), handler);
  * ```
  *
- * @param permissions - List of permitted alternative permission codes
+ * @param permissions - List of permitted alternative permission codes (rest params or array)
  * @returns Express middleware function
  * @throws {UnauthorizedError} When req.user is absent
  * @throws {ForbiddenError} When user lacks all of the specified permissions
  * @see BL-302
  */
 export function requireAnyPermission(
-  ...permissions: string[]
+  ...permissions: Array<string | string[]>
 ) {
+  const flatPermissions = permissions.flat();
   return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     if (!req.user) {
       throw new UnauthorizedError('Authentication required');
@@ -74,12 +76,12 @@ export function requireAnyPermission(
 
     req.user.permissions = userPerms;
 
-    if (permissions.some((p) => matchesHierarchicalPermission(userPerms, p))) {
+    if (flatPermissions.some((p) => matchesHierarchicalPermission(userPerms, p))) {
       return next();
     }
 
     throw new ForbiddenError(
-      `Access denied. Requires at least one capability: ${permissions.join(' or ')}`
+      `Access denied. Requires at least one capability: ${flatPermissions.join(' or ')}`
     );
   };
 }

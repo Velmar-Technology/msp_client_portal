@@ -110,6 +110,48 @@ export class PermissionRepository extends BaseRepository<Role> {
   }
 
   /**
+   * Idempotently seeds `role_permissions` bindings declared in module `security.csv` files
+   * for global/system roles (`WHERE tenant_id IS NULL`). Uses `ON CONFLICT DO NOTHING` so
+   * custom Admin modifications in PostgreSQL are never overwritten.
+   *
+   * @param bindings - Array of `{ roleName, permissionCode }` pairs
+   * @see BL-302
+   */
+  async seedRolePermissions(
+    bindings: Array<{ roleName: string; permissionCode: string }>
+  ): Promise<void> {
+    if (bindings.length === 0) return;
+
+    const roleNames = Array.from(new Set(bindings.map((b) => b.roleName)));
+    for (const roleName of roleNames) {
+      await pool.query(
+        `
+        INSERT INTO roles (name, description, is_system, tenant_id)
+        SELECT $1::varchar(100), $2::text, true, NULL
+        WHERE NOT EXISTS (
+          SELECT 1 FROM roles WHERE UPPER(name) = UPPER($1::varchar(100)) AND tenant_id IS NULL
+        )
+        `,
+        [roleName, `System default role: ${roleName}`]
+      );
+    }
+
+    for (const binding of bindings) {
+      await pool.query(
+        `
+        INSERT INTO role_permissions (role_id, permission_id)
+        SELECT r.id, p.id
+        FROM roles r
+        JOIN permissions p ON p.code = $2
+        WHERE UPPER(r.name) = UPPER($1) AND r.tenant_id IS NULL
+        ON CONFLICT (role_id, permission_id) DO NOTHING
+        `,
+        [binding.roleName, binding.permissionCode]
+      );
+    }
+  }
+
+  /**
    * Assigns a role to a user within a tenant idempotently.
    *
    * @param userId - Target user ID

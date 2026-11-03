@@ -4,6 +4,7 @@ import ticketRoutes from './routes/ticket.routes';
 /**
  * Self-registering backend manifest for Helpdesk Tickets (ADR-017 / BL-302).
  * Mounts under parent 'helpdesk' at '/helpdesk/tickets'.
+ * Permissions and default role bindings are declared in `./security.csv`.
  */
 export const moduleManifest: ServerModuleManifest = {
   id: 'helpdesk.tickets',
@@ -14,29 +15,4 @@ export const moduleManifest: ServerModuleManifest = {
       router: ticketRoutes,
     },
   ],
-  permissions: {
-    admin: [
-      'tickets:read',
-      'tickets:create',
-      'tickets:manage',
-      'helpdesk:tickets:read',
-      'helpdesk:tickets:create',
-      'helpdesk:tickets:update',
-      'helpdesk:tickets:delete',
-      'helpdesk:tickets:manage',
-    ],
-    technician: [
-      'tickets:read',
-      'tickets:manage',
-      'helpdesk:tickets:read',
-      'helpdesk:tickets:create',
-      'helpdesk:tickets:update',
-    ],
-    client: [
-      'tickets:read',
-      'tickets:create',
-      'helpdesk:tickets:read',
-      'helpdesk:tickets:create',
-    ],
-  },
 };

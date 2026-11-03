@@ -3,7 +3,7 @@ import assetRoutes from './routes/asset.routes';
 
 /**
  * Self-registering backend manifest for the Assets & Consumables module (ADR-017 / BL-302).
- * Automatically discovered for API Gateway routing and Dynamic RBAC permission catalog sync.
+ * Permissions and default role bindings are declared in `./security.csv`.
  */
 export const moduleManifest: ServerModuleManifest = {
   id: 'assets',
@@ -13,15 +13,4 @@ export const moduleManifest: ServerModuleManifest = {
       router: assetRoutes,
     },
   ],
-  permissions: {
-    admin: [
-      'assets:read',
-      'assets:create',
-      'assets:update',
-      'assets:delete',
-      'assets:manage',
-    ],
-    technician: ['assets:read', 'assets:create', 'assets:update'],
-    client: ['assets:read'],
-  },
 };

@@ -239,5 +239,13 @@ describe('featureRegistry (Zero-Touch Frontend Auto-Discovery & Hierarchy)', () 
       'devices:read',
     ]);
     expect(emptyParentMerged.some((i) => i.to === '/helpdesk')).toBe(false);
+
+    // Dynamic RBAC overrides legacy hardcoded role restrictions:
+    // Even though TECHNICIAN is not in assets' fallback roles ['CLIENT', 'ADMIN'],
+    // granting 'assets:read' in userPermissions dynamically unlocks '/assets' in the sidebar.
+    const dynamicTechMerged = mergeFeatureNavItems(baseItems, 'TECHNICIAN', undefined, [
+      'assets:read',
+    ]);
+    expect(dynamicTechMerged.some((i) => i.to === '/assets')).toBe(true);
   });
 });

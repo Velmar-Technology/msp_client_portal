@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Router } from 'express';
 import { registeredModuleManifests } from './modules.generated';
+import { registeredSecurityRules } from './permissions.generated';
 import { resolveModuleRouteMounts, type ServerModuleManifest } from './moduleManifest.types';
 import { assets, consumables, consumableCheckouts, tickets, ticketResponses, ticketAttachments, ticketEvents } from '@shared/db';
 import {
@@ -10,14 +11,25 @@ import {
 import { UserRole } from '@shared/types';
 
 describe('moduleRegistry (Zero-Touch Backend Auto-Discovery, Hierarchy & Least Privilege RBAC)', () => {
-  it('auto-discovers the assets and hierarchical helpdesk module manifests with atomic CRUD permissions', () => {
+  it('auto-discovers module manifests and colocated security.csv rules across flat and hierarchical modules', () => {
     const assetsMod = registeredModuleManifests.find((m) => m.id === 'assets');
     expect(assetsMod).toBeDefined();
     expect(assetsMod?.routes?.some((r) => r.prefix === '/assets')).toBe(true);
-    expect(assetsMod?.permissions).toEqual({
-      admin: ['assets:read', 'assets:create', 'assets:update', 'assets:delete', 'assets:manage'],
-      technician: ['assets:read', 'assets:create', 'assets:update'],
-      client: ['assets:read'],
+
+    // Verify colocated security.csv rules were parsed into registeredSecurityRules
+    const assetsReadRule = registeredSecurityRules.find((r) => r.code === 'assets:read');
+    expect(assetsReadRule).toEqual({
+      code: 'assets:read',
+      module: 'assets',
+      description: 'View hardware assets and consumables inventory',
+      roles: ['ADMIN', 'TECHNICIAN', 'CLIENT'],
+    });
+    const ticketsDeleteRule = registeredSecurityRules.find((r) => r.code === 'helpdesk:tickets:delete');
+    expect(ticketsDeleteRule).toEqual({
+      code: 'helpdesk:tickets:delete',
+      module: 'helpdesk',
+      description: 'Delete support tickets',
+      roles: ['ADMIN'],
     });
 
     const helpdeskMod = registeredModuleManifests.find((m) => m.id === 'helpdesk');
@@ -93,10 +105,11 @@ describe('moduleRegistry (Zero-Touch Backend Auto-Discovery, Hierarchy & Least P
     expect(matchesHierarchicalPermission(['helpdesk:tickets:manage'], 'helpdesk:manage')).toBe(false);
   });
 
-  it('merges module manifest permissions into PermissionService and syncs catalog idempotently into DB', async () => {
+  it('merges security.csv permissions into PermissionService and syncs catalog + role_permissions idempotently into DB', async () => {
     const mockRepo = {
       getUserPermissions: vi.fn().mockResolvedValue([]),
       upsertPermissions: vi.fn().mockResolvedValue(undefined),
+      seedRolePermissions: vi.fn().mockResolvedValue(undefined),
     };
     const mockCache = {
       wrapVersioned: vi.fn((_ns, _t, _k, _ttl, fn) => fn()),
@@ -124,11 +137,17 @@ describe('moduleRegistry (Zero-Touch Backend Auto-Discovery, Hierarchy & Least P
       await service.hasPermission('u-3', 't-1', 'helpdesk:tickets:update', UserRole.CLIENT)
     ).toBe(false);
 
-    // Verify idempotent DB catalog sync
+    // Verify idempotent DB catalog + role_permissions sync from security.csv
     const catalog = await service.syncPermissionCatalog();
     expect(mockRepo.upsertPermissions).toHaveBeenCalledTimes(1);
-    expect(catalog.some((entry) => entry.code === 'helpdesk:tickets:create' && entry.module === 'helpdesk')).toBe(
-      true
-    );
+    expect(mockRepo.seedRolePermissions).toHaveBeenCalledTimes(1);
+    expect(
+      catalog.some(
+        (entry) =>
+          entry.code === 'helpdesk:tickets:create' &&
+          entry.module === 'helpdesk' &&
+          entry.description === 'Create support tickets and responses'
+      )
+    ).toBe(true);
   });
 });

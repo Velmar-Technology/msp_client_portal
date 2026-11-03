@@ -17,7 +17,6 @@ export const featureManifest: FeatureManifest = {
       labelKey: "helpdesk",
       group: "operations",
       order: 70,
-      roles: ["CLIENT", "TECHNICIAN", "ADMIN"],
     },
   ],
 };

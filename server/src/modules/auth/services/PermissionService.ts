@@ -2,7 +2,10 @@ import { PermissionRepository, permissionRepository } from '../repositories/Perm
 import { cacheManager, CacheManager } from '@shared/utils/cache/CacheManager';
 import { UserRole } from '@shared/types';
 import { logger } from '@shared/utils/logger';
-import { registeredModulePermissions } from '@shared/registry/permissions.generated';
+import {
+  registeredModulePermissions,
+  registeredSecurityRules,
+} from '@shared/registry/permissions.generated';
 
 const BASE_SYSTEM_PERMISSIONS = [
   'users:read',
@@ -125,6 +128,7 @@ function getAllSystemPermissions(): string[] {
     new Set([
       ...BASE_SYSTEM_PERMISSIONS,
       ...(registeredModulePermissions ?? []).flatMap((p) => [
+        ...(p.catalog ?? []),
         ...(p.admin ?? []),
         ...(p.technician ?? []),
         ...(p.client ?? []),
@@ -284,10 +288,9 @@ export class PermissionService {
   }
 
   /**
-   * Synchronizes auto-discovered module manifest permissions (`ADR-017`) with the
-   * PostgreSQL `permissions` catalog (`ADR-014` / `BL-302`).
-   * Idempotently upserts any missing capability codes into the database and returns
-   * the complete merged permission catalog.
+   * Synchronizes auto-discovered module `security.csv` rules (`ADR-017`) with the
+   * PostgreSQL `permissions`, `roles`, and `role_permissions` catalog (`ADR-014` / `BL-302`).
+   * Idempotently upserts any missing capability codes and default role bindings into the database.
    *
    * @returns Array of all registered permission catalog entries
    * @see BL-302
@@ -295,8 +298,20 @@ export class PermissionService {
   async syncPermissionCatalog(): Promise<
     Array<{ code: string; module: string; description: string }>
   > {
+    const csvByCode = new Map(
+      (registeredSecurityRules ?? []).map((rule) => [rule.code, rule])
+    );
     const allCodes = getAllSystemPermissions();
+
     const catalogEntries = allCodes.map((code) => {
+      const csvRule = csvByCode.get(code);
+      if (csvRule) {
+        return {
+          code: csvRule.code,
+          module: csvRule.module,
+          description: csvRule.description,
+        };
+      }
       const parts = code.split(':');
       const moduleName = parts[0] || 'system';
       const action = parts[parts.length - 1] || 'access';
@@ -308,11 +323,21 @@ export class PermissionService {
       };
     });
 
+    const roleBindings: Array<{ roleName: string; permissionCode: string }> = [];
+    for (const rule of registeredSecurityRules ?? []) {
+      for (const roleName of rule.roles) {
+        roleBindings.push({ roleName, permissionCode: rule.code });
+      }
+    }
+
     try {
       await this.permRepo.upsertPermissions(catalogEntries);
+      if (roleBindings.length > 0 && typeof this.permRepo.seedRolePermissions === 'function') {
+        await this.permRepo.seedRolePermissions(roleBindings);
+      }
     } catch (error) {
       logger.warn(
-        'Failed to upsert discovered manifest permissions into DB catalog; returning in-memory catalog:',
+        'Failed to upsert discovered security.csv permissions into DB catalog; returning in-memory catalog:',
         error
       );
     }

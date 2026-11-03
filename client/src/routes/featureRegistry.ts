@@ -26,9 +26,9 @@ export interface FeatureNavEntry {
   parentTo?: string;
   /** Numeric sort order within the sidebar group or within `parentTo`'s sub-items (e.g. 10, 20, 25, 30) */
   order: number;
-  /** Roles that should see this item in their sidebar */
-  roles: SidebarRole[];
-  /** Optional Dynamic RBAC capability (or array of alternative capabilities) required to display this item when `user.permissions` is present */
+  /** Optional fallback roles when `user.permissions` is not hydrated; superseded by `requiredPermission` under Dynamic RBAC (`BL-302`) */
+  roles?: SidebarRole[];
+  /** Dynamic RBAC capability (or array of alternative capabilities) required to display this item (`BL-302`) */
   requiredPermission?: string | string[];
   /** Optional subscription feature code required for entitlement gating */
   requiredFeature?: string;
@@ -250,9 +250,18 @@ export function mergeFeatureNavItems<T extends BaseNavItem>(
   );
 
   const discoveredEntries = allRawEntries.filter((entry) => {
-    if (!entry.roles.includes(role)) return false;
+    // Dynamic RBAC Primary Check (BL-302 / ADR-014 / ADR-017):
+    // When userPermissions is hydrated and requiredPermission is declared, evaluate capability directly
+    // without blocking on legacy hardcoded role names.
     if (entry.requiredPermission && Array.isArray(userPermissions)) {
       return hasFrontendPermission(userPermissions, entry.requiredPermission);
+    }
+    // Parent containers without their own requiredPermission are filtered by whether any child remains visible
+    if (parentContainerPaths.has(entry.to) && Array.isArray(userPermissions)) {
+      return true;
+    }
+    if (entry.roles && entry.roles.length > 0) {
+      return entry.roles.includes(role);
     }
     return true;
   });
