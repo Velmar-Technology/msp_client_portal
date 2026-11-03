@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import { Laptop, List, LayoutGrid, Search, Plus } from "lucide-react";
+import { Laptop, List, LayoutGrid, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import type { SubscriptionEquipment } from "@shared/contracts";
@@ -10,11 +10,8 @@ import { Page } from "@/components/Page";
 import { useUrlState } from "@/hooks/useUrlState";
 import type { PageViewOption, PageGraphDataPoint } from "@/components/page/types";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DataTable } from "@/components/ui/data-table";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Sub-components
 import { EmptySubscriptionsCard } from "../components/EmptySubscriptionsCard";
@@ -261,6 +258,19 @@ export function DevicesPage() {
     [page, totalPages, filteredEquipment.length, limit, setPage, setLimit, t],
   );
 
+
+  const hasActiveFilters = Boolean(
+    searchTerm ||
+    (selectedStatus && selectedStatus !== "all") ||
+    (selectedClient && selectedClient !== "all")
+  );
+
+  const handleClearAllFilters = useCallback(() => {
+    setSearchTerm("");
+    setSelectedStatus("");
+    setSelectedClient("");
+  }, [setSearchTerm, setSelectedStatus, setSelectedClient]);
+
   const bulkActions = useMemo(
     () => [
       {
@@ -397,16 +407,16 @@ export function DevicesPage() {
         <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
         <Page.HeaderRow>
           <Page.TitleGroup>
-            <Page.Title>{t("nav.devices")}</Page.Title>
+            <Page.Title docsUrl="https://help.velmar.com/devices">{t("nav.devices")}</Page.Title>
             <Page.Description>{t("devices.subtitle")}</Page.Description>
           </Page.TitleGroup>
           <Page.Actions maxVisible={3}>
             {isAdmin ? (
               <Button
                 type="button"
-                size="default"
+                size="sm"
                 onClick={handleOpenAddDevice}
-                className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer shadow-xs"
+                className="h-8 px-3.5 rounded-xl text-xs font-semibold gap-1.5 cursor-pointer shadow-2xs"
               >
                 <Plus className="h-3.5 w-3.5" />
                 <span>{t("devices.addDevice", "Add Device")}</span>
@@ -415,12 +425,11 @@ export function DevicesPage() {
               firstAvailableSlot && (
                 <Button
                   type="button"
-                  size="default"
-                  variant="outline"
+                  size="sm"
                   onClick={() =>
                     handleOpenActivateWithOtp(firstAvailableSlot.subscription_id, firstAvailableSlot.slot_index)
                   }
-                  className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
+                  className="h-8 px-3.5 rounded-xl text-xs font-semibold gap-1.5 cursor-pointer shadow-2xs"
                 >
                   <Laptop className="h-3.5 w-3.5" />
                   <span>{t("devices.activateDevice", "Activate Device")}</span>
@@ -429,19 +438,41 @@ export function DevicesPage() {
             )}
           </Page.Actions>
         </Page.HeaderRow>
-        <Page.Toolbar>
-          {(currentView === "list" || currentView === "tiled") && (
-            <Page.Filters>
-              <InputGroup className="w-full sm:w-72">
-                <InputGroupInput
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder={isAdmin ? t("devices.adminSearchPlaceholder") : t("devices.searchPlaceholder")}
-                />
-                <InputGroupAddon>
-                  <Search className="h-3.5 w-3.5 text-muted-foreground" />
-                </InputGroupAddon>
-              </InputGroup>
+      </Page.Header>
+
+      {(currentView === "list" || currentView === "tiled") && (
+        <div className="space-y-3 mb-4">
+          <Page.SearchInput
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder={isAdmin ? t("devices.adminSearchPlaceholder") : t("devices.searchPlaceholder")}
+          />
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Status Filter */}
+              <Page.FilterPill
+                label={t("devices.tableStatus")}
+                value={selectedStatus && selectedStatus !== "all" ? selectedStatus : ""}
+                options={statusFilterOptions}
+                onChange={setSelectedStatus}
+                onClear={() => setSelectedStatus("")}
+              />
+              <span className="sr-only">{t("devices.filterAllStatuses")}</span>
+
+              {/* Client Filter for Admins */}
+              {isAdmin && uniqueClients.length > 0 && (
+                <>
+                  <Page.FilterPill
+                    label={t("devices.tableClientTenant")}
+                    value={selectedClient && selectedClient !== "all" ? selectedClient : ""}
+                    options={clientFilterOptions}
+                    onChange={setSelectedClient}
+                    onClear={() => setSelectedClient("")}
+                  />
+                  <span className="sr-only">{t("devices.filterAllClients")}</span>
+                </>
+              )}
 
               {/* Multi-Subscription Selector */}
               {activeSubscriptions.length > 1 && !isAdmin && (
@@ -452,88 +483,32 @@ export function DevicesPage() {
                 />
               )}
 
-              {/* Client Filter for Admins */}
-              {isAdmin && uniqueClients.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <label
-                    htmlFor="devices-client-filter"
-                    className="text-[10px] uppercase font-bold text-muted-foreground select-none"
-                  >
-                    {t("devices.tableClientTenant")}
-                  </label>
-                  <div className="flex items-center bg-muted p-0.5 rounded-md border border-border">
-                    <Select value={selectedClient || "all"} onValueChange={setSelectedClient}>
-                      <SelectTrigger
-                        id="devices-client-filter"
-                        aria-label={t("devices.filterAllClients")}
-                        size="default"
-                        className="px-2.5 rounded text-xs font-semibold bg-card text-foreground shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5"
-                      >
-                        <SelectValue placeholder={t("devices.filterAllClients")} />
-                      </SelectTrigger>
-                      <SelectContent className="bg-card border-border">
-                        <SelectItem value="all" className="text-xs font-medium cursor-pointer">
-                          {t("devices.filterAllClients")}
-                        </SelectItem>
-                        {clientFilterOptions.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value} className="text-xs font-medium cursor-pointer">
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              )}
-
-              {/* Status Filter */}
-              <div className="flex items-center gap-2">
-                <label
-                  htmlFor="devices-status-filter"
-                  className="text-[10px] uppercase font-bold text-muted-foreground select-none"
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  onClick={handleClearAllFilters}
+                  className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer rounded-full"
                 >
-                  {t("devices.tableStatus")}
-                </label>
-                <div className="flex items-center bg-muted p-0.5 rounded-md border border-border">
-                  <Select value={selectedStatus || "all"} onValueChange={setSelectedStatus}>
-                    <SelectTrigger
-                      id="devices-status-filter"
-                      aria-label={t("devices.tableStatus")}
-                      size="default"
-                      className="px-2.5 rounded text-xs font-semibold bg-card text-foreground shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5"
-                    >
-                      <SelectValue placeholder={t("devices.filterAllStatuses")} />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border">
-                      <SelectItem value="all" className="text-xs font-medium cursor-pointer">
-                        {t("devices.filterAllStatuses")}
-                      </SelectItem>
-                      {statusFilterOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value} className="text-xs font-medium cursor-pointer">
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </Page.Filters>
-          )}
+                  <X className="size-3 mr-1" />
+                  {t("common.clearFilters", "Clear all")}
+                </Button>
+              )}
+            </div>
 
-          <Page.Controls>
-            <Page.ViewSwitcher size="sm" />
-          </Page.Controls>
-        </Page.Toolbar>
-      </Page.Header>
+            <div className="flex items-center gap-2">
+              <Page.ViewSwitcher size="sm" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between gap-3">
-            <Skeleton className="w-full sm:w-72 h-8" />
-            <div className="flex items-center gap-2">
-              <Skeleton className="w-28 h-8" />
-              <Skeleton className="w-24 h-8" />
-            </div>
+          <Skeleton className="w-full h-9 rounded-full" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="w-24 h-7 rounded-full" />
+            <Skeleton className="w-24 h-7 rounded-full" />
           </div>
           {currentView === "tiled" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -554,52 +529,78 @@ export function DevicesPage() {
           {/* View 1: List (DataTable) */}
           <Page.View type="list" className="space-y-4">
             {activeSubscriptions.length === 0 && !isAdmin ? (
-              <div className="flex items-center justify-center min-h-[60vh]">
+              <Page.ContentCard className="p-8">
                 <EmptySubscriptionsCard onBrowsePlans={handleBrowsePlans} />
-              </div>
+              </Page.ContentCard>
             ) : filteredEquipment.length === 0 ? (
-              <Card className="p-8 text-center space-y-2">
-                <Laptop className="h-6 w-6 text-muted-foreground mx-auto" />
-                <p className="text-sm font-semibold text-foreground">{t("devices.noSlotsFound")}</p>
-                <p className="text-xs text-muted-foreground">
-                  {t("devices.noSlotsFoundDesc", "No devices or slots match your search criteria.")}
-                </p>
-              </Card>
+              <Page.ContentCard className="p-8">
+                <Page.EmptyState
+                  icon={Laptop}
+                  title={t("devices.noSlotsFound")}
+                  description={t("devices.noSlotsFoundDesc", "No devices or slots match your search criteria.")}
+                  primaryAction={
+                    hasActiveFilters
+                      ? {
+                          label: t("common.clearFilters", "Clear all filters"),
+                          onClick: handleClearAllFilters,
+                        }
+                      : firstAvailableSlot
+                        ? {
+                            label: t("devices.activateDevice", "Activate Device"),
+                            onClick: () =>
+                              handleOpenActivateWithOtp(firstAvailableSlot.subscription_id, firstAvailableSlot.slot_index),
+                          }
+                        : undefined
+                  }
+                />
+              </Page.ContentCard>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-                <div className="lg:col-span-3 space-y-4">
-                  <DataTable
-                    columns={equipmentColumns}
-                    data={paginatedEquipment}
-                    noDataMessage={t("devices.noSlotsFound")}
-                    loading={loading}
-                    className="border-none rounded-none"
-                    pagination={paginationConfig}
-                    enableRowSelection={true}
-                    onSelectedRowsChange={setSelectedDevices}
-                    bulkActions={bulkActions}
-                    sorting={sorting}
-                    onSortingChange={setSorting}
-                  />
-                </div>
-              </div>
+              <Page.ContentCard className="p-0 border-border/70 overflow-hidden">
+                <DataTable
+                  columns={equipmentColumns}
+                  data={paginatedEquipment}
+                  noDataMessage={t("devices.noSlotsFound")}
+                  loading={loading}
+                  className="border-none rounded-none"
+                  pagination={paginationConfig}
+                  enableRowSelection={true}
+                  onSelectedRowsChange={setSelectedDevices}
+                  bulkActions={bulkActions}
+                  sorting={sorting}
+                  onSortingChange={setSorting}
+                />
+              </Page.ContentCard>
             )}
           </Page.View>
 
           {/* View 2: Tiled (Cards Grid) */}
           <Page.View type="tiled" className="space-y-4">
             {activeSubscriptions.length === 0 && !isAdmin ? (
-              <div className="flex items-center justify-center min-h-[60vh]">
+              <Page.ContentCard className="p-8">
                 <EmptySubscriptionsCard onBrowsePlans={handleBrowsePlans} />
-              </div>
+              </Page.ContentCard>
             ) : filteredEquipment.length === 0 ? (
-              <Card className="p-8 text-center space-y-2">
-                <Laptop className="h-6 w-6 text-muted-foreground mx-auto" />
-                <p className="text-sm font-semibold text-foreground">{t("devices.noSlotsFound")}</p>
-                <p className="text-xs text-muted-foreground">
-                  {t("devices.noSlotsFoundDesc", "No devices or slots match your search criteria.")}
-                </p>
-              </Card>
+              <Page.ContentCard className="p-8">
+                <Page.EmptyState
+                  icon={Laptop}
+                  title={t("devices.noSlotsFound")}
+                  description={t("devices.noSlotsFoundDesc", "No devices or slots match your search criteria.")}
+                  primaryAction={
+                    hasActiveFilters
+                      ? {
+                          label: t("common.clearFilters", "Clear all filters"),
+                          onClick: handleClearAllFilters,
+                        }
+                      : firstAvailableSlot
+                        ? {
+                            label: t("devices.activateDevice", "Activate Device"),
+                            onClick: () =>
+                              handleOpenActivateWithOtp(firstAvailableSlot.subscription_id, firstAvailableSlot.slot_index),
+                          }
+                        : undefined
+                  }
+                />
+              </Page.ContentCard>
             ) : (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

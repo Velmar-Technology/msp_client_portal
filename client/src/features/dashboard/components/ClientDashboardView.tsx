@@ -178,11 +178,6 @@ export function ClientDashboardView() {
       <div className="flex flex-col gap-6">
         {/* ElevenLabs Hero Header & Segmented Telemetry Card */}
         <ElevenDashboardHero
-          workspaceName={
-            user?.name
-              ? t("dashboard.userWorkspace", { name: user.name })
-              : t("dashboard.clientWorkspace")
-          }
           userName={user?.name?.split(" ")[0] || "Client"}
           statusText={openTickets === 0 ? t("dashboard.systemStatus") : `${openTickets} ${t("tickets.statusOpen")}`}
           statusType={openTickets === 0 ? "operational" : "warning"}

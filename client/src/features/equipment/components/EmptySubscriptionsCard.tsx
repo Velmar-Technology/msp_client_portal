@@ -1,8 +1,7 @@
 import { memo } from "react";
 import { Laptop } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Page } from "@/components/Page";
 
 export interface EmptySubscriptionsCardProps {
   onBrowsePlans: () => void;
@@ -17,22 +16,14 @@ export const EmptySubscriptionsCard = memo(function EmptySubscriptionsCard({
 }: EmptySubscriptionsCardProps) {
   const { t } = useTranslation();
   return (
-    <Card className="p-8 shadow-xs border-border flex flex-col items-center justify-center text-center space-y-3 max-w-md mx-auto">
-      <span className="p-3 bg-muted text-muted-foreground rounded-full border border-border inline-flex">
-        <Laptop className="h-6 w-6" />
-      </span>
-      <div>
-        <h3 className="text-sm font-bold text-foreground font-heading">{t("devices.noActiveSubscriptions")}</h3>
-        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{t("devices.noActiveSubscriptionsDesc")}</p>
-      </div>
-      <Button
-        type="button"
-        size="default"
-        onClick={onBrowsePlans}
-        className="h-8 px-4 text-xs font-semibold cursor-pointer"
-      >
-        {t("devices.browseSupportPlans")}
-      </Button>
-    </Card>
+    <Page.EmptyState
+      icon={Laptop}
+      title={t("devices.noActiveSubscriptions")}
+      description={t("devices.noActiveSubscriptionsDesc")}
+      primaryAction={{
+        label: t("devices.browseSupportPlans"),
+        onClick: onBrowsePlans,
+      }}
+    />
   );
 });

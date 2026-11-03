@@ -442,11 +442,6 @@ export function AdminDashboardView() {
       <div className="flex flex-col gap-6" id="section-overview">
         {/* ElevenLabs Hero Header & Segmented Telemetry Card */}
         <ElevenDashboardHero
-          workspaceName={
-            user?.name
-              ? t("dashboard.userConsole", { name: user.name })
-              : t("dashboard.adminConsole")
-          }
           userName={user?.name?.split(" ")[0] || "Admin"}
           categories={categories}
           metricTabs={metricTabs}
