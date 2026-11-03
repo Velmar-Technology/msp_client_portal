@@ -9,6 +9,33 @@ import {
   Activity,
 } from 'lucide-react';
 
+export const ALLOWED_MIMES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'application/pdf',
+  'text/plain',
+  'application/octet-stream',
+];
+
+export const ALLOWED_EXTS = ['.jpg', '.jpeg', '.png', '.webp', '.pdf', '.txt', '.log', '.zip'];
+
+export function validateImage(file: File): { valid: boolean; error?: string } {
+  const ext = '.' + (file.name.split('.').pop()?.toLowerCase() || '');
+  const isAllowedExt = ALLOWED_EXTS.includes(ext);
+  const isAllowedMime = ALLOWED_MIMES.includes(file.type) || (isAllowedExt && !file.type);
+
+  if (!isAllowedExt || !isAllowedMime) {
+    return { valid: false, error: 'Invalid file format. Allowed: JPG, PNG, WEBP, PDF, TXT, LOG, ZIP.' };
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    return { valid: false, error: 'File exceeds 10MB limit.' };
+  }
+
+  return { valid: true };
+}
+
 export const formatFileSize = (bytes?: number | null): string => {
   if (!bytes || bytes === 0) return '0 Bytes';
   const k = 1024;

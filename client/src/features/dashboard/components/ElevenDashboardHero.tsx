@@ -31,7 +31,6 @@ export interface ElevenCategoryTab {
 }
 
 export interface ElevenDashboardHeroProps {
-  workspaceName?: string;
   userName?: string;
   statusText?: string;
   statusType?: "operational" | "warning" | "error";
@@ -87,7 +86,6 @@ function generateSmoothCurve(points: { x: number; y: number }[]): string {
 }
 
 export function ElevenDashboardHero({
-  workspaceName,
   userName = "User",
   statusText,
   statusType = "operational",
@@ -118,7 +116,6 @@ export function ElevenDashboardHero({
   }, [explicitCategories, t]);
 
   const greeting = useMemo(() => getGreeting(t), [t]);
-  const effectiveWorkspaceName = workspaceName || t("dashboard.clientWorkspace");
 
   const [selectedCategory, setSelectedCategory] = useState<string>(
     activeCategoryId || (categories[0]?.id ?? "overview")
@@ -269,10 +266,10 @@ export function ElevenDashboardHero({
           </div>
           )}
 
-          {/* Workspace subtle label */}
+          {/* Workspace subtle label
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-0.5">
             {effectiveWorkspaceName}
-          </p>
+          </p> */}
 
           {/* Greeting Heading */}
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">

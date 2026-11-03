@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Page } from "@/components/Page";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useDeferredLoading } from "@/hooks/useDeferredLoading";
 import { SKELETON_DISPLAY_DELAY_MS } from "@/constants/ui";
 import {
@@ -287,55 +286,57 @@ export function NotificationPreferencesPage() {
           </Page.TitleGroup>
         </Page.HeaderRow>
       </Page.Header>
-      <Tabs value={effectiveActiveTab} onValueChange={setActiveTab} className="w-full">
 
-        <TabsList className="mb-4">
-          <TabsTrigger value="channels" className="gap-2">
-            <Sliders className="h-3.5 w-3.5" />
-            <span>{t("notificationPreferences.tabChannels", "Delivery Channels")}</span>
-          </TabsTrigger>
-          <TabsTrigger value="history" className="gap-2 relative">
-            <History className="h-3.5 w-3.5" />
-            <span>{t("notificationPreferences.tabHistory", "Notification History")}</span>
-            {unreadCount > 0 && (
-              <span
-                className="ml-1 rounded-full bg-primary text-primary-foreground px-1.5 py-0.2 text-[10px] font-semibold"
-                title={t("notifications.unreadCount", { count: unreadCount, defaultValue: "{{count}} unread" })}
-                aria-label={t("notifications.unreadCount", { count: unreadCount, defaultValue: "{{count}} unread" })}
-              >
-                {unreadCount}
-              </span>
-            )}
-          </TabsTrigger>
-          {isAdmin && (
-            <TabsTrigger value="templates" className="gap-2">
-              <Mail className="h-3.5 w-3.5" />
-              <span>{t("notificationPreferences.tabTemplates", "Email Templates")}</span>
-            </TabsTrigger>
-          )}
-        </TabsList>
+      <div className="mb-6">
+        <Page.Tabs
+          activeTab={effectiveActiveTab}
+          onTabChange={setActiveTab}
+          tabs={[
+            {
+              id: "channels",
+              label: t("notificationPreferences.tabChannels", "Delivery Channels"),
+              icon: Sliders,
+            },
+            {
+              id: "history",
+              label: t("notificationPreferences.tabHistory", "Notification History"),
+              icon: History,
+              badge: unreadCount > 0 ? (
+                <span
+                  title={t("notifications.unreadCount", { count: unreadCount, defaultValue: "{{count}} unread" })}
+                  aria-label={t("notifications.unreadCount", { count: unreadCount, defaultValue: "{{count}} unread" })}
+                >
+                  {unreadCount}
+                </span>
+              ) : undefined,
+            },
+            ...(isAdmin
+              ? [
+                  {
+                    id: "templates",
+                    label: t("notificationPreferences.tabTemplates", "Email Templates"),
+                    icon: Mail,
+                  },
+                ]
+              : []),
+          ]}
+        />
+      </div>
 
-        <TabsContent value="channels">
-          <div className="flex flex-col">
-            <HeaderInfo />
-            <StatusBanner message={message} type={messageType} />
+      {effectiveActiveTab === "channels" && (
+        <div className="flex flex-col">
+          <HeaderInfo />
+          <StatusBanner message={message} type={messageType} />
 
-            {preferences && <PreferenceMatrix preferences={preferences} onToggle={handleToggle} isLocked={isLocked} />}
+          {preferences && <PreferenceMatrix preferences={preferences} onToggle={handleToggle} isLocked={isLocked} />}
 
-            <ActionFooter hasChanges={hasChanges} isSaving={isSaving} onSave={handleSave} />
-          </div>
-        </TabsContent>
+          <ActionFooter hasChanges={hasChanges} isSaving={isSaving} onSave={handleSave} />
+        </div>
+      )}
 
-        <TabsContent value="history">
-          <NotificationHistorySection />
-        </TabsContent>
+      {effectiveActiveTab === "history" && <NotificationHistorySection />}
 
-        {isAdmin && (
-          <TabsContent value="templates">
-            <EmailTemplatesGallerySection />
-          </TabsContent>
-        )}
-      </Tabs>
+      {isAdmin && effectiveActiveTab === "templates" && <EmailTemplatesGallerySection />}
     </Page>
   );
 }

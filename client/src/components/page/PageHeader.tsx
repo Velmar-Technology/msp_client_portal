@@ -2,6 +2,7 @@ import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PageDocsLink } from "./PageDocsLink";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -102,19 +103,24 @@ export function PageTitleGroup({
 export function PageTitle({
   className,
   children,
+  docsUrl,
+  docsLabel,
   ...props
 }: PageTitleProps) {
   return (
-    <h1
-      data-slot="page-title"
-      className={cn(
-        "text-lg sm:text-xl font-bold tracking-tight text-foreground font-heading animate-fade-in truncate",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </h1>
+    <div className="flex items-center gap-2 min-w-0">
+      <h1
+        data-slot="page-title"
+        className={cn(
+          "text-lg sm:text-xl font-bold tracking-tight text-foreground font-heading animate-fade-in truncate",
+          className
+        )}
+        {...props}
+      >
+        {children}
+      </h1>
+      {docsUrl && <PageDocsLink href={docsUrl} label={docsLabel} />}
+    </div>
   );
 }
 

@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { FeatureLockedPreview } from "@/components/shared/FeatureLockedPreview";
 import { FEATURE_CODES } from "@/constants/subscriptions";
@@ -249,18 +248,28 @@ export function ByokSettingsPage() {
         </Page.HeaderRow>
       </Page.Header>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md h-9">
-          <TabsTrigger value="web-config" className="text-xs">
-            {t("byok.tabWeb", "Configuración Web")}
-          </TabsTrigger>
-          <TabsTrigger value="desktop-mcp" className="text-xs">
-            {t("byok.tabDesktop", "Claude Desktop / Cursor")}
-          </TabsTrigger>
-        </TabsList>
+      <div className="mb-6">
+        <Page.Tabs
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          tabs={[
+            {
+              id: "web-config",
+              label: t("byok.tabWeb", "Configuración Web"),
+              icon: Cpu,
+            },
+            {
+              id: "desktop-mcp",
+              label: t("byok.tabDesktop", "Claude Desktop / Cursor"),
+              icon: Terminal,
+            },
+          ]}
+        />
+      </div>
 
-        {/* Tab 1: Web Portal Configuration */}
-        <TabsContent value="web-config" className="space-y-4 pt-2">
+      {/* Tab 1: Web Portal Configuration */}
+      {activeTab === "web-config" && (
+        <div className="space-y-4 pt-2">
           <Card>
             <form onSubmit={handleSaveConfig}>
               <CardHeader className="pb-4">
@@ -434,10 +443,12 @@ export function ByokSettingsPage() {
               </CardFooter>
             </form>
           </Card>
-        </TabsContent>
+        </div>
+      )}
 
-        {/* Tab 2: Desktop MCP Zero-Secret Setup */}
-        <TabsContent value="desktop-mcp" className="space-y-4 pt-2">
+      {/* Tab 2: Desktop MCP Zero-Secret Setup */}
+      {activeTab === "desktop-mcp" && (
+        <div className="space-y-4 pt-2">
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
@@ -495,8 +506,8 @@ export function ByokSettingsPage() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
     </Page>
   );
 }

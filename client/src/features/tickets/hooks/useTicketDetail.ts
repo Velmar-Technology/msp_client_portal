@@ -20,6 +20,33 @@ import { NAV_COUNTER_QUERY_KEYS } from "@/features/nav";
  */
 import { useTicketChatStream } from './useTicketChatStream';
 
+export const ALLOWED_MIMES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'application/pdf',
+  'text/plain',
+  'application/octet-stream',
+];
+
+export const ALLOWED_EXTS = ['.jpg', '.jpeg', '.png', '.webp', '.pdf', '.txt', '.log', '.zip'];
+
+export function validateImage(file: File): { valid: boolean; error?: string } {
+  const ext = '.' + (file.name.split('.').pop()?.toLowerCase() || '');
+  const isAllowedExt = ALLOWED_EXTS.includes(ext);
+  const isAllowedMime = ALLOWED_MIMES.includes(file.type) || (isAllowedExt && !file.type);
+
+  if (!isAllowedExt || !isAllowedMime) {
+    return { valid: false, error: 'Invalid file format. Allowed: JPG, PNG, WEBP, PDF, TXT, LOG, ZIP.' };
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    return { valid: false, error: 'File exceeds 10MB limit.' };
+  }
+
+  return { valid: true };
+}
+
 export function useTicketDetail(ticketId: string | undefined) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
@@ -182,7 +209,16 @@ export function useTicketDetail(ticketId: string | undefined) {
 
   const handleSendResponse = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ticketId || (!responseText.trim() && responseFiles.length === 0)) return;
+    if (!ticketId) return;
+
+    // Files require an accompanying text message
+    if (responseFiles.length > 0 && !responseText.trim()) {
+      setResponseFeedback({ text: t('ticketDetail.messageRequiredWithAttachments'), isError: true });
+      return;
+    }
+
+    if (!responseText.trim()) return;
+
     setSendingResponse(true);
     setResponseFeedback(null);
     try {
@@ -197,9 +233,15 @@ export function useTicketDetail(ticketId: string | undefined) {
       setResponseFiles([]);
       setResponseFeedback({ text: t('ticketDetail.responseSuccess'), isError: false });
       setTimeout(() => setResponseFeedback(null), 3000);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to send response', err);
-      setResponseFeedback({ text: t('ticketDetail.responseError'), isError: true });
+      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+      const errMsg = axiosErr?.response?.data?.message || axiosErr?.message || '';
+      if (responseFiles.length > 0 && (!responseText.trim() || errMsg.toLowerCase().includes('message'))) {
+        setResponseFeedback({ text: t('ticketDetail.messageRequiredWithAttachments'), isError: true });
+      } else {
+        setResponseFeedback({ text: t('ticketDetail.responseError'), isError: true });
+      }
     } finally {
       setSendingResponse(false);
     }
@@ -246,26 +288,15 @@ export function useTicketDetail(ticketId: string | undefined) {
     setUploadError(null);
     setUploading(true);
 
-    const allowedMimeTypes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-      'application/pdf', 'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'text/plain', 'video/mp4',
-    ];
+    // Validated against ALLOWED_MIMES and ALLOWED_EXTS
 
-    const maxFileSize = 10 * 1024 * 1024; // 10MB
 
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        if (!allowedMimeTypes.includes(file.type)) {
-          setUploadError(t('ticketDetail.invalidFileType'));
-          continue;
-        }
-        if (file.size > maxFileSize) {
-          setUploadError(t('ticketDetail.fileTooLarge'));
+        const validation = validateImage(file);
+        if (!validation.valid) {
+          setUploadError(validation.error || t('ticketDetail.invalidFileType'));
           continue;
         }
         const newAttachment = await ticketService.uploadAttachment(ticketId, file);

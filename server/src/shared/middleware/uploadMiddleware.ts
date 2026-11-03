@@ -2,7 +2,7 @@ import multer from 'multer';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { env } from '@shared/config/env';
-import { ALLOWED_MIME_TYPES } from '@shared/config/constants';
+import { ALLOWED_MIME_TYPES, ALLOWED_EXTS } from '@shared/config/constants';
 import { InvalidFileTypeError } from '@shared/errors';
 
 const storage = multer.diskStorage({
@@ -21,7 +21,11 @@ const fileFilter = (
   file: Express.Multer.File,
   cb: multer.FileFilterCallback,
 ): void => {
-  if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+  const ext = path.extname(file.originalname).toLowerCase();
+  const isAllowedMime = ALLOWED_MIME_TYPES.includes(file.mimetype);
+  const isAllowedExt = ALLOWED_EXTS.includes(ext);
+
+  if (isAllowedMime || (isAllowedExt && file.mimetype === 'application/octet-stream')) {
     cb(null, true);
   } else {
     cb(new InvalidFileTypeError(`File type ${file.mimetype} is not allowed`));

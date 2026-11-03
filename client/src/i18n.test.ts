@@ -180,7 +180,34 @@ describe('i18n Language Resolution & Browser Detection', () => {
     });
   });
 
-  describe('Feature Locked Translations Parity', () => {
+  describe('Universal Locale Key Parity', () => {
+    const extractKeys = (obj: Record<string, unknown>, prefix = ''): string[] => {
+      let keys: string[] = [];
+      for (const k of Object.keys(obj)) {
+        const fullKey = prefix ? `${prefix}.${k}` : k;
+        const val = obj[k];
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+          keys = keys.concat(extractKeys(val as Record<string, unknown>, fullKey));
+        } else {
+          keys.push(fullKey);
+        }
+      }
+      return keys;
+    };
+
+    it('enforces 100% bidirectional parity between en_US and es_DO across all namespaces', () => {
+      const enKeys = new Set(extractKeys(enUS));
+      const esKeys = new Set(extractKeys(esDO));
+
+      const missingInEs = [...enKeys].filter((k) => !esKeys.has(k));
+      const missingInEn = [...esKeys].filter((k) => !enKeys.has(k));
+
+      expect(missingInEs, `Missing in es_DO.json: ${missingInEs.join(', ')}`).toEqual([]);
+      expect(missingInEn, `Missing in en_US.json: ${missingInEn.join(', ')}`).toEqual([]);
+      expect(enKeys.size).toBeGreaterThan(0);
+      expect(enKeys.size).toBe(esKeys.size);
+    });
+
     it('ensures en_US and es_DO featureLocked sections have full key parity', () => {
       expect(enUS.featureLocked).toBeDefined();
       expect(esDO.featureLocked).toBeDefined();

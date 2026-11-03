@@ -45,7 +45,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { Info, AlertTriangle, CheckCircle2, Laptop, Cloud, MoreHorizontal } from 'lucide-react';
+import { Info, AlertTriangle, CheckCircle2, Laptop, Cloud, MoreHorizontal, Users, PlayCircle, Sparkles, Copy, KeyRound } from 'lucide-react';
 import {
   GlowCard,
   GlowCardHeader,
@@ -86,6 +86,184 @@ export const StyleGuidePage: React.FC = () => {
           </Page.Actions>
         </Page.HeaderRow>
       </Page.Header>
+
+      {/* ElevenLabs Compound Layout Pattern */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold text-foreground">ElevenLabs Page Layout Compounds</h2>
+          <p className="text-xs text-muted-foreground">Action cards, wide search, filter pills, content card, and empty states.</p>
+        </div>
+
+        <Page.ActionGrid>
+          <Page.ActionCard
+            icon={Laptop}
+            title="Add webhook tool"
+            description="Trigger HTTP actions on lifecycle events"
+            onClick={() => {}}
+          />
+          <Page.ActionCard
+            icon={Cloud}
+            title="Add client tool"
+            description="Run client-side functions in browser"
+            onClick={() => {}}
+          />
+          <Page.ActionCard
+            icon={Info}
+            title="Add integration tool"
+            description="Sync with external API services"
+            onClick={() => {}}
+          />
+        </Page.ActionGrid>
+
+        <Page.SearchInput
+          value=""
+          onChange={() => {}}
+          placeholder="Search tools..."
+        />
+
+        {/* Pill Segmented Tabs */}
+        <Page.Tabs variant="pill" defaultTab="all">
+          <Page.Tab id="all" label="All Tests">
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Page.TogglePill
+                  icon={Users}
+                  label="Shared with me"
+                  active={false}
+                  onToggle={() => {}}
+                />
+                <Page.FilterPill
+                  label="Type"
+                  value=""
+                  options={[
+                    { value: "webhook", label: "Webhook" },
+                    { value: "client", label: "Client" },
+                  ]}
+                  onChange={() => {}}
+                  onClear={() => {}}
+                />
+                <Page.FilterPill
+                  label="Creator"
+                  value="me"
+                  options={[
+                    { value: "me", label: "Created by me" },
+                    { value: "team", label: "Created by team" },
+                  ]}
+                  onChange={() => {}}
+                  onClear={() => {}}
+                />
+              </div>
+
+              <Page.ContentCard>
+                <Page.EmptyState
+                  icon={Laptop}
+                  title="No tests found"
+                  description="You have not created any tests yet. Get started by creating your first automated test."
+                  primaryAction={{
+                    label: "Create your first test",
+                    onClick: () => {},
+                  }}
+                  secondaryAction={{
+                    label: "Learn how",
+                    icon: PlayCircle,
+                    href: "https://docs.example.com",
+                  }}
+                />
+              </Page.ContentCard>
+            </div>
+          </Page.Tab>
+          <Page.Tab id="past" label="Past Run Analysis">
+            <div className="p-4 text-xs text-muted-foreground">Historical run diagnostics and traces</div>
+          </Page.Tab>
+        </Page.Tabs>
+      </section>
+
+      {/* API Keys & Integration Flow Pattern */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold text-foreground">API Keys, Callout Banner & Integration Flow</h2>
+          <p className="text-xs text-muted-foreground">Standalone bubble tabs, callout banner, and connected dual-icon integration flow empty state.</p>
+        </div>
+
+        <Page.Tabs
+          variant="bubble"
+          defaultTab="keys"
+          tabs={[
+            {
+              id: "keys",
+              label: (
+                <span className="flex items-center gap-1.5">
+                  <KeyRound className="size-3.5" />
+                  <span>API keys</span>
+                </span>
+              ),
+            },
+            {
+              id: "services",
+              label: (
+                <span className="flex items-center gap-1.5">
+                  <Users className="size-3.5" />
+                  <span>Service accounts</span>
+                </span>
+              ),
+            },
+          ]}
+        />
+
+        <Page.Banner
+          icon={Sparkles}
+          title="Let your coding agent set this up."
+          description="One prompt signs you in, creates a key, and adds the SDK to your project."
+          action={{
+            label: "Copy prompt",
+            icon: Copy,
+            onClick: () => {},
+          }}
+          onDismiss={() => {}}
+        />
+
+        <Page.ContentCard>
+          <Page.EmptyState
+            connectedIcons={{
+              from: Cloud,
+              to: Laptop,
+            }}
+            title="API Keys"
+            description="An API key lets you connect to our API and use its features. You can create multiple keys with different access levels."
+            primaryAction={{
+              label: "Create Key",
+              onClick: () => {},
+            }}
+          />
+        </Page.ContentCard>
+      </section>
+
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold text-foreground">ElevenLabs Setting Rows & Layout Primitives (ADR-016)</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Card-less row layouts with hairline dividers (<code className="text-xs bg-muted px-1 py-0.5 rounded">divide-y divide-border/50</code>), text-first minimalist labels, and flat danger zones.
+          </p>
+        </div>
+        <div className="max-w-3xl divide-y divide-border/50 rounded-xl border border-border/40 p-6 bg-card/40">
+          <Page.SettingRow
+            label="Full Legal Name"
+            description="Estiven Polanco"
+            action={<Button variant="outline" size="sm" className="h-8 text-xs font-medium">Update Name</Button>}
+          />
+          <Page.SettingRow
+            label="Two-Factor Authentication"
+            description="Enforce high-assurance TOTP authenticator verification on login."
+            action={<Button variant="outline" size="sm" className="h-8 text-xs font-medium">Configure 2FA</Button>}
+          />
+          <Page.SettingRow
+            danger
+            label="Delete Entire Account"
+            description="Permanently delete your entire account across all workspaces. This action cannot be reversed."
+            action={<Button variant="outline" size="sm" className="h-8 text-xs font-medium border-destructive/40 text-destructive hover:bg-destructive/10">Delete Account</Button>}
+          />
+        </div>
+      </section>
 
       <section className="space-y-4">
         <h2 className="text-xl font-semibold text-foreground">ElevenLabs Conversational AI Agents</h2>

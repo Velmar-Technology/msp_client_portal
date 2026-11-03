@@ -12,7 +12,7 @@ import {
   AttachmentMedia,
   AttachmentTitle,
 } from '@/components/ui/attachment';
-import { formatFileSize, getAttachmentIcon } from './ticketUtils';
+import { formatFileSize, getAttachmentIcon, ALLOWED_EXTS } from './ticketUtils';
 import { cn } from '@/lib/utils';
 
 export interface TicketChatterComposerProps {
@@ -163,6 +163,7 @@ export const TicketChatterComposer: React.FC<TicketChatterComposerProps> = ({
               ref={fileInputRef}
               type="file"
               multiple
+              accept={ALLOWED_EXTS.join(",")}
               onChange={(e) => {
                 if (e.target.files) {
                   setResponseFiles((prev) => [...prev, ...Array.from(e.target.files || [])]);
@@ -170,9 +171,15 @@ export const TicketChatterComposer: React.FC<TicketChatterComposerProps> = ({
               }}
               className="hidden"
             />
-            <span className="hidden sm:inline text-[10px] text-muted-foreground/70 font-mono select-none">
-              {t('ticketDetail.ctrlEnterHint')}
-            </span>
+            {responseFiles.length > 0 && !responseText.trim() ? (
+              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium select-none">
+                {t('ticketDetail.messageRequiredWithAttachments')}
+              </span>
+            ) : (
+              <span className="hidden sm:inline text-[10px] text-muted-foreground/70 font-mono select-none">
+                {t('ticketDetail.ctrlEnterHint')}
+              </span>
+            )}
           </div>
 
           <Button

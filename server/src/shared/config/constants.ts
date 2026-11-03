@@ -81,19 +81,28 @@ export const DEFAULT_PAGE = 1;
 export const DEFAULT_LIMIT = 10;
 export const MAX_LIMIT = 100;
 
-/** Supported file types for ticket attachments */
-export const ALLOWED_MIME_TYPES = [
+export const ALLOWED_MIMES = [
   'image/jpeg',
   'image/png',
-  'image/gif',
   'image/webp',
   'application/pdf',
+  'text/plain',
+  'application/octet-stream', // Allow binary streams when extension is safe
+];
+
+export const ALLOWED_EXTS = ['.jpg', '.jpeg', '.png', '.webp', '.pdf', '.txt', '.log', '.zip'];
+
+/** Supported file types for ticket attachments */
+export const ALLOWED_MIME_TYPES = [
+  ...ALLOWED_MIMES,
+  'image/gif',
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.ms-excel',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'text/plain',
   'video/mp4',
+  'application/zip',
+  'application/x-zip-compressed',
 ];
 
 /** Tax rate */

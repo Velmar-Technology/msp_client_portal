@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Settings,
@@ -9,16 +9,22 @@ import {
   Bell,
   HelpCircle,
   Loader2,
+  Navigation,
+  Sun,
+  Moon,
+  Laptop,
 } from "lucide-react";
 import { useTopNav, type FlatItem } from "@/hooks/useTopNav";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { NotificationBell } from "@/components/layout/NotificationBell";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
+import { Button } from "@/components/ui/button";
+import { useTheme } from "@/components/shared/useTheme";
+import { TopNavBreadcrumbs } from "@/components/layout/TopNavBreadcrumbs";
+import { FeedbackDialog } from "@/components/layout/FeedbackDialog";
+import { AiCopilotDrawer } from "@/components/layout/AiCopilotDrawer";
+import { FolderMenu } from "@/components/layout/FolderMenu";
+import { UserPresenceAvatar } from "@/components/shared/UserPresenceAvatar";
+import { useConnectionStatus } from "@/hooks/useConnectionStatus";
 
 // 1. SearchBar Sub-component
 interface SearchBarProps {
@@ -35,6 +41,12 @@ interface SearchBarProps {
   t: (key: string) => string;
 }
 
+/**
+ * Pill-shaped global search bar with keyboard shortcut hints and grouped quick-action dropdown.
+ *
+ * @param props - SearchBar props
+ * @returns JSX.Element
+ */
 export function SearchBar({
   searchQuery,
   setSearchQuery,
@@ -49,9 +61,10 @@ export function SearchBar({
   t,
 }: SearchBarProps) {
   return (
-    <div ref={containerRef} className="hidden md:flex items-center flex-1 max-w-sm mx-6 relative">
-      <InputGroup className="w-full bg-muted/30 border border-border/60 hover:border-border rounded-lg transition-all focus-within:border-foreground/20 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
-        <InputGroupInput
+    <div ref={containerRef} className="hidden md:flex items-center relative">
+      <div className="relative flex items-center">
+        <Search className="absolute left-2.5 size-3.5 text-muted-foreground/70 pointer-events-none" />
+        <input
           id="topnav-search"
           placeholder={t("topNav.search")}
           value={searchQuery}
@@ -65,15 +78,16 @@ export function SearchBar({
             prefetchInvoices();
           }}
           onKeyDown={handleKeyDown}
-          className="text-xs"
+          className="h-7 w-56 lg:w-64 rounded-full border border-border/70 bg-background/50 pl-8 pr-12 text-xs placeholder:text-muted-foreground/70 focus:outline-hidden focus:ring-1 focus:ring-ring focus:border-ring transition-all shadow-2xs"
         />
-        <InputGroupAddon>
-          <Search className="size-3.5 text-muted-foreground/70" />
-        </InputGroupAddon>
-      </InputGroup>
+        <div className="absolute right-2 flex items-center gap-0.5 pointer-events-none">
+          <kbd className="inline-flex h-4 select-none items-center rounded border border-border/70 bg-muted/70 px-1 font-mono text-[9px] font-medium text-muted-foreground">⌘</kbd>
+          <kbd className="inline-flex h-4 select-none items-center rounded border border-border/70 bg-muted/70 px-1 font-mono text-[9px] font-medium text-muted-foreground">K</kbd>
+        </div>
+      </div>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1.5 w-full bg-popover/95 backdrop-blur-md border border-border/80 rounded-xl shadow-2xl overflow-hidden z-50 text-popover-foreground select-none max-h-95 overflow-y-auto custom-scrollbar">
+        <div className="absolute top-full left-0 mt-1.5 w-80 lg:w-96 bg-popover/95 backdrop-blur-md border border-border/80 rounded-xl shadow-2xl overflow-hidden z-50 text-popover-foreground select-none max-h-96 overflow-y-auto custom-scrollbar">
           {isLoading ? (
             <div className="flex items-center justify-center py-6 gap-2 text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -109,7 +123,7 @@ export function SearchBar({
                     )}
                     <button
                       onClick={item.onClick}
-                      className={`w-full text-left px-2.5 py-1.5 flex items-center justify-between transition-colors rounded-lg text-xs ${
+                      className={`w-full text-left px-2.5 py-1.5 flex items-center justify-between transition-colors rounded-lg text-xs cursor-pointer ${
                         isSelected
                           ? "bg-muted/80 text-foreground font-medium"
                           : "hover:bg-muted/60 text-muted-foreground hover:text-foreground"
@@ -151,6 +165,12 @@ interface SettingsMenuProps {
   t: (key: string) => string;
 }
 
+/**
+ * Dropdown menu for role-based account settings.
+ *
+ * @param props - SettingsMenu props
+ * @returns JSX.Element
+ */
 export function SettingsMenu({
   showSettingsMenu,
   setShowSettingsMenu,
@@ -168,6 +188,7 @@ export function SettingsMenu({
             ? "bg-muted/80 text-foreground"
             : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
         }`}
+        aria-label={t("nav.settings")}
       >
         <Settings className="h-4 w-4" />
       </button>
@@ -215,6 +236,12 @@ interface UserMenuProps {
   t: (key: string) => string;
 }
 
+/**
+ * User account profile menu with avatar presence ring and theme mode toggle.
+ *
+ * @param props - UserMenu props
+ * @returns JSX.Element
+ */
 export function UserMenu({
   showUserMenu,
   setShowUserMenu,
@@ -223,6 +250,9 @@ export function UserMenu({
   logout,
   t,
 }: UserMenuProps) {
+  const { theme, setTheme } = useTheme();
+  const connectionStatus = useConnectionStatus();
+
   if (!user) {
     return (
       <Link
@@ -238,25 +268,18 @@ export function UserMenu({
     <div className="relative" ref={userMenuRef}>
       <button
         onClick={() => setShowUserMenu(!showUserMenu)}
-        className="flex items-center gap-1.5 p-1 rounded-lg hover:bg-muted/60 transition-colors cursor-pointer"
+        className="cursor-pointer rounded-full p-0 flex items-center justify-center"
+        aria-label={user?.name || "User menu"}
       >
-        {user?.avatarUrl ? (
-          <img
-            src={user.avatarUrl}
-            alt={user.name}
-            className="w-6.5 h-6.5 rounded-full object-cover border border-border/80"
-          />
-        ) : (
-          <div className="w-6.5 h-6.5 bg-foreground text-background rounded-full flex items-center justify-center border border-border/80">
-            <span className="text-[10px] font-bold">
-              {user?.name?.charAt(0).toUpperCase() || "U"}
-            </span>
-          </div>
-        )}
+        <UserPresenceAvatar
+          user={user}
+          status={connectionStatus}
+          showTooltip={!showUserMenu}
+        />
       </button>
 
       {showUserMenu && (
-        <div className="absolute right-0 top-10 w-52 bg-popover/95 backdrop-blur-md border border-border/80 rounded-xl shadow-2xl p-1 animate-in fade-in-0 zoom-in-95 z-50">
+        <div className="absolute right-0 top-9 w-56 bg-popover/95 backdrop-blur-md border border-border/80 rounded-xl shadow-2xl p-1 animate-in fade-in-0 zoom-in-95 z-50">
           <div className="px-2.5 py-2 border-b border-border/60 mb-1">
             <p className="text-xs font-semibold text-foreground truncate">{user?.name}</p>
             <p className="text-[10px] text-muted-foreground truncate mt-0.5">{user?.email}</p>
@@ -269,9 +292,87 @@ export function UserMenu({
               </span>
             )}
           </div>
+
+          {/* Real-time Connection Status Indicator Row */}
+          <div className="px-2.5 py-1.5 border-b border-border/60 mb-1 flex items-center justify-between text-[10px]">
+            <span className="text-muted-foreground">
+              {connectionStatus === "connected"
+                ? t("presence.syncActive")
+                : connectionStatus === "reconnecting"
+                ? t("presence.syncReconnecting")
+                : t("presence.syncOffline")}
+            </span>
+            <span className="inline-flex items-center gap-1 font-medium">
+              <span
+                className={`size-1.5 rounded-full ${
+                  connectionStatus === "connected"
+                    ? "bg-[#00c853]"
+                    : connectionStatus === "reconnecting"
+                    ? "bg-amber-500 animate-pulse"
+                    : "bg-neutral-400"
+                }`}
+              />
+              <span className="capitalize">{connectionStatus}</span>
+            </span>
+          </div>
+
+          {/* Theme Mode Switcher */}
+          <div className="px-2.5 py-1.5 border-b border-border/60 mb-1">
+            <p className="text-[10px] font-medium text-muted-foreground/70 uppercase tracking-wider mb-1.5">
+              {t("topNav.theme") || "Theme"}
+            </p>
+            <div className="grid grid-cols-3 gap-1 bg-muted/40 p-0.5 rounded-lg border border-border/60">
+              <button
+                type="button"
+                onClick={() => setTheme("light")}
+                className={`flex items-center justify-center gap-1 py-1 rounded text-[10px] font-medium transition-colors cursor-pointer ${
+                  theme === "light"
+                    ? "bg-background text-foreground shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Sun className="size-3" />
+                <span>{t("topNav.themeLight") || "Light"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme("dark")}
+                className={`flex items-center justify-center gap-1 py-1 rounded text-[10px] font-medium transition-colors cursor-pointer ${
+                  theme === "dark"
+                    ? "bg-background text-foreground shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Moon className="size-3" />
+                <span>{t("topNav.themeDark") || "Dark"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme("system")}
+                className={`flex items-center justify-center gap-1 py-1 rounded text-[10px] font-medium transition-colors cursor-pointer ${
+                  theme === "system"
+                    ? "bg-background text-foreground shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Laptop className="size-3" />
+                <span>{t("topNav.themeSystem") || "Auto"}</span>
+              </button>
+            </div>
+          </div>
+
+          <Link
+            to="/profile"
+            onClick={() => setShowUserMenu(false)}
+            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors text-xs cursor-pointer text-left font-medium"
+          >
+            <UserIcon className="h-3.5 w-3.5" />
+            <span>{t("nav.profile")}</span>
+          </Link>
+
           <button
             onClick={logout}
-            className="w-full flex items-center gap-2 px-2.5 py-1.5 text-destructive hover:bg-destructive/10 transition-colors text-xs rounded-lg cursor-pointer text-left font-medium"
+            className="w-full flex items-center gap-2 px-2.5 py-1.5 text-destructive hover:bg-destructive/10 transition-colors text-xs rounded-lg cursor-pointer text-left font-medium mt-1"
           >
             <LogOut className="h-3.5 w-3.5" />
             <span>{t("topNav.signOut")}</span>
@@ -282,7 +383,14 @@ export function UserMenu({
   );
 }
 
-// 4. Premium SaaS TopNav Component
+// 4. Redesigned Premium SaaS TopNav Component
+/**
+ * Main Top Navigation Bar matching the modernized reference layout.
+ * Includes dynamic breadcrumb trail, pill search with ⌘K, quick action pills,
+ * folder quick-access menu, notification bell with blue indicator, and user menu.
+ *
+ * @returns JSX.Element
+ */
 export function TopNav() {
   const {
     t,
@@ -291,8 +399,6 @@ export function TopNav() {
     navigate,
     showUserMenu,
     setShowUserMenu,
-    showSettingsMenu,
-    setShowSettingsMenu,
     searchQuery,
     setSearchQuery,
     isOpen,
@@ -300,57 +406,77 @@ export function TopNav() {
     isLoading,
     selectedIndex,
     flatItems,
-    settingsRef,
     userMenuRef,
     containerRef,
     prefetchInvoices,
     handleKeyDown,
   } = useTopNav();
 
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+
   return (
-    <header className="flex justify-between items-center w-full px-4 md:px-8 h-12 bg-background/80 backdrop-blur-md border-b border-border/80 sticky top-0 z-30 transition-colors">
-      <div className="flex items-center gap-2">
-        <SidebarTrigger className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-muted/60 hover:text-foreground cursor-pointer transition-colors" />
-        <h2 className="text-xs font-bold text-foreground md:hidden font-heading">
-          {t("topNav.portal")}
-        </h2>
+    <header className="flex justify-between items-center w-full px-4 md:px-6 h-11 bg-background/80 backdrop-blur-md border-b border-border/80 sticky top-0 z-30 transition-colors">
+      {/* Left: Sidebar Trigger & Dynamic Breadcrumbs */}
+      <div className="flex items-center gap-2.5">
+        <SidebarTrigger className="h-7 w-7 rounded-lg text-muted-foreground hover:bg-muted/60 hover:text-foreground cursor-pointer transition-colors" />
+        <TopNavBreadcrumbs />
       </div>
 
-      {/* Global Search Bar */}
-      <SearchBar
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        isOpen={isOpen}
-        setIsOpen={setIsOpen}
-        isLoading={isLoading}
-        selectedIndex={selectedIndex}
-        flatItems={flatItems}
-        containerRef={containerRef}
-        prefetchInvoices={prefetchInvoices}
-        handleKeyDown={handleKeyDown}
-        t={t}
-      />
+      {/* Center & Right Section */}
+      <div className="flex items-center gap-2">
+        {/* Global Search Bar with ⌘K Badge */}
+        <SearchBar
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          isOpen={isOpen}
+          setIsOpen={setIsOpen}
+          isLoading={isLoading}
+          selectedIndex={selectedIndex}
+          flatItems={flatItems}
+          containerRef={containerRef}
+          prefetchInvoices={prefetchInvoices}
+          handleKeyDown={handleKeyDown}
+          t={t}
+        />
 
-      <div className="flex items-center gap-1.5">
-        {/* Theme Toggle */}
-        <ThemeToggle />
+        {/* Action Pills: Hidden on mobile viewports (< md) */}
+        <div className="hidden md:flex items-center gap-1.5">
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={() => setIsFeedbackOpen(true)}
+            className="h-7 rounded-full px-3 text-xs font-normal border-border/70 hover:bg-muted/60 text-foreground cursor-pointer shadow-2xs"
+          >
+            {t("topNav.feedback")}
+          </Button>
 
-        {/* Notifications */}
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={() => navigate("/help")}
+            className="h-7 rounded-full px-3 text-xs font-normal border-border/70 hover:bg-muted/60 text-foreground cursor-pointer shadow-2xs"
+          >
+            {t("topNav.docs")}
+          </Button>
+
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={() => setIsCopilotOpen(true)}
+            className="h-7 rounded-full px-3 text-xs font-normal border-border/70 hover:bg-muted/60 text-foreground flex items-center gap-1.5 cursor-pointer shadow-2xs group"
+          >
+            <Navigation className="size-3 text-sky-500 fill-sky-500 rotate-45 group-hover:scale-110 transition-transform" />
+            <span>{t("topNav.ask")}</span>
+          </Button>
+
+          <FolderMenu />
+        </div>
+
+        {/* Real-time Notifications Bell with blue dot */}
         {user && <NotificationBell />}
 
-        {/* Settings Dropdown */}
-        {user && (
-          <SettingsMenu
-            showSettingsMenu={showSettingsMenu}
-            setShowSettingsMenu={setShowSettingsMenu}
-            settingsRef={settingsRef}
-            userRole={user.role}
-            navigate={navigate}
-            t={t}
-          />
-        )}
-
-        {/* User Profile Dropdown / Sign In Button */}
+        {/* User Account Avatar with status presence ring */}
         <UserMenu
           showUserMenu={showUserMenu}
           setShowUserMenu={setShowUserMenu}
@@ -360,6 +486,10 @@ export function TopNav() {
           t={t}
         />
       </div>
+
+      {/* Overlay Modals & Drawers */}
+      <FeedbackDialog open={isFeedbackOpen} onOpenChange={setIsFeedbackOpen} />
+      <AiCopilotDrawer open={isCopilotOpen} onOpenChange={setIsCopilotOpen} />
     </header>
   );
 }

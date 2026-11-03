@@ -5,9 +5,14 @@ import { ticketService } from "@/features/tickets";
 import { invoiceService } from "@/features/billing";
 
 const mockNavigate = vi.fn();
-vi.mock('react-router-dom', () => ({
-  useNavigate: () => mockNavigate,
-}));
+vi.mock("react-router-dom", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react-router-dom")>();
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+    useLocation: () => ({ pathname: "/dashboard" }),
+  };
+});
 
 // Stable references mirror react-i18next's contract (memoized t / i18n instances).
 // Unstable identities here would re-trigger effects on every render.
@@ -209,3 +214,33 @@ test('allows user to find ticket when prefixed with hash like "#ce9d703a"', asyn
   }, { timeout: 500 });
 });
 
+
+
+test('renders Breadcrumbs and action pills (Feedback, Docs, Ask)', () => {
+  render(<TopNav />);
+  expect(screen.getByText('topNav.home')).toBeInTheDocument();
+  expect(screen.getByText('topNav.feedback')).toBeInTheDocument();
+  expect(screen.getByText('topNav.docs')).toBeInTheDocument();
+  expect(screen.getByText('topNav.ask')).toBeInTheDocument();
+});
+
+test('clicking Docs pill navigates to /help', () => {
+  render(<TopNav />);
+  const docsBtn = screen.getByText('topNav.docs');
+  fireEvent.click(docsBtn);
+  expect(mockNavigate).toHaveBeenCalledWith('/help');
+});
+
+test('clicking Feedback pill opens FeedbackDialog', async () => {
+  render(<TopNav />);
+  const feedbackBtn = screen.getByText('topNav.feedback');
+  fireEvent.click(feedbackBtn);
+  expect(await screen.findByText('topNav.feedbackTitle')).toBeInTheDocument();
+});
+
+test('clicking Ask pill opens AiCopilotDrawer', async () => {
+  render(<TopNav />);
+  const askBtn = screen.getByText('topNav.ask');
+  fireEvent.click(askBtn);
+  expect(await screen.findByText('topNav.aiCopilotTitle')).toBeInTheDocument();
+});

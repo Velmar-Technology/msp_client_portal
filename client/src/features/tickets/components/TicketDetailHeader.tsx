@@ -34,22 +34,7 @@ export const TicketStatusBar: React.FC<TicketStatusBarProps> = ({
     }
 
     if (user?.role === 'CLIENT') {
-      if (ticket.status === 'OPEN') {
-        return (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onStatusChange('CANCELLED')}
-            disabled={statusUpdating}
-            className="h-7 px-3 text-xs border-destructive/30 text-destructive hover:bg-destructive/10 font-semibold cursor-pointer"
-          >
-            {statusUpdating && (
-              <div className="w-3 h-3 border-2 border-destructive/20 border-t-destructive rounded-full animate-spin mr-1" />
-            )}
-            {t('tickets.cancelTicket')}
-          </Button>
-        );
-      }
+      // Client cancellation handled in Overview tab Danger Zone
       return null;
     }
 

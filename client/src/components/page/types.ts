@@ -230,9 +230,11 @@ export interface PageNotebookProps extends Omit<React.ComponentPropsWithoutRef<"
   defaultTab?: string;
   activeTab?: string;
   onTabChange?: (tab: string) => void;
+  /** Alias for onTabChange */
+  onChange?: (tab: string) => void;
   syncUrl?: boolean;
   paramKey?: string;
-  variant?: "default" | "line";
+  variant?: "default" | "line" | "pill" | "bubble";
   tabs?: PageTabItem[];
   tabsListClassName?: string;
   children?: React.ReactNode;
@@ -417,6 +419,10 @@ export interface PageTitleGroupProps extends React.ComponentPropsWithoutRef<"div
 export interface PageTitleProps extends React.ComponentPropsWithoutRef<"h1"> {
   className?: string;
   children?: React.ReactNode;
+  /** Optional documentation link URL displayed as a docs icon next to the title */
+  docsUrl?: string;
+  /** Optional accessible tooltip label for the documentation icon */
+  docsLabel?: string;
 }
 
 /**

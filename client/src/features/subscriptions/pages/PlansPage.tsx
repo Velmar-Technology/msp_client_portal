@@ -26,8 +26,6 @@ import { PaymentSection } from "../components/PaymentSection";
 import { ActiveSubscriptionsDashboard } from "../components/ActiveSubscriptionsDashboard";
 import { DeletePlanAlertDialog } from "../components/DeletePlanAlertDialog";
 import { ChangeTierPanel } from "../components/ChangeTierPanel";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { SUBSCRIPTION_STATUS_COLORS } from "@/constants/subscriptions";
 import CheckoutSheet from "@/components/checkout-sheet";
 
@@ -387,34 +385,24 @@ export function PlansPage() {
 
       {/* Navigation Section Switcher: Browse Plans vs Active Subscriptions */}
       {showTabs && (
-        <div className="border-b border-border pb-2 mb-5">
-          <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as "browse" | "manage")} className="w-full">
-            <TabsList className="bg-muted p-1 rounded-lg">
-              <TabsTrigger
-                value="browse"
-                onClick={() => setActiveTab("browse")}
-                className="gap-2 text-xs font-medium px-4 py-1.5 cursor-pointer data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs"
-              >
-                <ShoppingBag className="h-3.5 w-3.5" />
-                <span>{t("plans.browseTab")}</span>
-              </TabsTrigger>
-
-              <TabsTrigger
-                value="manage"
-                onClick={() => setActiveTab("manage")}
-                className="gap-2 text-xs font-medium px-4 py-1.5 cursor-pointer data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs"
-              >
-                <CreditCard className="h-3.5 w-3.5 text-blue-500" />
-                <span>{t("plans.manageTab")}</span>
-                <Badge
-                  variant="secondary"
-                  className="ml-1 text-[10px] font-mono px-1.5 py-0 min-w-5 inline-flex justify-center"
-                >
-                  {activeSubscriptions.length}
-                </Badge>
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+        <div className="mb-6">
+          <Page.Tabs
+            activeTab={activeTab}
+            onTabChange={(val) => setActiveTab(val as "browse" | "manage")}
+            tabs={[
+              {
+                id: "browse",
+                label: t("plans.browseTab", "Available Plans"),
+                icon: ShoppingBag,
+              },
+              {
+                id: "manage",
+                label: t("plans.manageTab", "Active Subscriptions"),
+                icon: CreditCard,
+                badge: activeSubscriptions.length > 0 ? activeSubscriptions.length : undefined,
+              },
+            ]}
+          />
         </div>
       )}
 

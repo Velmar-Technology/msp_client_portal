@@ -1,16 +1,15 @@
 import { useMemo } from "react";
-import { Download, FileText, LayoutGrid, List, Search } from "lucide-react";
+import { Download, FileText, LayoutGrid, List } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Page } from "@/components/Page";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useResourcesPage } from "@/hooks/useResourcesPage";
 import type { ResourceItem } from "@/lib/resourceCatalog";
-
 import { RESOURCE_CATEGORY_ICONS as CATEGORY_ICONS } from "@/constants/resources";
+
+
 
 export type ResourceViewMode = "tiled" | "list";
 
@@ -141,110 +140,102 @@ export function ResourcesPage() {
     [t],
   );
 
+  const hasActiveFilters = Boolean(searchTerm.trim() || (selectedOs && selectedOs !== "ALL"));
+
+  const handleClearAll = () => {
+    setSearchTerm("");
+    setSelectedOs("ALL");
+  };
+
   return (
     <Page<ResourceViewMode> defaultView="tiled" availableViews={availableViews} isLoading={loading}>
-      <Page.Header>
-        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-        <Page.HeaderRow>
-          <Page.TitleGroup>
-            <Page.Title>{t("resources.title")}</Page.Title>
-            <Page.Description>{t("resources.subtitle")}</Page.Description>
-          </Page.TitleGroup>
-        </Page.HeaderRow>
+      <div className="flex flex-col gap-5">
+        {/* Page Title & View Switcher */}
+        <div className="flex items-center justify-between gap-3 pt-1">
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground font-heading">
+            {t("resources.title")}
+          </h1>
+          <Page.ViewSwitcher size="sm" />
+        </div>
 
-        <Page.Toolbar>
-          <Page.Filters>
-            <InputGroup className="w-full sm:w-72">
-              <InputGroupInput
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder={t("resources.searchPlaceholder")}
-              />
-              <InputGroupAddon>
-                <Search />
-              </InputGroupAddon>
-            </InputGroup>
+        {/* ElevenLabs Wide Search Bar */}
+        <Page.SearchInput
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder={t("resources.searchPlaceholder") || "Search resources..."}
+        />
 
-            <div className="flex items-center gap-2">
-              <label
-                htmlFor="resources-os-filter"
-                className="text-[10px] uppercase font-bold text-muted-foreground select-none"
-              >
-                {t("resources.filterByOs")}
-              </label>
-              <div className="flex items-center bg-muted p-0.5 rounded-md border border-border">
-                <Select value={selectedOs} onValueChange={(val) => setSelectedOs(val as typeof selectedOs)}>
-                  <SelectTrigger
-                    id="resources-os-filter"
-                    aria-label={t("resources.filterByOs")}
-                    size="default"
-                    className="px-2.5 rounded text-xs font-semibold bg-card text-foreground shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5"
-                  >
-                    <SelectValue placeholder={t("resources.filterByOs")} />
-                  </SelectTrigger>
-                  <SelectContent className="bg-card border-border">
-                    {osFilterOptions.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value} className="text-xs font-medium cursor-pointer">
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </Page.Filters>
+        {/* ElevenLabs + Filter Pills Row */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar flex-wrap">
+          <Page.FilterPill
+            label={t("resources.filterByOs") || "OS"}
+            value={selectedOs === "ALL" ? "" : selectedOs}
+            options={osFilterOptions}
+            onChange={(val) => setSelectedOs(val as typeof selectedOs)}
+            onClear={() => setSelectedOs("ALL")}
+          />
 
-          <Page.Controls>
-            <Page.ViewSwitcher size="sm" />
-          </Page.Controls>
-        </Page.Toolbar>
-      </Page.Header>
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={handleClearAll}
+              className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+              {t("resources.clearFilters") || "Clear all"}
+            </Button>
+          )}
+        </div>
 
-      {/* TILED (GRID) VIEW */}
-      <Page.View type="tiled" className="space-y-4">
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="w-full h-40" />
-            ))}
-          </div>
-        ) : filteredResources.length === 0 ? (
-          <Card className="p-8 text-center space-y-2">
-            <FileText className="h-6 w-6 text-muted-foreground mx-auto" />
-            <p className="text-sm font-semibold text-foreground">{t("resources.emptyTitle")}</p>
-            <p className="text-xs text-muted-foreground">{t("resources.emptyDesc")}</p>
-          </Card>
+        {/* Populated Content or Empty State Card */}
+        {!loading && filteredResources.length === 0 ? (
+          <Page.ContentCard>
+            <Page.EmptyState
+              icon={FileText}
+              title={t("resources.emptyTitle") || "No resources found"}
+              description={t("resources.emptyDesc") || "No resources match your search or filter criteria."}
+              actionLabel={hasActiveFilters ? (t("resources.clearFilters") || "Clear all filters") : undefined}
+              onAction={hasActiveFilters ? handleClearAll : undefined}
+            />
+          </Page.ContentCard>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filteredResources.map((item) => (
-              <ResourceCard key={item.id} item={item} onDownload={handleDownload} />
-            ))}
-          </div>
-        )}
-      </Page.View>
+          <>
+            {/* TILED (GRID) VIEW */}
+            <Page.View type="tiled" className="space-y-4">
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton key={i} className="w-full h-40" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {filteredResources.map((item) => (
+                    <ResourceCard key={item.id} item={item} onDownload={handleDownload} />
+                  ))}
+                </div>
+              )}
+            </Page.View>
 
-      {/* LIST VIEW */}
-      <Page.View type="list" className="space-y-4">
-        {loading ? (
-          <div className="space-y-2.5">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="w-full h-16" />
-            ))}
-          </div>
-        ) : filteredResources.length === 0 ? (
-          <Card className="p-8 text-center space-y-2">
-            <FileText className="h-6 w-6 text-muted-foreground mx-auto" />
-            <p className="text-sm font-semibold text-foreground">{t("resources.emptyTitle")}</p>
-            <p className="text-xs text-muted-foreground">{t("resources.emptyDesc")}</p>
-          </Card>
-        ) : (
-          <div className="flex flex-col gap-2.5">
-            {filteredResources.map((item) => (
-              <ResourceListItem key={item.id} item={item} onDownload={handleDownload} />
-            ))}
-          </div>
+            {/* LIST VIEW */}
+            <Page.View type="list" className="space-y-4">
+              {loading ? (
+                <div className="space-y-2.5">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton key={i} className="w-full h-16" />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2.5">
+                  {filteredResources.map((item) => (
+                    <ResourceListItem key={item.id} item={item} onDownload={handleDownload} />
+                  ))}
+                </div>
+              )}
+            </Page.View>
+          </>
         )}
-      </Page.View>
+      </div>
     </Page>
   );
 }

@@ -11,6 +11,7 @@ export interface SubscriptionSelectorProps {
 
 /**
  * Compact Subscription Selector sub-component for switching between multiple client subscriptions.
+ * Styled with an ElevenLabs pill aesthetic while preserving exact Radix Select semantics and a11y labels.
  */
 export const SubscriptionSelector = memo(function SubscriptionSelector({
   subscriptions,
@@ -19,35 +20,27 @@ export const SubscriptionSelector = memo(function SubscriptionSelector({
 }: SubscriptionSelectorProps) {
   const { t } = useTranslation();
   return (
-    <div className="flex items-center gap-2">
-      <label
-        htmlFor="active-sub-select-devices"
-        className="text-[10px] uppercase font-bold text-muted-foreground select-none shrink-0"
-      >
-        {t("nav.subscriptions", "Subscription")}
-      </label>
-      <div className="flex items-center bg-muted p-0.5 rounded-md border border-border">
-        <Select value={selectedId} onValueChange={onChange}>
-          <SelectTrigger
-            id="active-sub-select-devices"
-            aria-label={t("devices.selectSubscription")}
-            size="default"
-            className="h-8 px-2.5 rounded text-xs font-semibold bg-card text-foreground shadow-xs border-0 focus:ring-0 cursor-pointer gap-1.5 w-48 sm:w-56"
-          >
-            <SelectValue placeholder={t("devices.selectSubscription")} />
-          </SelectTrigger>
-          <SelectContent className="bg-card border-border">
-            {subscriptions.map((sub) => (
-              <SelectItem key={sub.id} value={sub.id} className="text-xs font-medium cursor-pointer">
-                {t("devices.subOptionLabel", {
-                  name: sub.service_name,
-                  devicesStr: t("devices.devicesCount", { count: sub.equipment_count }),
-                })}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+    <div className="flex items-center">
+      <Select value={selectedId} onValueChange={onChange}>
+        <SelectTrigger
+          id="active-sub-select-devices"
+          aria-label={t("devices.selectSubscription")}
+          size="default"
+          className="h-7 px-3 rounded-full text-xs font-medium border border-border/80 bg-background/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs gap-1.5 w-auto max-w-xs"
+        >
+          <SelectValue placeholder={t("devices.selectSubscription")} />
+        </SelectTrigger>
+        <SelectContent className="bg-card border-border">
+          {subscriptions.map((sub) => (
+            <SelectItem key={sub.id} value={sub.id} className="text-xs font-medium cursor-pointer">
+              {t("devices.subOptionLabel", {
+                name: sub.service_name,
+                devicesStr: t("devices.devicesCount", { count: sub.equipment_count }),
+              })}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 });

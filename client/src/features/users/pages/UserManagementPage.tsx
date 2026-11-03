@@ -1,3 +1,4 @@
+import { Users } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Page } from "@/components/Page";
 import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
@@ -27,7 +28,6 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useUserManagement } from "../hooks/useUserManagement";
 import type { RoleFilter, StatusFilter } from "../hooks/useUserManagement";
 import { useAuth } from "@/hooks/useAuth";
-import { UserStatsBar } from "../components/UserStatsBar";
 
 import { UserRoleBadge } from "../components/UserRoleBadge";
 import { UserActionsMenu } from "../components/UserActionsMenu";
@@ -113,9 +113,7 @@ export function UserManagementPage() {
   const {
     t,
     users,
-    stats,
     loading,
-    statsLoading,
     actionLoading,
     page,
     totalPages,
@@ -349,74 +347,106 @@ export function UserManagementPage() {
       : t("userManagement.confirmDeactivateDesc", { name: confirmation.userName });
   }, [confirmation, t, getRoleLabel, getClientTypeLabel]);
 
+  const hasActiveFilters = Boolean(
+    searchQuery.trim() || roleFilter || (statusFilter && statusFilter !== "all")
+  );
+
+  const handleClearAllFilters = () => {
+    handleSearchChange("");
+    handleRoleFilterChange("" as RoleFilter);
+    handleStatusFilterChange("all" as StatusFilter);
+  };
+
   return (
     <Page>
-      <Page.Header>
-        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-        <Page.HeaderRow>
-          <Page.TitleGroup>
-            <Page.Title>{t("userManagement.pageTitle")}</Page.Title>
-            <Page.Description>{t("userManagement.pageSubtitle")}</Page.Description>
-          </Page.TitleGroup>
-        </Page.HeaderRow>
-      </Page.Header>
+      <div className="flex flex-col gap-5">
+        {/* Page Title */}
+        <div className="pt-1">
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground font-heading">
+            {t("userManagement.pageTitle")}
+          </h1>
+        </div>
 
-      <div className="flex flex-col gap-4">
-        {/* Metrics Header Bar */}
-        <section aria-label="User Statistics">
-          <UserStatsBar stats={stats} loading={statsLoading} />
-        </section>
+        {/* ElevenLabs Wide Search Input */}
+        <Page.SearchInput
+          value={searchQuery}
+          onChange={handleSearchChange}
+          placeholder={t("userManagement.searchPlaceholder") || "Search users by ID, name or email..."}
+        />
 
-        {/* Main Data Table */}
-        <section aria-label="User Accounts Table">
-          <DataTable
-            columns={columns}
-            data={users}
-            loading={loading}
-            noDataMessage={t("userManagement.noUsersFound")}
-            bulkActions={bulkActions}
-            sorting={sorting}
-            onSortingChange={handleSortingChange}
-            enableSorting
-            manualSorting
-            search={{
-              value: searchQuery,
-              onChange: handleSearchChange,
-              placeholder: t("userManagement.searchPlaceholder"),
-            }}
-            filters={[
-              {
-                id: "role",
-                value: roleFilter,
-                onChange: (val) => handleRoleFilterChange(val as RoleFilter),
-                placeholder: t("userManagement.filterAllRoles") || "All Roles",
-                options: [
-                  { value: "CLIENT", label: t("userManagement.roleClient") || "Client" },
-                  { value: "TECHNICIAN", label: t("userManagement.roleTech") || "Technician" },
-                  { value: "ADMIN", label: t("userManagement.roleAdmin") || "Admin" },
-                ],
-              },
-              {
-                id: "status",
-                value: statusFilter === "all" ? "" : statusFilter,
-                onChange: (val) => handleStatusFilterChange((val || "all") as StatusFilter),
-                placeholder: t("userManagement.filterAllStatuses") || "All Statuses",
-                options: [
-                  { value: "active", label: t("userManagement.statusActive") || "Active" },
-                  { value: "inactive", label: t("userManagement.statusInactive") || "Inactive" },
-                ],
-              },
+        {/* ElevenLabs + Filter Pills Row */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar flex-wrap">
+          <Page.FilterPill
+            label={t("userManagement.colRole") || "Role"}
+            value={roleFilter}
+            options={[
+              { value: "CLIENT", label: t("userManagement.roleClient") || "Client" },
+              { value: "TECHNICIAN", label: t("userManagement.roleTech") || "Technician" },
+              { value: "ADMIN", label: t("userManagement.roleAdmin") || "Admin" },
             ]}
-            pagination={{
-              page,
-              totalPages,
-              totalItems: total,
-              limit,
-              onPageChange: setPage,
-              onLimitChange: handleLimitChange,
-            }}
+            onChange={(val) => handleRoleFilterChange(val as RoleFilter)}
+            onClear={() => handleRoleFilterChange("" as RoleFilter)}
           />
-        </section>
+
+          <Page.FilterPill
+            label={t("userManagement.colStatus") || "Status"}
+            value={statusFilter === "all" ? "" : statusFilter}
+            options={[
+              { value: "active", label: t("userManagement.statusActive") || "Active" },
+              { value: "inactive", label: t("userManagement.statusInactive") || "Inactive" },
+            ]}
+            onChange={(val) => handleStatusFilterChange(val as StatusFilter)}
+            onClear={() => handleStatusFilterChange("all" as StatusFilter)}
+          />
+
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={handleClearAllFilters}
+              className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+              {t("userManagement.clearFilters") || "Clear all"}
+            </Button>
+          )}
+        </div>
+
+        {/* ElevenLabs Unified Card Container: Empty State or DataTable */}
+        <Page.ContentCard>
+          {!loading && users.length === 0 ? (
+            <Page.EmptyState
+              icon={Users}
+              title={t("userManagement.noUsersFound") || "No users found"}
+              description={
+                hasActiveFilters
+                  ? (t("userManagement.noUsersFilteredDesc") || "No users match your active search and filter criteria.")
+                  : (t("userManagement.noUsersDesc") || "No users have interacted with your workspace yet.")
+              }
+              actionLabel={hasActiveFilters ? (t("userManagement.clearFilters") || "Clear all filters") : undefined}
+              onAction={hasActiveFilters ? handleClearAllFilters : undefined}
+            />
+          ) : (
+            <DataTable
+              columns={columns}
+              data={users}
+              loading={loading}
+              noDataMessage={t("userManagement.noUsersFound")}
+              bulkActions={bulkActions}
+              sorting={sorting}
+              onSortingChange={handleSortingChange}
+              enableSorting
+              manualSorting
+              pagination={{
+                page,
+                totalPages,
+                totalItems: total,
+                limit,
+                onPageChange: setPage,
+                onLimitChange: handleLimitChange,
+              }}
+            />
+          )}
+        </Page.ContentCard>
       </div>
 
       <AlertDialog open={bulkRoleModalOpen} onOpenChange={setBulkRoleModalOpen}>
