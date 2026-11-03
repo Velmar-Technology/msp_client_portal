@@ -35,7 +35,7 @@ export {
 };
 
 // ---- Enum Types ----
-export const userRoleEnum = pgEnum('user_role', ['CLIENT', 'TECHNICIAN', 'ADMIN']);
+export const userRoleEnum = pgEnum('user_role', ['CLIENT', 'TECHNICIAN', 'ADMIN', 'GUEST']);
 export const subscriptionStatusEnum = pgEnum('subscription_status', ['ACTIVE', 'EXPIRING', 'EXPIRED', 'CANCELLED']);
 export const invoiceStatusEnum = pgEnum('invoice_status', ['PENDING', 'PAID', 'OVERDUE', 'CANCELLED']);
 export const leadStageEnum = pgEnum('lead_stage', ['NEW', 'QUALIFIED', 'PROPOSITION', 'WON', 'LOST']);

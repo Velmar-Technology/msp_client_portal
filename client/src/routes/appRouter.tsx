@@ -14,7 +14,6 @@ import { equipmentRoutes } from "@/features/equipment";
 import { rmmRoutes } from "@/features/rmm";
 import { crmRoutes } from "@/features/crm";
 import { financialRoutes } from "@/features/financial";
-import { usersRoutes } from "@/features/users";
 import { settingsRoutes } from "@/features/settings";
 import { systemRoutes } from "@/features/system";
 import type { AppRouteObject } from "./types";
@@ -65,7 +64,6 @@ const protectedFeatureRoutes: RouteObject[] = applyGuards([
   ...rmmRoutes,
   ...crmRoutes,
   ...financialRoutes,
-  ...usersRoutes,
   ...settingsRoutes,
   ...systemRoutes,
   ...getDiscoveredFeatureRoutes(),

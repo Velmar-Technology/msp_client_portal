@@ -56,6 +56,7 @@ function parseSecurityCsv(csvPath) {
   const admin = [];
   const technician = [];
   const client = [];
+  const guest = [];
 
   for (const line of dataLines) {
     const parts = line.split(',').map((p) => p.trim());
@@ -74,6 +75,7 @@ function parseSecurityCsv(csvPath) {
     if (upperRoles.has('ADMIN')) admin.push(code);
     if (upperRoles.has('TECHNICIAN')) technician.push(code);
     if (upperRoles.has('CLIENT')) client.push(code);
+    if (upperRoles.has('GUEST')) guest.push(code);
   }
 
   if (rules.length === 0) {
@@ -87,6 +89,7 @@ function parseSecurityCsv(csvPath) {
     `    admin: ${fmtArr(admin)},`,
     `    technician: ${fmtArr(technician)},`,
     `    client: ${fmtArr(client)},`,
+    `    guest: ${fmtArr(guest)},`,
     '  }',
   ].join('\n');
 

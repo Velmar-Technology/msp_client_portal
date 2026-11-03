@@ -21,6 +21,9 @@ export function getRoleFallbackPath(userRole?: string): string {
   if (userRole === "TECHNICIAN") {
     return "/tech/dashboard";
   }
+  if (userRole === "GUEST") {
+    return "/helpdesk/tickets";
+  }
   return "/dashboard";
 }
 

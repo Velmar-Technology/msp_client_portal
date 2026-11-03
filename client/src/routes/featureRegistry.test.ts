@@ -57,6 +57,7 @@ describe('featureRegistry (Zero-Touch Frontend Auto-Discovery & Hierarchy)', () 
       '/assets',
       '/resources',
       '/helpdesk',
+      '/settings',
     ]);
 
     const helpdeskGroup = clientMerged.find((item) => item.to === '/helpdesk');
@@ -75,8 +76,12 @@ describe('featureRegistry (Zero-Touch Frontend Auto-Discovery & Hierarchy)', () 
     expect(adminAssetsItem?.requiredFeature).toBeUndefined();
 
     const techMerged = mergeFeatureNavItems(baseItems, 'TECHNICIAN');
-    expect(techMerged.some((item) => item.to === '/assets')).toBe(false);
+    expect(techMerged.some((item) => item.to === '/assets')).toBe(true);
     expect(techMerged.some((item) => item.to === '/helpdesk')).toBe(true);
+
+    const guestMerged = mergeFeatureNavItems(baseItems, 'GUEST');
+    expect(guestMerged.some((item) => item.to === '/assets')).toBe(false);
+    expect(guestMerged.some((item) => item.to === '/helpdesk')).toBe(true);
   });
 
   it('supports hierarchical sidebar sub-items via parentTo sorted by numeric order', () => {

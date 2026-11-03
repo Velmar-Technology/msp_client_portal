@@ -155,6 +155,14 @@ function getClientDefaultPermissions(): string[] {
   );
 }
 
+function getGuestDefaultPermissions(): string[] {
+  return Array.from(
+    new Set([
+      ...(registeredModulePermissions ?? []).flatMap((p) => p.guest ?? []),
+    ])
+  );
+}
+
 /**
  * Domain service managing dynamic capabilities, RBAC resolution, and Redis permission caching.
  */
@@ -215,6 +223,9 @@ export class PermissionService {
           }
           if (legacyRole === UserRole.CLIENT || legacyRole === 'CLIENT') {
             return getClientDefaultPermissions();
+          }
+          if (legacyRole === UserRole.GUEST || legacyRole === 'GUEST') {
+            return getGuestDefaultPermissions();
           }
 
           return [];

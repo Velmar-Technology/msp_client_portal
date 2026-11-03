@@ -4,7 +4,7 @@ import type { CrumbResolver } from '@/components/layout/routeCrumbs';
 import { hasFrontendPermission } from './routeUtils';
 import type { AppRouteObject } from './types';
 
-export type SidebarRole = 'CLIENT' | 'TECHNICIAN' | 'ADMIN';
+export type SidebarRole = 'CLIENT' | 'TECHNICIAN' | 'ADMIN' | 'GUEST';
 export type SidebarGroup = 'management' | 'operations' | 'account';
 
 export interface FeatureNavSubItem {

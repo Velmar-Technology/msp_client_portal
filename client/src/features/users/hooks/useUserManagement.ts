@@ -397,6 +397,7 @@ export function useUserManagement() {
         ADMIN: t("userManagement.roleAdmin"),
         TECHNICIAN: t("userManagement.roleTech"),
         CLIENT: t("userManagement.roleClient"),
+        GUEST: t("userManagement.roleGuest"),
       };
       return labels[role] || role;
     },

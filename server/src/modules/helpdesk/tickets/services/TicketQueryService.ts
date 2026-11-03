@@ -57,9 +57,10 @@ export class TicketQueryService {
    * @returns Record mapping TicketStatus to count
    */
   async getStatusSummary(ctx: UserContext): Promise<Record<string, number>> {
-    const clientId = ctx.role === UserRole.CLIENT ? ctx.userId : undefined;
+    const isClientOrGuest = ctx.role === UserRole.CLIENT || ctx.role === UserRole.GUEST;
+    const clientId = isClientOrGuest ? ctx.userId : undefined;
     const assignedTechId = ctx.role === UserRole.TECHNICIAN ? ctx.userId : undefined;
-    const tenantId = ctx.role === UserRole.CLIENT ? ctx.tenantId : undefined;
+    const tenantId = isClientOrGuest ? ctx.tenantId : undefined;
     return this.ticketRepo.countByStatus(clientId, assignedTechId, tenantId);
   }
 

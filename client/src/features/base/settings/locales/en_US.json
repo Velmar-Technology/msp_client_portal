@@ -1,0 +1,39 @@
+{
+  "settings": {
+    "description": "Manage workspace defaults, user profile, and operational parameters.",
+    "changePassword": "Change Password",
+    "revokeAll": "Revoke Sessions",
+    "tabs": {
+      "general": "General",
+      "profile": "Profile",
+      "notifications": "Notifications",
+      "ai": "AI / BYOK"
+    },
+    "groups": {
+      "workspace": "Workspace Identity",
+      "personal": "Personal Account",
+      "alerts": "Alert Channels",
+      "ai": "AI / BYOK Credentials"
+    },
+    "rows": {
+      "tenantName": "Organization Name",
+      "tenantNameDesc": "Display name used across client portal, invoices, and SLA reports.",
+      "language": "Default Language",
+      "languageDesc": "Preferred locale for reports, notifications, and portal UI.",
+      "clientType": "Client Segmentation",
+      "clientTypeDesc": "Operational tier governing SLA target response times.",
+      "fullName": "Full Name",
+      "emailAddress": "Email Address",
+      "password": "Account Password",
+      "passwordDesc": "Last updated credentials used for portal authentication.",
+      "terminateSessions": "Revoke Active Sessions",
+      "terminateSessionsDesc": "Log out of all other browsers and remote workstation clients.",
+      "emailAlerts": "Email Digest",
+      "emailAlertsDesc": "Receive critical ticket SLA alerts and weekly operational reports.",
+      "securityAlerts": "Security Audit Notices",
+      "securityAlertsDesc": "Immediate notification on role promotions or JIT elevation requests.",
+      "byokStatus": "Bring-Your-Own-Key",
+      "byokDesc": "Decoupled LLM provider credentials stored locally or proxied via zero-secret MCP."
+    }
+  }
+}

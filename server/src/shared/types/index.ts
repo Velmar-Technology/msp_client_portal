@@ -8,6 +8,7 @@ export enum UserRole {
   CLIENT = 'CLIENT',
   TECHNICIAN = 'TECHNICIAN',
   ADMIN = 'ADMIN',
+  GUEST = 'GUEST',
 }
 
 export enum TicketStatus {

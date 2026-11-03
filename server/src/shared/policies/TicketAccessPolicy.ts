@@ -7,10 +7,11 @@ export type { UserContext };
 
 /**
  * Policy enforcing multi-tenant ticket read access, RBAC state machine transitions,
- * client self-cancellation constraints, and SLA 1-hour cancellation boundaries.
+ * client and guest self-cancellation constraints, and SLA 1-hour cancellation boundaries.
  *
  * @see BL-101 - 1-Hour SLA Cancellation Window
  * @see BL-301 - RBAC & State Machine Transitions
+ * @see ADR-017 - Zero-Touch Discovery & GUEST Role Specification
  */
 export class TicketAccessPolicy {
   /**
@@ -18,11 +19,16 @@ export class TicketAccessPolicy {
    *
    * @param ticket - Target Ticket entity
    * @param ctx - UserContext containing role, userId, and tenantId
-   * @throws {ForbiddenError} When a client attempts to read a cross-tenant ticket
+   * @throws {ForbiddenError} When a client or guest attempts to read an unauthorized ticket
    */
   assertReadAccess(ticket: Ticket, ctx: UserContext): void {
     if (ctx.role === UserRole.CLIENT && ticket.tenant_id !== ctx.tenantId) {
       throw new ForbiddenError('You do not have access to this ticket');
+    }
+    if (ctx.role === UserRole.GUEST) {
+      if (ticket.tenant_id !== ctx.tenantId || ticket.client_id !== ctx.userId) {
+        throw new ForbiddenError('You do not have access to this ticket');
+      }
     }
   }
 
@@ -45,7 +51,7 @@ export class TicketAccessPolicy {
 
   /**
    * Asserts that the user is authorized to perform the given status update on the ticket.
-   * Clients may only cancel their own tickets.
+   * Clients and guests may only cancel their own tickets.
    *
    * @see BL-301
    * @param ticket - Target Ticket entity
@@ -58,9 +64,13 @@ export class TicketAccessPolicy {
     this.assertReadAccess(ticket, ctx);
     this.assertStatusTransition(ticket.status, targetStatus);
 
-    if (ctx.role === UserRole.CLIENT) {
+    if (ctx.role === UserRole.CLIENT || ctx.role === UserRole.GUEST) {
       if (targetStatus !== TicketStatus.CANCELLED) {
-        throw new ForbiddenError('Clients can only cancel tickets');
+        throw new ForbiddenError(
+          ctx.role === UserRole.GUEST
+            ? 'Guests can only cancel tickets'
+            : 'Clients can only cancel tickets',
+        );
       }
       if (ticket.client_id !== ctx.userId) {
         throw new ForbiddenError('You can only cancel your own tickets');
@@ -97,7 +107,11 @@ export class TicketAccessPolicy {
     const scopedFilters = { ...filters };
     if (ctx.role === UserRole.CLIENT) {
       scopedFilters.tenantId = ctx.tenantId;
+    } else if (ctx.role === UserRole.GUEST) {
+      scopedFilters.tenantId = ctx.tenantId;
+      scopedFilters.clientId = ctx.userId;
     } else if (ctx.role === UserRole.TECHNICIAN) {
+      // Technicians see unassigned tickets or tickets assigned to them
       scopedFilters.assignedTechId = ctx.userId;
     }
     return scopedFilters;

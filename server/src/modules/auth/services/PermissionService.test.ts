@@ -63,6 +63,11 @@ describe('PermissionService', () => {
       const clientPerms = await service.getUserPermissions('u3', 't1', UserRole.CLIENT);
       expect(clientPerms).toContain('tickets:create');
       expect(clientPerms).not.toContain('tickets:manage');
+
+      const guestPerms = await service.getUserPermissions('u4', 't1', UserRole.GUEST);
+      expect(guestPerms).toContain('helpdesk:tickets:read');
+      expect(guestPerms).toContain('helpdesk:kb:read');
+      expect(guestPerms).not.toContain('assets:read');
     });
   });
 

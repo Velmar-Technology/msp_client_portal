@@ -41,7 +41,8 @@
     "copiedToClipboard": "Copiado al portapapeles",
     "clickToCopy": "Haga clic para copiar",
     "active": "Activo",
-    "ready": "Listo"
+    "ready": "Listo",
+    "notSet": "No especificado"
   },
   "layout": {
     "blockedTitle": "Plan Activo Requerido",
@@ -1436,6 +1437,7 @@
     "roleAdmin": "Administrador",
     "roleTech": "Técnico",
     "roleClient": "Cliente",
+    "roleGuest": "Invitado",
     "active": "Activo",
     "inactive": "Inactivo",
     "statusActive": "Activo",

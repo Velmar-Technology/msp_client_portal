@@ -1,0 +1,39 @@
+{
+  "settings": {
+    "description": "Administre los valores predeterminados del espacio de trabajo, el perfil de usuario y los parámetros operativos.",
+    "changePassword": "Cambiar Contraseña",
+    "revokeAll": "Revocar Sesiones",
+    "tabs": {
+      "general": "General",
+      "profile": "Perfil",
+      "notifications": "Notificaciones",
+      "ai": "IA / BYOK"
+    },
+    "groups": {
+      "workspace": "Identidad del Espacio de Trabajo",
+      "personal": "Cuenta Personal",
+      "alerts": "Canales de Alerta",
+      "ai": "Credenciales IA / BYOK"
+    },
+    "rows": {
+      "tenantName": "Nombre de la Organización",
+      "tenantNameDesc": "Nombre mostrado en el portal de clientes, facturas e informes de SLA.",
+      "language": "Idioma Predeterminado",
+      "languageDesc": "Idioma preferido para informes, notificaciones y la interfaz del portal.",
+      "clientType": "Segmentación de Clientes",
+      "clientTypeDesc": "Nivel operativo que rige los tiempos de respuesta del SLA.",
+      "fullName": "Nombre Completo",
+      "emailAddress": "Correo Electrónico",
+      "password": "Contraseña de la Cuenta",
+      "passwordDesc": "Últimas credenciales utilizadas para la autenticación en el portal.",
+      "terminateSessions": "Revocar Sesiones Activas",
+      "terminateSessionsDesc": "Cerrar sesión en todos los demás navegadores y clientes de estaciones remotas.",
+      "emailAlerts": "Resumen por Correo",
+      "emailAlertsDesc": "Reciba alertas críticas de SLA de tickets e informes operativos semanales.",
+      "securityAlerts": "Avisos de Auditoría de Seguridad",
+      "securityAlertsDesc": "Notificación inmediata sobre promociones de roles o solicitudes de elevación JIT.",
+      "byokStatus": "Traiga su Propia Llave (BYOK)",
+      "byokDesc": "Credenciales de proveedor LLM desacopladas almacenadas localmente o intermediadas mediante MCP sin secretos."
+    }
+  }
+}

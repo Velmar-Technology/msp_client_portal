@@ -18,6 +18,7 @@ export const featureManifest: FeatureManifest = {
       labelKey: "help",
       group: "operations",
       order: 20,
+      roles: ["CLIENT", "TECHNICIAN", "ADMIN", "GUEST"],
       requiredPermission: ["helpdesk:kb:read", "tickets:read"],
     },
   ],

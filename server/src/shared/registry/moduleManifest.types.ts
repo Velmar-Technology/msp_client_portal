@@ -21,6 +21,8 @@ export interface ModulePermissionConfig {
   technician?: string[];
   /** Default capabilities granted to CLIENT fallback */
   client?: string[];
+  /** Default capabilities granted to GUEST fallback */
+  guest?: string[];
 }
 
 /**
@@ -48,6 +50,7 @@ export interface ServerModulePermissions {
   admin?: string[];
   technician?: string[];
   client?: string[];
+  guest?: string[];
 }
 
 /**

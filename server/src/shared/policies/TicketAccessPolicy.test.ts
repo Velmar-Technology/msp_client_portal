@@ -26,6 +26,7 @@ describe('TicketAccessPolicy', () => {
   });
 
   const clientCtx: UserContext = { userId: 'client-123', role: UserRole.CLIENT, tenantId: 'tenant-456' };
+  const guestCtx: UserContext = { userId: 'guest-789', role: UserRole.GUEST, tenantId: 'tenant-456' };
   const technicianCtx: UserContext = { userId: 'tech-1', role: UserRole.TECHNICIAN, tenantId: 'tenant-456' };
   const adminCtx: UserContext = { userId: 'admin-1', role: UserRole.ADMIN, tenantId: 'tenant-456' };
 
@@ -40,6 +41,25 @@ describe('TicketAccessPolicy', () => {
   it('rejects a client reading a ticket from another tenant', () => {
     const foreignTicket = buildTicket({ tenant_id: 'tenant-other' });
     expect(() => ticketAccessPolicy.assertReadAccess(foreignTicket, clientCtx)).toThrowError(
+      expect.objectContaining({ statusCode: 403 })
+    );
+  });
+
+  it('permits a guest to read a ticket within their tenant if they authored it', () => {
+    const ownTicket = buildTicket({ client_id: 'guest-789', tenant_id: 'tenant-456' });
+    expect(() => ticketAccessPolicy.assertReadAccess(ownTicket, guestCtx)).not.toThrow();
+  });
+
+  it('rejects a guest reading a ticket authored by another user in the same tenant', () => {
+    const othersTicket = buildTicket({ client_id: 'client-123', tenant_id: 'tenant-456' });
+    expect(() => ticketAccessPolicy.assertReadAccess(othersTicket, guestCtx)).toThrowError(
+      expect.objectContaining({ statusCode: 403 })
+    );
+  });
+
+  it('rejects a guest reading a ticket from another tenant even if userId matched', () => {
+    const foreignTicket = buildTicket({ client_id: 'guest-789', tenant_id: 'tenant-other' });
+    expect(() => ticketAccessPolicy.assertReadAccess(foreignTicket, guestCtx)).toThrowError(
       expect.objectContaining({ statusCode: 403 })
     );
   });
@@ -67,9 +87,23 @@ describe('TicketAccessPolicy', () => {
       ).not.toThrow();
     });
 
+    it('lets a guest cancel their own ticket', () => {
+      const ownTicket = buildTicket({ client_id: 'guest-789', tenant_id: 'tenant-456' });
+      expect(() =>
+        ticketAccessPolicy.assertStatusUpdateAccess(ownTicket, TicketStatus.CANCELLED, guestCtx)
+      ).not.toThrow();
+    });
+
     it('forbids a client from applying any non-cancel status', () => {
       expect(() =>
         ticketAccessPolicy.assertStatusUpdateAccess(buildTicket(), TicketStatus.IN_PROGRESS, clientCtx)
+      ).toThrowError(expect.objectContaining({ statusCode: 403 }));
+    });
+
+    it('forbids a guest from applying any non-cancel status', () => {
+      const ownTicket = buildTicket({ client_id: 'guest-789', tenant_id: 'tenant-456' });
+      expect(() =>
+        ticketAccessPolicy.assertStatusUpdateAccess(ownTicket, TicketStatus.IN_PROGRESS, guestCtx)
       ).toThrowError(expect.objectContaining({ statusCode: 403 }));
     });
 
@@ -77,6 +111,13 @@ describe('TicketAccessPolicy', () => {
       const foreignTicket = buildTicket({ client_id: 'client-other' });
       expect(() =>
         ticketAccessPolicy.assertStatusUpdateAccess(foreignTicket, TicketStatus.CANCELLED, clientCtx)
+      ).toThrowError(expect.objectContaining({ statusCode: 403 }));
+    });
+
+    it('forbids a guest from cancelling a ticket they do not own', () => {
+      const othersTicket = buildTicket({ client_id: 'client-123', tenant_id: 'tenant-456' });
+      expect(() =>
+        ticketAccessPolicy.assertStatusUpdateAccess(othersTicket, TicketStatus.CANCELLED, guestCtx)
       ).toThrowError(expect.objectContaining({ statusCode: 403 }));
     });
 
@@ -114,6 +155,12 @@ describe('TicketAccessPolicy', () => {
     it('scopes a client to their tenant', () => {
       const scoped = ticketAccessPolicy.applyFilterScope(baseFilters, clientCtx);
       expect(scoped.tenantId).toBe('tenant-456');
+    });
+
+    it('scopes a guest to their tenant and their own userId', () => {
+      const scoped = ticketAccessPolicy.applyFilterScope(baseFilters, guestCtx);
+      expect(scoped.tenantId).toBe('tenant-456');
+      expect(scoped.clientId).toBe('guest-789');
     });
 
     it('scopes a technician to their own assigned tickets', () => {

@@ -41,7 +41,8 @@
     "copiedToClipboard": "Copied to clipboard",
     "clickToCopy": "Click to copy",
     "active": "Active",
-    "ready": "Ready"
+    "ready": "Ready",
+    "notSet": "Not specified"
   },
   "layout": {
     "blockedTitle": "Active Plan Required",
@@ -1524,7 +1525,8 @@
     "pageOf": "Page {page} of {total}",
     "noUsersDesc": "No users have interacted with your workspace yet.",
     "noUsersFilteredDesc": "No users match your active search and filter criteria.",
-    "clearFilters": "Clear all filters"
+    "clearFilters": "Clear all filters",
+    "roleGuest": "Guest"
   },
   "financial": {
     "title": "Financial Overview",

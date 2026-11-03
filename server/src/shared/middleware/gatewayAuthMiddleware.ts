@@ -48,7 +48,10 @@ export async function gatewayAuthMiddleware(
       }
 
       const requestedTenantId = req.headers['x-tenant-id'] as string;
-      const canSwitchTenant = decoded.role === UserRole.ADMIN || decoded.role === UserRole.TECHNICIAN;
+      const canSwitchTenant =
+        decoded.role === UserRole.ADMIN ||
+        decoded.role === UserRole.TECHNICIAN ||
+        decoded.role === UserRole.GUEST;
 
       if (canSwitchTenant && requestedTenantId) {
         req.headers['x-tenant-id'] = requestedTenantId;

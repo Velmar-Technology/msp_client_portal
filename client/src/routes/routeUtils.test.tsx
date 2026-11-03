@@ -49,6 +49,9 @@ describe("routeUtils", () => {
     it("should return /tech/dashboard for TECHNICIAN", () => {
       expect(getRoleFallbackPath("TECHNICIAN")).toBe("/tech/dashboard");
     });
+    it("should return /helpdesk/tickets for GUEST", () => {
+      expect(getRoleFallbackPath("GUEST")).toBe("/helpdesk/tickets");
+    });
 
     it("should return /dashboard for other roles", () => {
       expect(getRoleFallbackPath("CLIENT")).toBe("/dashboard");

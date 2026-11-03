@@ -15,6 +15,10 @@ export const USER_ROLE_CONFIG: Record<UserRole, { badge: string; dot: string }> 
     badge: "bg-muted text-muted-foreground border border-border",
     dot: "bg-muted-foreground",
   },
+  GUEST: {
+    badge: "bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 border border-purple-500/20",
+    dot: "bg-purple-500",
+  },
 };
 
 export interface RoleOption {
@@ -27,6 +31,7 @@ export const USER_ROLE_OPTIONS: RoleOption[] = [
   { value: "ADMIN", icon: ShieldCheck, labelKey: "userManagement.roleAdmin" },
   { value: "TECHNICIAN", icon: Wrench, labelKey: "userManagement.roleTech" },
   { value: "CLIENT", icon: User, labelKey: "userManagement.roleClient" },
+  { value: "GUEST", icon: User, labelKey: "userManagement.roleGuest" },
 ];
 
 export interface ClientTypeOption {
