@@ -773,6 +773,15 @@
     "noTicketsInStatus": "No tickets"
   },
   "ticketDetail": {
+    "properties": "Properties",
+    "overview": "Overview",
+    "discussion": "Discussion",
+    "diagnostics": "Diagnostics",
+    "ticketProperties": "Ticket Properties",
+    "assignedSpecialist": "Assigned Specialist",
+    "ticketActions": "Ticket Actions",
+    "cancelTitle": "Cancel Ticket Request",
+    "cancelExplanation": "Withdraw this request if it is no longer needed. Permitted within the 1-hour SLA window.",
     "invalidTicketId": "Ticket ID Invalid",
     "invalidTicketIdDesc": "The provided ticket ID is not valid. Please verify the URL and try again.",
     "ticketNotFound": "Ticket Not Found",

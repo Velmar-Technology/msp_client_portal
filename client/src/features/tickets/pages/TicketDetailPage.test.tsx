@@ -7,7 +7,7 @@ import { useSLATimer } from '../hooks/useSLATimer';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => key,
+    t: (key: string, options?: any) => (typeof options === 'string' ? options : key),
     i18n: { language: 'en_US' },
   }),
 }));
@@ -30,7 +30,7 @@ describe('TicketDetailPage - Button Blocking for CANCELLED Tickets', () => {
 
   test('does not render Reopen or action buttons when ticket is CANCELLED', () => {
     vi.mocked(useTicketDetail).mockReturnValue({
-      t: (key: string) => key,
+      t: (key: string, options?: any) => (typeof options === 'string' ? options : key),
       i18n: { language: 'en_US' } as any,
       user: { id: 'user-1', role: 'CLIENT', name: 'John Doe', email: 'john@example.com' } as any,
       ticket: {
@@ -88,7 +88,7 @@ describe('TicketDetailPage - Button Blocking for CANCELLED Tickets', () => {
 
   test('renders cancel button for CLIENT when ticket is OPEN', () => {
     vi.mocked(useTicketDetail).mockReturnValue({
-      t: (key: string) => key,
+      t: (key: string, options?: any) => (typeof options === 'string' ? options : key),
       i18n: { language: 'en_US' } as any,
       user: { id: 'user-1', role: 'CLIENT', name: 'John Doe', email: 'john@example.com' } as any,
       ticket: {
@@ -145,7 +145,7 @@ describe('TicketDetailPage - Button Blocking for CANCELLED Tickets', () => {
 
   test('renders invalid ticket ID error view when ticket is null and not loading', () => {
     vi.mocked(useTicketDetail).mockReturnValue({
-      t: ((key: string) => key) as any,
+      t: ((key: string, options?: any) => (typeof options === 'string' ? options : key)) as any,
       i18n: { language: 'en_US' } as any,
       user: { id: 'user-1', role: 'CLIENT', name: 'John Doe', email: 'john@example.com' } as any,
       ticket: null,
@@ -200,7 +200,7 @@ describe('TicketDetailPage - Button Blocking for CANCELLED Tickets', () => {
     vi.useFakeTimers();
 
     vi.mocked(useTicketDetail).mockReturnValue({
-      t: ((key: string) => key) as any,
+      t: ((key: string, options?: any) => (typeof options === 'string' ? options : key)) as any,
       i18n: { language: 'en_US' } as any,
       user: { id: 'user-1', role: 'CLIENT', name: 'John Doe', email: 'john@example.com' } as any,
       ticket: null,
@@ -257,5 +257,135 @@ describe('TicketDetailPage - Button Blocking for CANCELLED Tickets', () => {
 
     vi.useRealTimers();
   });
-});
 
+  test('renders modern bubble tabs and card-less property rows in Overview tab', () => {
+    vi.mocked(useTicketDetail).mockReturnValue({
+      t: (key: string, options?: any) => (typeof options === 'string' ? options : key),
+      i18n: { language: 'en_US' } as any,
+      user: { id: 'tech-1', role: 'TECHNICIAN', name: 'Alex Rivera', email: 'alex@velmar.com' } as any,
+      ticket: {
+        id: 'ticket-101',
+        title: 'Core Switch Fiber Link Down',
+        description: 'SFP+ module unseated in rack 4',
+        status: 'IN_PROGRESS',
+        priority: 'CRITICAL',
+        category: 'NETWORK',
+        created_at: new Date().toISOString(),
+        client_name: 'Acme Logistics',
+        reporter_name: 'Carlos Santana',
+        assigned_tech_name: 'Alex Rivera',
+      } as any,
+      responses: [
+        { id: 'resp-1', message: 'Investigating module connection', created_at: new Date().toISOString() },
+      ],
+      timeline: [],
+      attachments: [],
+      technicians: [],
+      loading: false,
+      loadingTechs: false,
+      assigning: false,
+      statusUpdating: false,
+      sendingResponse: false,
+      uploading: false,
+      responseText: '',
+      setResponseText: vi.fn(),
+      responseFiles: [],
+      setResponseFiles: vi.fn(),
+      responseFeedback: null,
+      selectedTechId: '',
+      setSelectedTechId: vi.fn(),
+      assignMessage: null,
+      uploadError: null,
+      previewFile: null,
+      setPreviewFile: vi.fn(),
+      isDragOver: false,
+      setIsDragOver: vi.fn(),
+      canAssign: false,
+      getStatusLabel: (s: string) => s,
+      getPriorityLabel: (p: string) => p,
+      getCategoryLabel: (c: string) => c,
+      handleStatusChange: vi.fn(),
+      handleAssign: vi.fn(),
+      handleSendResponse: vi.fn(),
+      handleFileUpload: vi.fn(),
+    } as any);
+
+    render(
+      <MemoryRouter>
+        <TicketDetailPage />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Core Switch Fiber Link Down')).toBeInTheDocument();
+    expect(screen.getByText('SFP+ module unseated in rack 4')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /properties/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /timeline/i })).toBeInTheDocument();
+    expect(screen.getByText('Investigating module connection')).toBeInTheDocument();
+    expect(screen.getByText('Ticket Properties')).toBeInTheDocument();
+    expect(screen.getByText('ticketDetail.priority')).toBeInTheDocument();
+    expect(screen.getByText('tickets.tableCategory')).toBeInTheDocument();
+    expect(screen.getByText('Assigned Specialist')).toBeInTheDocument();
+  });
+
+  test('dynamically displays Diagnostics tab when device_snapshot is attached', () => {
+    vi.mocked(useTicketDetail).mockReturnValue({
+      t: (key: string, options?: any) => (typeof options === 'string' ? options : key),
+      i18n: { language: 'en_US' } as any,
+      user: { id: 'tech-1', role: 'TECHNICIAN', name: 'Alex Rivera', email: 'alex@velmar.com' } as any,
+      ticket: {
+        id: 'ticket-102',
+        title: 'High CPU on Workstation',
+        description: 'Host lagging constantly',
+        status: 'OPEN',
+        priority: 'MEDIUM',
+        category: 'HARDWARE',
+        created_at: new Date().toISOString(),
+        client_name: 'Acme Logistics',
+        device_snapshot: {
+          cpuUsagePercent: 92,
+          memoryUsagePercent: 65,
+          diskUsagePercent: 40,
+        },
+      } as any,
+      responses: [],
+      timeline: [],
+      attachments: [],
+      technicians: [],
+      loading: false,
+      loadingTechs: false,
+      assigning: false,
+      statusUpdating: false,
+      sendingResponse: false,
+      uploading: false,
+      responseText: '',
+      setResponseText: vi.fn(),
+      responseFiles: [],
+      setResponseFiles: vi.fn(),
+      responseFeedback: null,
+      selectedTechId: '',
+      setSelectedTechId: vi.fn(),
+      assignMessage: null,
+      uploadError: null,
+      previewFile: null,
+      setPreviewFile: vi.fn(),
+      isDragOver: false,
+      setIsDragOver: vi.fn(),
+      canAssign: false,
+      getStatusLabel: (s: string) => s,
+      getPriorityLabel: (p: string) => p,
+      getCategoryLabel: (c: string) => c,
+      handleStatusChange: vi.fn(),
+      handleAssign: vi.fn(),
+      handleSendResponse: vi.fn(),
+      handleFileUpload: vi.fn(),
+    } as any);
+
+    render(
+      <MemoryRouter>
+        <TicketDetailPage />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('tab', { name: /diagnostics/i })).toBeInTheDocument();
+  });
+});

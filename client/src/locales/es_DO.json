@@ -773,6 +773,15 @@
     "noTicketsInStatus": "Sin tickets"
   },
   "ticketDetail": {
+    "properties": "Propiedades",
+    "overview": "Resumen",
+    "discussion": "Discusión",
+    "diagnostics": "Diagnóstico",
+    "ticketProperties": "Propiedades del Ticket",
+    "assignedSpecialist": "Especialista Asignado",
+    "ticketActions": "Acciones del Ticket",
+    "cancelTitle": "Cancelar Solicitud de Ticket",
+    "cancelExplanation": "Cancele esta solicitud si ya no es necesaria. Permitido dentro de la ventana SLA de 1 hora.",
     "invalidTicketId": "ID de Ticket Inválido",
     "invalidTicketIdDesc": "El ID de ticket proporcionado no es válido. Por favor verifique el enlace e intente nuevamente.",
     "ticketNotFound": "Ticket No Encontrado",
