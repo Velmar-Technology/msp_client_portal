@@ -527,4 +527,105 @@ describe("Page component (Enterprise Odoo View System)", () => {
       expect(root).toHaveClass("max-w-7xl");
     });
   });
+  describe("ElevenLabs-style Page Layout Compound Components", () => {
+    it("exposes ActionGrid, ActionCard, DocsLink, SearchInput, FilterPill, ContentCard, EmptyState on Page", () => {
+      expect(Page.ActionGrid).toBeDefined();
+      expect(Page.ActionCard).toBeDefined();
+      expect(Page.DocsLink).toBeDefined();
+      expect(Page.SearchInput).toBeDefined();
+      expect(Page.FilterPill).toBeDefined();
+      expect(Page.TogglePill).toBeDefined();
+      expect(Page.ContentCard).toBeDefined();
+      expect(Page.EmptyState).toBeDefined();
+    });
+
+    it("renders Page with Title docsUrl and ActionGrid", () => {
+      render(
+        <MemoryRouter>
+          <Page>
+            <Page.Header>
+              <Page.Title docsUrl="https://docs.example.com">Tools</Page.Title>
+            </Page.Header>
+            <Page.ActionGrid data-testid="actions-grid">
+              <Page.ActionCard title="Add webhook tool" />
+              <Page.ActionCard title="Add client tool" />
+            </Page.ActionGrid>
+          </Page>
+        </MemoryRouter>
+      );
+
+      expect(screen.getByText("Tools")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /view documentation/i })).toHaveAttribute(
+        "href",
+        "https://docs.example.com"
+      );
+      expect(screen.getByText("Add webhook tool")).toBeInTheDocument();
+      expect(screen.getByText("Add client tool")).toBeInTheDocument();
+    });
+
+    it("renders full compound layout with SearchInput, FilterPill, ContentCard, and EmptyState", () => {
+      const handleSearch = vi.fn();
+      const handleClear = vi.fn();
+
+      render(
+        <MemoryRouter>
+          <Page>
+            <Page.SearchInput value="search term" onChange={handleSearch} />
+            <Page.FilterPill
+              label="Type"
+              value="WEBHOOK"
+              options={[{ value: "WEBHOOK", label: "Webhook" }]}
+              onChange={vi.fn()}
+              onClear={handleClear}
+            />
+            <Page.ContentCard>
+              <Page.EmptyState
+                title="No tools found"
+                description="You don't have any tools yet."
+                actionLabel="Create Tool"
+                onAction={vi.fn()}
+              />
+            </Page.ContentCard>
+          </Page>
+        </MemoryRouter>
+      );
+
+      expect(screen.getByTestId("page-search-input")).toHaveValue("search term");
+      expect(screen.getByTestId("filter-pill-active-type")).toBeInTheDocument();
+      expect(screen.getByText("No tools found")).toBeInTheDocument();
+      expect(screen.getByText("You don't have any tools yet.")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /create tool/i })).toBeInTheDocument();
+    });
+    it("renders Page.Tabs with variant='pill' and Page.TogglePill", () => {
+      const handleToggle = vi.fn();
+      render(
+        <MemoryRouter>
+          <Page>
+            <Page.Tabs variant="pill" defaultTab="all">
+              <Page.Tab id="all" label="All Tests">
+                <div data-testid="tab-all-content">All Tests Content</div>
+              </Page.Tab>
+              <Page.Tab id="past" label="Past Run Analysis">
+                <div data-testid="tab-past-content">Past Runs Content</div>
+              </Page.Tab>
+            </Page.Tabs>
+            <Page.TogglePill
+              label="Shared with me"
+              active={false}
+              onToggle={handleToggle}
+            />
+          </Page>
+        </MemoryRouter>
+      );
+
+      expect(screen.getByRole("tab", { name: "All Tests" })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "Past Run Analysis" })).toBeInTheDocument();
+      expect(screen.getByTestId("tab-all-content")).toBeInTheDocument();
+
+      const toggle = screen.getByRole("switch", { name: /shared with me/i });
+      expect(toggle).toBeInTheDocument();
+      fireEvent.click(toggle);
+      expect(handleToggle).toHaveBeenCalledWith(true);
+    });
+  });
 });
