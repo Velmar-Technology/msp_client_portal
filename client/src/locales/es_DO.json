@@ -1446,7 +1446,8 @@
         "title": "Whitepaper de Seguridad y Revisiones vCIO",
         "desc": "Postura de seguridad integral, endurecimiento y resultados de revisiones de vCIO para el plan Avanzado."
       }
-    }
+    },
+    "clearFilters": "Limpiar todos los filtros"
   },
   "billing": {
     "title": "Historial de Facturación",
@@ -1655,7 +1656,10 @@
     "processing": "Procesando...",
     "noUsers": "No se encontraron usuarios",
     "noUsersFound": "No se encontraron usuarios",
-    "pageOf": "Página {page} de {total}"
+    "pageOf": "Página {page} de {total}",
+    "noUsersDesc": "Ningún usuario ha interactuado con su espacio de trabajo aún.",
+    "noUsersFilteredDesc": "Ningún usuario coincide con sus criterios de búsqueda y filtros.",
+    "clearFilters": "Limpiar todos los filtros"
   },
   "financial": {
     "title": "Resumen Financiero",

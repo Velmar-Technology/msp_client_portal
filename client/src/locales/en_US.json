@@ -1450,7 +1450,8 @@
         "title": "Security & vCIO Reviews Whitepaper",
         "desc": "Comprehensive security posture, hardening, and virtual CIO review outcomes for Advanced plan."
       }
-    }
+    },
+    "clearFilters": "Clear all filters"
   },
   "billing": {
     "title": "Billing History",
@@ -1660,7 +1661,10 @@
     "processing": "Processing...",
     "noUsers": "No users found",
     "noUsersFound": "No users found",
-    "pageOf": "Page {page} of {total}"
+    "pageOf": "Page {page} of {total}",
+    "noUsersDesc": "No users have interacted with your workspace yet.",
+    "noUsersFilteredDesc": "No users match your active search and filter criteria.",
+    "clearFilters": "Clear all filters"
   },
   "financial": {
     "title": "Financial Overview",
