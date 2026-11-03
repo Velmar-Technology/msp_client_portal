@@ -24,3 +24,7 @@ export * from './hooks/useAssetsModals';
 
 // Ephemeral UI Types
 export * from './types';
+
+// Sub-Features (ADR-017)
+export * as consumables from './consumables';
+

@@ -1,6 +1,6 @@
-export { assetService, AssetService } from './services/AssetService';
-export { assetController, AssetController } from './controllers/AssetController';
-export { consumableService, ConsumableService } from './services/ConsumableService';
-export { consumableController, ConsumableController } from './controllers/ConsumableController';
-export { default as assetRoutes } from './routes/asset.routes';
+export * from './repositories/AssetRepository';
+export * from './services/AssetService';
+export * from './controllers/AssetController';
+export * from './consumables';
 export { moduleManifest } from './manifest';
+export { default as assetRoutes } from './routes/asset.routes';

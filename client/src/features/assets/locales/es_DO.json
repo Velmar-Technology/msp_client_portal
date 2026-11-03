@@ -1,6 +1,8 @@
 {
   "nav": {
-    "assets": "Activos"
+    "assets": "Activos",
+    "hardware": "Hardware",
+    "itAssets": "Equipos TI"
   },
   "assets": {
     "title": "Inventario de Activos",
@@ -18,7 +20,7 @@
       "hardware": "Hardware",
       "network": "Redes",
       "software": "Software",
-      "peripheral": "Periféricos",
+      "peripheral": "Perif\u00e9ricos",
       "itAssets": "Equipos TI",
       "consumables": "Consumibles y Suministros"
     },
@@ -26,7 +28,7 @@
       "all": "Todos los Estados",
       "active": "Activo",
       "maintenance": "Mantenimiento",
-      "inStorage": "En Almacén",
+      "inStorage": "En Almac\u00e9n",
       "decommissioned": "Desincorporado"
     },
     "headers": {
@@ -34,7 +36,7 @@
       "type": "Tipo",
       "status": "Estado",
       "makeModel": "Marca / Modelo",
-      "serial": "Número de Serie",
+      "serial": "N\u00famero de Serie",
       "assigned": "Asignado A"
     },
     "empty": {
@@ -56,7 +58,7 @@
     },
     "placeholders": {
       "name": "ej., Router Principal, Laptop Desarrollo",
-      "notes": "Detalles opcionales de despliegue o ubicación"
+      "notes": "Detalles opcionales de despliegue o ubicaci\u00f3n"
     },
     "messages": {
       "createSuccess": "Activo registrado exitosamente",
@@ -66,75 +68,8 @@
       "error": "Error al guardar activo. Por favor intenta de nuevo."
     },
     "deleteConfirm": {
-      "title": "¿Eliminar Activo?",
-      "description": "Esto eliminará {{name}} del inventario activo. Los enlaces con dispositivos quedarán desvinculados."
-    },
-    "consumables": {
-      "newConsumable": "Agregar Consumible",
-      "kpiTotal": "Total de Consumibles",
-      "kpiLowStock": "Alertas de Stock Bajo",
-      "kpiOutOfStock": "Agotados",
-      "searchPlaceholder": "Buscar consumibles por nombre, categoría, SKU...",
-      "emptyList": "No se encontraron consumibles registrados.",
-      "outOfStock": "Agotado",
-      "lowStock": "Stock Bajo",
-      "inStock": "En Stock",
-      "afterCheckout": "Después de Despacho:",
-      "currentStock": "Stock Actual:",
-      "newStock": "Nuevo Nivel de Stock:",
-      "colItem": "Artículo / Nombre",
-      "colCategory": "Categoría",
-      "colStock": "Nivel de Stock",
-      "colStatus": "Estado",
-      "colLocation": "Ubicación",
-      "colCost": "Costo Unitario",
-      "checkoutBtn": "Despachar",
-      "restockBtn": "Reabastecer",
-      "viewHistory": "Historial de Despachos",
-      "createTitle": "Agregar Consumible o Suministro",
-      "editTitle": "Editar Consumible",
-      "nameLabel": "Nombre del Artículo *",
-      "categoryLabel": "Categoría *",
-      "selectCategory": "Seleccionar Categoría",
-      "manufacturerLabel": "Fabricante",
-      "modelLabel": "Número de Modelo",
-      "skuLabel": "SKU / Nro. de Artículo",
-      "quantityLabel": "Cantidad en Stock *",
-      "minQuantityLabel": "Umbral Mínimo de Alerta *",
-      "locationLabel": "Ubicación de Almacén",
-      "costLabel": "Costo Unitario ($)",
-      "addButton": "Agregar Artículo",
-      "checkoutTitle": "Despachar Consumible",
-      "notesLabel": "Notas / Destinatario",
-      "checkoutNotesPlaceholder": "ej. Entregado a Contabilidad para impresora HP",
-      "insufficientStock": "No se puede despachar más del stock disponible",
-      "checkoutConfirm": "Confirmar Despacho",
-      "checkoutSuccess": "Se despacharon {{count}} unidades exitosamente",
-      "checkoutError": "Error al despachar consumible",
-      "restockTitle": "Reabastecer Consumible",
-      "quantityToAdd": "Cantidad a Agregar *",
-      "poLabel": "Orden de Compra / Factura #",
-      "restockNotesPlaceholder": "ej. Recibido de suplidor lote #44",
-      "confirmRestock": "Confirmar Reabastecimiento",
-      "restockSuccess": "Se reabastecieron {{count}} unidades. Total actual: {{total}}",
-      "restockError": "Error al reabastecer consumible",
-      "historyTitle": "Historial de Despachos",
-      "noHistory": "No hay despachos registrados para este artículo.",
-      "deleteConfirmTitle": "¿Eliminar Artículo Consumible?",
-      "deleteConfirmDesc": "Esto eliminará \"{{name}}\" del inventario activo. El historial de despachos se mantendrá.",
-      "createdSuccess": "Consumible registrado con éxito",
-      "updatedSuccess": "Consumible actualizado con éxito",
-      "deletedSuccess": "Consumible eliminado con éxito",
-      "actionError": "Error al procesar consumible",
-      "categories": {
-        "toner": "Tóner y Tinta",
-        "cables": "Cables y Adaptadores",
-        "peripherals": "Periféricos",
-        "batteries": "Baterías",
-        "paper": "Papel y Medios",
-        "tools": "Herramientas y Limpieza",
-        "other": "Otro"
-      }
+      "title": "\u00bfEliminar Activo?",
+      "description": "Esto eliminar\u00e1 {{name}} del inventario activo. Los enlaces con dispositivos quedar\u00e1n desvinculados."
     }
   }
 }

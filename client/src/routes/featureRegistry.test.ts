@@ -14,12 +14,14 @@ describe('featureRegistry (Zero-Touch Frontend Auto-Discovery & Hierarchy)', () 
   it('auto-discovers the assets and hierarchical helpdesk feature manifests and their routes', () => {
     const manifests = getDiscoveredFeatureManifests();
     expect(manifests.some((m) => m.id === 'assets')).toBe(true);
+    expect(manifests.some((m) => m.id === 'assets.consumables')).toBe(true);
     expect(manifests.some((m) => m.id === 'helpdesk')).toBe(true);
     expect(manifests.some((m) => m.id === 'helpdesk.tickets')).toBe(true);
     expect(manifests.some((m) => m.id === 'helpdesk.kb')).toBe(true);
 
     const routes = getDiscoveredFeatureRoutes();
     expect(routes.some((r) => r.path === '/assets')).toBe(true);
+    expect(routes.some((r) => r.path === '/assets/consumables')).toBe(true);
     expect(routes.some((r) => r.path === '/helpdesk/tickets')).toBe(true);
     expect(routes.some((r) => r.path === '/helpdesk/tickets/:id')).toBe(true);
     expect(routes.some((r) => r.path === '/helpdesk/kb')).toBe(true);
@@ -66,6 +68,10 @@ describe('featureRegistry (Zero-Touch Frontend Auto-Discovery & Hierarchy)', () 
 
     const clientAssetsItem = clientMerged.find((item) => item.to === '/assets');
     expect(clientAssetsItem?.requiredFeature).toBeDefined();
+    expect(clientAssetsItem?.items?.map((s) => s.to)).toEqual([
+      '/assets',
+      '/assets/consumables',
+    ]);
 
     const adminMerged = mergeFeatureNavItems(baseItems, 'ADMIN');
     const adminAssetsItem = adminMerged.find((item) => item.to === '/assets');
