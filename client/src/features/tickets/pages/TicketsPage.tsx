@@ -1,8 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
-import { Plus, Eye, MoreHorizontal, Ban, ChevronRight, List, LayoutGrid, Search, CheckCheck } from "lucide-react";
+import { Plus, Eye, MoreHorizontal, Ban, ChevronRight, List, LayoutGrid, CheckCheck, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Page } from "@/components/Page";
 import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
 import type { ColumnDef, Column } from "@tanstack/react-table";
@@ -366,6 +364,65 @@ export function TicketsPage() {
     [t, user, navigate, handleTicketAction, markTicketAsRead],
   );
 
+  const statusFilterOptions = useMemo(
+    () => [
+      { value: "OPEN", label: t("tickets.filterOpen") || "Open" },
+      { value: "IN_PROGRESS", label: t("tickets.filterInProgress") || "In Progress" },
+      { value: "RESOLVED", label: t("tickets.filterResolved") || "Resolved" },
+      { value: "CLOSED", label: t("tickets.filterClosed") || "Closed" },
+      { value: "CANCELLED", label: t("tickets.filterCancelled") || "Cancelled" },
+    ],
+    [t]
+  );
+
+  const priorityFilterOptions = useMemo(
+    () => [
+      { value: "LOW", label: t("tickets.priorities.LOW") || "Low" },
+      { value: "MEDIUM", label: t("tickets.priorities.MEDIUM") || "Medium" },
+      { value: "HIGH", label: t("tickets.priorities.HIGH") || "High" },
+      { value: "CRITICAL", label: t("tickets.priorities.CRITICAL") || "Critical" },
+    ],
+    [t]
+  );
+
+  const categoryFilterOptions = useMemo(
+    () => [
+      { value: "REPAIR", label: t("tickets.categories.REPAIR") || "Hardware Repair" },
+      { value: "WARRANTY", label: t("tickets.categories.WARRANTY") || "Warranty Replacement" },
+      { value: "SERVICE_OUTAGE", label: t("tickets.categories.SERVICE_OUTAGE") || "Service Outage" },
+      { value: "PREVENTATIVE_MAINTENANCE", label: t("tickets.categories.PREVENTATIVE_MAINTENANCE") || "Maintenance" },
+      { value: "HELPDESK", label: t("tickets.categories.HELPDESK") || "IT Helpdesk" },
+      { value: "AI", label: t("tickets.categories.AI") || "AI & Automation" },
+    ],
+    [t]
+  );
+
+  const dateRangeFilterOptions = useMemo(
+    () => [
+      { value: "today", label: t("tickets.filterToday") || "Today" },
+      { value: "7d", label: t("tickets.filterLast7Days") || "Last 7 Days" },
+      { value: "30d", label: t("tickets.filterLast30Days") || "Last 30 Days" },
+      { value: "month", label: t("tickets.filterThisMonth") || "This Month" },
+    ],
+    [t]
+  );
+
+  const hasActiveFilters = Boolean(
+    searchQuery.trim() ||
+    statusFilter ||
+    priorityFilter ||
+    categoryFilter ||
+    (dateRangeFilter && dateRangeFilter !== "all")
+  );
+
+  const handleClearAllFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("");
+    setPriorityFilter("");
+    setCategoryFilter("");
+    setDateRangeFilter("all");
+  };
+
   return (
     <Page
       activeView={viewMode}
@@ -379,245 +436,190 @@ export function TicketsPage() {
       defaultPage={page}
       defaultPageSize={limit}
     >
-      <Page.Header>
-        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-        <Page.HeaderRow className="flex-col sm:flex-col xl:flex-row items-start sm:items-start xl:items-center gap-3">
-          <Page.TitleGroup>
-            <Page.Title>{t("tickets.title")}</Page.Title>
-            <Page.Description>{t("tickets.subtitle")}</Page.Description>
-          </Page.TitleGroup>
-          <div className="flex flex-wrap items-center gap-2.5 w-full xl:w-auto justify-between xl:justify-end">
+      <div className="flex flex-col gap-5">
+        {/* Header Row: Title & Subtitle + Primary Actions */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-1">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground font-heading">
+              {t("tickets.title")}
+            </h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {t("tickets.subtitle")}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {tickets.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleMarkAllAsRead}
+                className="h-8 px-3 rounded-xl text-xs font-semibold gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
+                title={t("tickets.markAllAsRead", "Mark all as read")}
+              >
+                <CheckCheck className="h-3.5 w-3.5" />
+                <span>{t("tickets.markAllAsRead", "Mark all as read")}</span>
+              </Button>
+            )}
+            {canCreateTicket && (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setShowNewTicket(true)}
+                className="h-8 px-3.5 rounded-xl text-xs font-semibold gap-1.5 cursor-pointer shadow-2xs"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>{t("tickets.newTicket")}</span>
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* ElevenLabs Wide Search Bar */}
+        <Page.SearchInput
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder={t("tickets.searchPlaceholder") || "Search tickets..."}
+        />
+
+        {/* ElevenLabs + Filter Pills Row with ViewSwitcher on the right */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Page.FilterPill
+              label={t("tickets.colStatus") || "Status"}
+              value={statusFilter}
+              options={statusFilterOptions}
+              onChange={setStatusFilter}
+              onClear={() => setStatusFilter("")}
+            />
+            <Page.FilterPill
+              label={t("tickets.colPriority") || "Priority"}
+              value={priorityFilter}
+              options={priorityFilterOptions}
+              onChange={setPriorityFilter}
+              onClear={() => setPriorityFilter("")}
+            />
+            <Page.FilterPill
+              label={t("tickets.colCategory") || "Category"}
+              value={categoryFilter}
+              options={categoryFilterOptions}
+              onChange={setCategoryFilter}
+              onClear={() => setCategoryFilter("")}
+            />
+            <Page.FilterPill
+              label={t("tickets.colDateRange") || "Date"}
+              value={dateRangeFilter === "all" ? "" : dateRangeFilter}
+              options={dateRangeFilterOptions}
+              onChange={setDateRangeFilter}
+              onClear={() => setDateRangeFilter("all")}
+            />
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={handleClearAllFilters}
+                className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                {t("tickets.clearFilters") || "Clear all"}
+              </Button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-auto">
             <Page.ViewSwitcher
               value={viewMode}
               onChange={handleViewChange}
+              size="sm"
               options={[
                 { value: "list", label: t("resources.viewList", "List"), icon: List, title: t("resources.viewList", "List") },
                 { value: "kanban", label: t("tickets.kanban", "Kanban"), icon: LayoutGrid, title: t("tickets.kanban", "Kanban") },
               ]}
             />
-            <Page.Actions maxVisible={3}>
-              {tickets.length > 0 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleMarkAllAsRead}
-                  className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
-                  title={t("tickets.markAllAsRead", "Mark all as read")}
-                >
-                  <CheckCheck className="h-3.5 w-3.5" />
-                  <span>{t("tickets.markAllAsRead", "Mark all as read")}</span>
-                </Button>
-              )}
-              {canCreateTicket && (
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => setShowNewTicket(true)}
-                  className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>{t("tickets.newTicket")}</span>
-                </Button>
-              )}
-            </Page.Actions>
           </div>
-        </Page.HeaderRow>
-        <Page.Toolbar className="w-full">
-          <Page.Filters className="flex flex-wrap items-center gap-2.5 w-full">
-            <InputGroup className="w-full sm:w-64">
-              <InputGroupInput
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t("tickets.searchPlaceholder")}
+        </div>
+
+        {/* Content Area: Card Wrapped or Empty State */}
+        {!loading && tickets.length === 0 ? (
+          <Page.ContentCard>
+            <Page.EmptyState
+              icon={MessageSquare}
+              title={t("tickets.noTicketsFound") || "No tickets found"}
+              description={
+                hasActiveFilters
+                  ? (t("tickets.noTicketsFilteredDesc") || "No tickets match your active search and filter criteria.")
+                  : (t("tickets.noTicketsDesc") || "No tickets have been created yet.")
+              }
+              primaryAction={
+                canCreateTicket
+                  ? {
+                      label: t("tickets.newTicket") || "New Ticket",
+                      icon: Plus,
+                      onClick: () => setShowNewTicket(true),
+                    }
+                  : undefined
+              }
+              secondaryAction={
+                hasActiveFilters
+                  ? {
+                      label: t("tickets.clearFilters") || "Clear all filters",
+                      onClick: handleClearAllFilters,
+                    }
+                  : undefined
+              }
+            />
+          </Page.ContentCard>
+        ) : (
+          <>
+            <Page.View type="list">
+              <Page.ContentCard>
+                <DataTable
+                  columns={columns}
+                  data={tickets}
+                  loading={loading}
+                  noDataMessage={t("tickets.noTicketsFound")}
+                  onRowClick={(ticket) => {
+                    markTicketAsRead(ticket.id, user?.id);
+                    navigate(`/tickets/${ticket.id}`);
+                  }}
+                  sorting={sorting}
+                  onSortingChange={handleSortingChange}
+                  enableSorting
+                  manualSorting
+                  enableRowSelection
+                  onSelectedRowsChange={setSelectedTickets}
+                  bulkActions={[
+                    {
+                      label: t("tickets.bulkCancel"),
+                      onClick: handleBulkCancelClick,
+                      variant: "destructive",
+                    },
+                  ]}
+                  pagination={{
+                    page,
+                    totalPages,
+                    totalItems: total,
+                    limit,
+                    onPageChange: setPage,
+                    onLimitChange: handleLimitChange,
+                  }}
+                />
+              </Page.ContentCard>
+            </Page.View>
+
+            <Page.View type="kanban">
+              <TicketKanbanBoard
+                tickets={tickets}
+                loading={loading}
+                userId={user?.id}
+                onTicketClick={(ticket) => {
+                  markTicketAsRead(ticket.id, user?.id);
+                  navigate(`/tickets/${ticket.id}`);
+                }}
               />
-              <InputGroupAddon>
-                <Search className="h-3.5 w-3.5 text-muted-foreground" />
-              </InputGroupAddon>
-            </InputGroup>
-
-            {/* Status Filter */}
-            <Select
-              value={statusFilter || "all"}
-              onValueChange={(val) => setStatusFilter(val === "all" ? "" : val)}
-            >
-              <SelectTrigger
-                id="tickets-status-filter"
-                aria-label={t("tickets.colStatus")}
-                size="default"
-                className="h-8 px-2.5 rounded-lg text-xs font-medium bg-muted/30 border border-border/60 hover:bg-muted/50 text-foreground cursor-pointer gap-1.5 shrink-0"
-              >
-                <SelectValue placeholder={t("tickets.filterAllStatuses")} />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border">
-                <SelectItem value="all" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.filterAllStatuses")}
-                </SelectItem>
-                <SelectItem value="OPEN" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.filterOpen")}
-                </SelectItem>
-                <SelectItem value="IN_PROGRESS" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.filterInProgress")}
-                </SelectItem>
-                <SelectItem value="RESOLVED" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.filterResolved")}
-                </SelectItem>
-                <SelectItem value="CLOSED" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.filterClosed")}
-                </SelectItem>
-                <SelectItem value="CANCELLED" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.filterCancelled")}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Category Filter */}
-            <Select
-              value={categoryFilter || "all"}
-              onValueChange={(val) => setCategoryFilter(val === "all" ? "" : val)}
-            >
-              <SelectTrigger
-                id="tickets-category-filter"
-                aria-label={t("tickets.colCategory")}
-                size="default"
-                className="h-8 px-2.5 rounded-lg text-xs font-medium bg-muted/30 border border-border/60 hover:bg-muted/50 text-foreground cursor-pointer gap-1.5 shrink-0"
-              >
-                <SelectValue placeholder={t("tickets.filterAllCategories")} />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border">
-                <SelectItem value="all" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.filterAllCategories")}
-                </SelectItem>
-                <SelectItem value="REPAIR" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.categories.REPAIR")}
-                </SelectItem>
-                <SelectItem value="WARRANTY" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.categories.WARRANTY")}
-                </SelectItem>
-                <SelectItem value="SERVICE_OUTAGE" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.categories.SERVICE_OUTAGE")}
-                </SelectItem>
-                <SelectItem value="PREVENTATIVE_MAINTENANCE" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.categories.PREVENTATIVE_MAINTENANCE") || "Maintenance"}
-                </SelectItem>
-                <SelectItem value="HELPDESK" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.categories.HELPDESK")}
-                </SelectItem>
-                <SelectItem value="AI" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.categories.AI")}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Priority Filter */}
-            <Select
-              value={priorityFilter || "all"}
-              onValueChange={(val) => setPriorityFilter(val === "all" ? "" : val)}
-            >
-              <SelectTrigger
-                id="tickets-priority-filter"
-                aria-label={t("tickets.colPriority")}
-                size="default"
-                className="h-8 px-2.5 rounded-lg text-xs font-medium bg-muted/30 border border-border/60 hover:bg-muted/50 text-foreground cursor-pointer gap-1.5 shrink-0"
-              >
-                <SelectValue placeholder={t("tickets.filterAllPriorities")} />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border">
-                <SelectItem value="all" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.filterAllPriorities")}
-                </SelectItem>
-                <SelectItem value="LOW" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.priorities.LOW")}
-                </SelectItem>
-                <SelectItem value="MEDIUM" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.priorities.MEDIUM")}
-                </SelectItem>
-                <SelectItem value="HIGH" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.priorities.HIGH")}
-                </SelectItem>
-                <SelectItem value="CRITICAL" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.priorities.CRITICAL")}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Date Range Filter */}
-            <Select value={dateRangeFilter || "all"} onValueChange={setDateRangeFilter}>
-              <SelectTrigger
-                id="tickets-daterange-filter"
-                aria-label={t("tickets.colDateRange")}
-                size="default"
-                className="h-8 px-2.5 rounded-lg text-xs font-medium bg-muted/30 border border-border/60 hover:bg-muted/50 text-foreground cursor-pointer gap-1.5 shrink-0"
-              >
-                <SelectValue placeholder={t("tickets.filterAllDates")} />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border">
-                <SelectItem value="all" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.filterAllDates")}
-                </SelectItem>
-                <SelectItem value="today" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.filterToday")}
-                </SelectItem>
-                <SelectItem value="7d" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.filterLast7Days")}
-                </SelectItem>
-                <SelectItem value="30d" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.filterLast30Days")}
-                </SelectItem>
-                <SelectItem value="month" className="text-xs font-medium cursor-pointer">
-                  {t("tickets.filterThisMonth")}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </Page.Filters>
-        </Page.Toolbar>
-      </Page.Header>
-
-      <Page.View type="list">
-        <DataTable
-          columns={columns}
-          data={tickets}
-          loading={loading}
-          noDataMessage={t("tickets.noTicketsFound")}
-          onRowClick={(ticket) => {
-            markTicketAsRead(ticket.id, user?.id);
-            navigate(`/tickets/${ticket.id}`);
-          }}
-          sorting={sorting}
-          onSortingChange={handleSortingChange}
-          enableSorting
-          manualSorting
-          enableRowSelection
-          onSelectedRowsChange={setSelectedTickets}
-          bulkActions={[
-            {
-              label: t("tickets.bulkCancel"),
-              onClick: handleBulkCancelClick,
-              variant: "destructive",
-            },
-          ]}
-          pagination={{
-            page,
-            totalPages,
-            totalItems: total,
-            limit,
-            onPageChange: setPage,
-            onLimitChange: handleLimitChange,
-          }}
-        />
-      </Page.View>
-
-      <Page.View type="kanban">
-        <TicketKanbanBoard
-          tickets={tickets}
-          loading={loading}
-          userId={user?.id}
-          onTicketClick={(ticket) => {
-            markTicketAsRead(ticket.id, user?.id);
-            navigate(`/tickets/${ticket.id}`);
-          }}
-        />
-      </Page.View>
+            </Page.View>
+          </>
+        )}
+      </div>
 
       {/* New Ticket Modal */}
       {showNewTicket && <NewTicketModal onClose={() => setShowNewTicket(false)} onCreated={handleTicketCreated} />}
