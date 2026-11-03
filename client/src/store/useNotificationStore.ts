@@ -24,6 +24,7 @@ export interface NotificationState {
   eventSource: EventSource | null;
   bellClearedAt: number | null;
   navInvalidationAt: number;
+  connectionStatus: 'connected' | 'reconnecting' | 'offline';
 
   fetchNotifications: () => Promise<void>;
   markAsRead: (id: string) => Promise<void>;
@@ -48,6 +49,7 @@ export const useNotificationStore = create<NotificationState>()(
       eventSource: null,
       bellClearedAt: getStoredBellClearedAt(),
       navInvalidationAt: 0,
+      connectionStatus: typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'connected',
 
       fetchNotifications: async () => {
         set({ isLoading: true }, false, 'notifications/fetch_request');
@@ -142,6 +144,9 @@ export const useNotificationStore = create<NotificationState>()(
         // Use absolute path for SSE connection, letting Vite proxy forward it
         const url = `/api/v1/notifications/stream?token=${encodeURIComponent(token)}`;
         const es = new EventSource(url);
+        es.onopen = () => {
+          set({ connectionStatus: 'connected' }, false, 'notifications/stream_open');
+        };
 
         es.addEventListener('notification', (e: MessageEvent) => {
           try {
@@ -210,7 +215,7 @@ export const useNotificationStore = create<NotificationState>()(
         es.addEventListener('error', async (e) => {
           console.warn('SSE connection encountered an error, attempting to reconnect...', e);
           es.close();
-          set({ eventSource: null }, false, 'notifications/stream_error');
+          set({ eventSource: null, connectionStatus: 'reconnecting' }, false, 'notifications/stream_error');
 
           try {
             await notificationService.getAll();
@@ -234,7 +239,7 @@ export const useNotificationStore = create<NotificationState>()(
         const { eventSource } = get();
         if (eventSource) {
           eventSource.close();
-          set({ eventSource: null }, false, 'notifications/stream_stop');
+          set({ eventSource: null, connectionStatus: 'offline' }, false, 'notifications/stream_stop');
         }
       },
     }),
