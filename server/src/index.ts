@@ -18,7 +18,7 @@ import { createExpressErrorMiddleware } from '@shared/errors';
 import routes from './routes';
 import { swaggerSpec } from '@shared/swagger/swagger.config';
 import { agentGateway } from '@modules/rmm';
-import { ticketStreamGateway } from '@modules/tickets';
+import { ticketStreamGateway } from '@modules/helpdesk';
 import { equipmentService } from '@modules/equipment';
 import { metricsMiddleware } from '@shared/middleware/metricsMiddleware';
 import { metricsService } from '@shared/metrics/metricsService';
@@ -181,7 +181,7 @@ async function startServer(): Promise<void> {
         subscriptionScheduler.start();
 
         // Start background SLA escalation scheduler
-        const { escalationScheduler } = require('@modules/tickets/services/EscalationScheduler');
+        const { escalationScheduler } = require('@modules/helpdesk/tickets/services/EscalationScheduler');
         escalationScheduler.start();
 
         resolve();
@@ -195,7 +195,7 @@ async function startServer(): Promise<void> {
         const { subscriptionScheduler } = require('@modules/subscriptions/services/SubscriptionScheduler');
         subscriptionScheduler.stop();
 
-        const { escalationScheduler } = require('@modules/tickets/services/EscalationScheduler');
+        const { escalationScheduler } = require('@modules/helpdesk/tickets/services/EscalationScheduler');
         escalationScheduler.stop();
 
         const { telemetryBufferService, agentClusterBroker } = require('@modules/rmm');

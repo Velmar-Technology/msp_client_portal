@@ -1,0 +1,22 @@
+{
+  "help": {
+    "title": "Help & Documentation",
+    "subtitle": "Find answers to common questions, learn about our service level agreements, or contact support directly.",
+    "searchPlaceholder": "Search help topics, FAQs, and more...",
+    "noResults": "No results found",
+    "noResultsDesc": "Try adjusting your search terms or selecting another category.",
+    "stillNeedAssistance": "Still need assistance?",
+    "stillNeedAssistanceDesc": "If you can't find what you are looking for in our documentation, you can create a direct support ticket.",
+    "createSupportTicket": "Create Support Ticket",
+    "emergencySupport": "Emergency & Direct Support",
+    "phoneSupport": "Phone Support",
+    "phoneValue": "{{phone}}",
+    "phoneDesc": "Toll-free emergency hotline",
+    "emailSupport": "Email Support",
+    "emailValue": "{{email}}",
+    "emailDesc": "Responses within 24 hours",
+    "supportHours": "Support Hours",
+    "hoursValue": "{{supportHours}}",
+    "hoursDesc": "{{monitoringHours}}"
+  }
+}

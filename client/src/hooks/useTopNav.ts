@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Ticket as TicketIcon, CreditCard, HelpCircle, LayoutDashboard, Plus, BookOpen, Bell, User, Download } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { ticketService, type TicketItem as Ticket } from "@/features/tickets";
+import { ticketService, type TicketItem as Ticket } from "@/features/helpdesk";
 import { invoiceService, type Invoice } from "@/features/billing";
 import { faqsEn, faqsEs, type FAQ } from "@/lib/faqs";
 
@@ -155,32 +155,32 @@ export function useTopNav() {
     if (user.role === "CLIENT") {
       pages.push(
         { title: t("nav.dashboard"), path: "/dashboard", icon: LayoutDashboard },
-        { title: t("nav.tickets"), path: "/tickets", icon: TicketIcon },
-        { title: t("tickets.newTicket"), path: "/tickets", state: { openCreateModal: true }, icon: Plus },
+        { title: t("nav.tickets"), path: "/helpdesk/tickets", icon: TicketIcon },
+        { title: t("tickets.newTicket"), path: "/helpdesk/tickets", state: { openCreateModal: true }, icon: Plus },
         { title: t("nav.plans"), path: "/plans", icon: BookOpen },
         { title: t("nav.billing"), path: "/billing", icon: CreditCard },
         { title: t("nav.resources"), path: "/resources", icon: Download },
         { title: t("nav.profile"), path: "/profile", icon: User },
-        { title: t("nav.help"), path: "/help", icon: HelpCircle },
+        { title: t("nav.help"), path: "/helpdesk/kb", icon: HelpCircle },
         { title: t("nav.notificationPreferences"), path: "/notifications/preferences", icon: Bell }
       );
     } else if (user.role === "TECHNICIAN") {
       pages.push(
         { title: t("nav.dashboard"), path: "/tech/dashboard", icon: LayoutDashboard },
-        { title: t("nav.tickets"), path: "/tickets", icon: TicketIcon },
+        { title: t("nav.tickets"), path: "/helpdesk/tickets", icon: TicketIcon },
         { title: t("nav.profile"), path: "/profile", icon: User },
-        { title: t("nav.help"), path: "/help", icon: HelpCircle },
+        { title: t("nav.help"), path: "/helpdesk/kb", icon: HelpCircle },
         { title: t("nav.notificationPreferences"), path: "/notifications/preferences", icon: Bell }
       );
     } else if (user.role === "ADMIN") {
       pages.push(
         { title: t("nav.dashboard"), path: "/dashboard", icon: LayoutDashboard },
-        { title: t("nav.tickets"), path: "/tickets", icon: TicketIcon },
+        { title: t("nav.tickets"), path: "/helpdesk/tickets", icon: TicketIcon },
         { title: t("nav.plans"), path: "/plans", icon: BookOpen },
         { title: t("nav.billing"), path: "/billing", icon: CreditCard },
         { title: t("nav.resources"), path: "/resources", icon: Download },
         { title: t("nav.profile"), path: "/profile", icon: User },
-        { title: t("nav.help"), path: "/help", icon: HelpCircle },
+        { title: t("nav.help"), path: "/helpdesk/kb", icon: HelpCircle },
         { title: t("nav.notificationPreferences"), path: "/notifications/preferences", icon: Bell }
       );
     }
@@ -317,7 +317,7 @@ export function useTopNav() {
         badgeClass: statusColorMap[tick.status] || "bg-muted text-muted-foreground",
         icon: TicketIcon,
         onClick: () => {
-          navigate(`/tickets/${tick.id}`);
+          navigate(`/helpdesk/tickets/${tick.id}`);
           setIsOpen(false);
           setSearchQuery("");
         },
@@ -347,7 +347,7 @@ export function useTopNav() {
         subtitle: faq.answer.slice(0, 80) + "...",
         icon: HelpCircle,
         onClick: () => {
-          navigate("/help", { state: { expandFaqId: faq.id } });
+          navigate("/helpdesk/kb", { state: { expandFaqId: faq.id } });
           setIsOpen(false);
           setSearchQuery("");
         },

@@ -33,6 +33,11 @@ export interface ServerModuleManifest {
   id: string;
   /** Optional parent module ID for hierarchical prefix inheritance (e.g. 'assets') */
   parentId?: string;
+  /**
+   * Optional base URL prefix for pure parent container modules that do not mount
+   * their own Express router (defaults to `/${id.replace(/\./g, '/')}`).
+   */
+  basePrefix?: string;
   /** Gateway routes to mount automatically */
   routes?: ModuleRouteMount[];
   /** Default RBAC permissions to register automatically */
@@ -44,8 +49,12 @@ export interface ServerModuleManifest {
  * When a child module specifies `parentId`, its route prefixes are automatically joined
  * onto the parent module's primary route prefix unless already prefixed.
  *
+ * Resolved mounts are sorted most-specific first (deepest path segments first) so
+ * parameterized parent routes (e.g. `GET /helpdesk/:id`) never shadow child sub-module
+ * routes (e.g. `GET /helpdesk/tickets`).
+ *
  * @param manifests - Array of discovered ServerModuleManifest objects
- * @returns Resolved array of ModuleRouteMount objects with full gateway prefixes
+ * @returns Resolved array of ModuleRouteMount objects sorted by path specificity
  */
 export function resolveModuleRouteMounts(manifests: ServerModuleManifest[]): ModuleRouteMount[] {
   const byId = new Map<string, ServerModuleManifest>();
@@ -54,7 +63,10 @@ export function resolveModuleRouteMounts(manifests: ServerModuleManifest[]): Mod
   }
 
   const getBasePrefix = (manifest: ServerModuleManifest, visited = new Set<string>()): string => {
-    const ownFirst = manifest.routes?.[0]?.prefix ?? '';
+    const ownFirst =
+      manifest.basePrefix ??
+      manifest.routes?.[0]?.prefix ??
+      `/${manifest.id.split('.').pop() ?? manifest.id}`;
     const normalizedOwn = ownFirst.startsWith('/') ? ownFirst : ownFirst ? `/${ownFirst}` : '';
     if (!manifest.parentId || visited.has(manifest.id)) {
       return normalizedOwn;
@@ -90,5 +102,14 @@ export function resolveModuleRouteMounts(manifests: ServerModuleManifest[]): Mod
     }
   }
 
-  return resolved;
+  // Sort deeper/more specific prefixes before shallower parent prefixes so
+  // e.g. `/helpdesk/tickets` is always mounted before `/helpdesk` (`/:id`).
+  return resolved.sort((a, b) => {
+    const aDepth = a.prefix.split('/').filter(Boolean).length;
+    const bDepth = b.prefix.split('/').filter(Boolean).length;
+    if (bDepth !== aDepth) {
+      return bDepth - aDepth;
+    }
+    return b.prefix.length - a.prefix.length;
+  });
 }

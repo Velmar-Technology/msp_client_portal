@@ -86,25 +86,6 @@ export const routeCrumbs: RouteCrumbConfig[] = [
     ],
   },
   {
-    path: "/tickets",
-    crumb: (t, _params, user) => ({
-      label: user?.role === "ADMIN" ? t("nav.allTickets") : t("nav.myTickets"),
-      to: "/tickets",
-    }),
-  },
-  {
-    path: "/tickets/:id",
-    crumb: (t, params, user) => [
-      {
-        label: user?.role === "ADMIN" ? t("nav.allTickets") : t("nav.myTickets"),
-        to: "/tickets",
-      },
-      {
-        label: `${t("ticketDetail.ticketId")} #${params?.id?.substring(0, 8) || ""}`,
-      },
-    ],
-  },
-  {
     path: "/profile",
     crumb: (t, _params, user) => [
       { label: user?.role === "ADMIN" ? t("nav.settings") : t("nav.account") },
@@ -125,10 +106,6 @@ export const routeCrumbs: RouteCrumbConfig[] = [
   {
     path: "/settings/ai",
     crumb: (t) => ({ label: t("nav.cafAiSettings", { defaultValue: "AI & CAF Quality" }), to: "/settings/ai" }),
-  },
-  {
-    path: "/help",
-    crumb: (t) => ({ label: t("nav.help"), to: "/help" }),
   },
   {
     path: "/terms",

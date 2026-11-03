@@ -16,7 +16,7 @@ export function Footer() {
       <div className="w-full px-4 md:px-8 flex flex-col md:flex-row justify-between items-center gap-2 text-[10px] md:text-xs">
         <span className="text-muted-foreground">{t("footer.copyright", { company: "Velmar Technology SRL" })}</span>
         <div className="flex gap-4">
-          <Link to="/help" className="text-muted-foreground hover:text-foreground transition-colors">
+          <Link to="/helpdesk/kb" className="text-muted-foreground hover:text-foreground transition-colors">
             {t("footer.help")}
           </Link>
           <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors">

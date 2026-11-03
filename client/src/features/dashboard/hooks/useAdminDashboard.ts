@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { invoiceService, type Invoice, type FinancialStatsResponse } from "@/features/billing";
 import { systemService, type StorageStatus } from "@/features/system";
-import { ticketService } from "@/features/tickets";
+import { ticketService } from '@/features/helpdesk';
 import { maintenanceService, type DeviceMaintenance } from "@/features/rmm";
 import { fetchTenants, type TenantSummary } from "@/features/auth";
 

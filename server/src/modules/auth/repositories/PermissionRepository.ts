@@ -82,6 +82,34 @@ export class PermissionRepository extends BaseRepository<Role> {
   }
 
   /**
+   * Idempotently upserts discovered module permission codes into the PostgreSQL `permissions` table.
+   * Ensures newly scaffolded module capabilities (`ADR-017`) are immediately available in Dynamic RBAC (`BL-302`).
+   *
+   * @param entries - Array of permission catalog definitions (`code`, `module`, `description`)
+   * @see BL-302
+   */
+  async upsertPermissions(
+    entries: Array<{ code: string; module: string; description: string }>
+  ): Promise<void> {
+    if (entries.length === 0) return;
+
+    const values: string[] = [];
+    const params: string[] = [];
+    entries.forEach((entry, idx) => {
+      const base = idx * 3;
+      values.push(`($${base + 1}, $${base + 2}, $${base + 3})`);
+      params.push(entry.code, entry.module, entry.description);
+    });
+
+    const query = `
+      INSERT INTO permissions (code, module, description)
+      VALUES ${values.join(', ')}
+      ON CONFLICT (code) DO NOTHING
+    `;
+    await pool.query(query, params);
+  }
+
+  /**
    * Assigns a role to a user within a tenant idempotently.
    *
    * @param userId - Target user ID

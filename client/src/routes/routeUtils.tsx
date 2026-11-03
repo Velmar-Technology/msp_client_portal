@@ -36,6 +36,69 @@ export function isRoleAuthorized(userRole?: string, allowedRoles?: string[]): bo
   return allowedRoles.includes(userRole);
 }
 
+const FRONTEND_IMPLIED_ACTIONS: Record<string, ReadonlySet<string>> = {
+  "*": new Set(["*"]),
+  manage: new Set(["manage", "write", "create", "update", "delete", "read"]),
+  write: new Set(["write", "create", "update", "read"]),
+  create: new Set(["create"]),
+  update: new Set(["update"]),
+  delete: new Set(["delete"]),
+  read: new Set(["read"]),
+};
+
+/**
+ * Pure Domain Query: Evaluates whether a user's dynamic RBAC permissions satisfy a required capability
+ * under strict Least Privilege (exact match, global '*', explicit '<prefix>:*' wildcard, or same-scope action dominance).
+ *
+ * @param userPermissions - Array of permission codes held by the user (or undefined when legacy role fallback is active)
+ * @param requiredPermission - Required capability code (e.g. 'helpdesk:tickets:read')
+ * @returns Boolean indicating whether the capability check passes
+ * @see BL-302
+ */
+export function hasFrontendPermission(
+  userPermissions: string[] | undefined,
+  requiredPermission?: string | string[]
+): boolean {
+  if (!requiredPermission) return true;
+  if (!userPermissions) return true;
+
+  if (Array.isArray(requiredPermission)) {
+    return requiredPermission.length === 0 || requiredPermission.some((perm) => hasFrontendPermission(userPermissions, perm));
+  }
+
+  const reqParts = requiredPermission.split(":");
+  const reqAction = reqParts[reqParts.length - 1];
+  const reqScopeParts = reqParts.slice(0, -1);
+
+  for (const granted of userPermissions) {
+    if (granted === "*" || granted === requiredPermission) {
+      return true;
+    }
+    if (granted.endsWith(":*")) {
+      const prefix = granted.slice(0, -1);
+      if (requiredPermission.startsWith(prefix)) {
+        return true;
+      }
+    }
+    const grantParts = granted.split(":");
+    if (grantParts.length < 2 || reqScopeParts.length === 0) continue;
+
+    const grantAction = grantParts[grantParts.length - 1];
+    const grantScopeParts = grantParts.slice(0, -1);
+
+    // Least Privilege: parent scopes do NOT implicitly leak into child sub-modules
+    if (grantScopeParts.length !== reqScopeParts.length) continue;
+    if (!grantScopeParts.every((seg, idx) => seg === reqScopeParts[idx])) continue;
+
+    const implied = FRONTEND_IMPLIED_ACTIONS[grantAction];
+    if (grantAction === reqAction || implied?.has("*") || implied?.has(reqAction)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 /**
  * Loading spinner element shown during initial auth session hydration.
  */
@@ -53,13 +116,19 @@ export function RouteLoadingSpinner() {
 export interface RouteGuardProps {
   children: React.ReactNode;
   allowedRoles?: string[];
+  requiredPermission?: string | string[];
   requiredFeature?: FeatureCode;
 }
 
 /**
- * RouteGuard Component: Guard wrapper enforcing authentication, role boundaries, and subscription features.
+ * RouteGuard Component: Guard wrapper enforcing authentication, Dynamic RBAC capabilities (with role fallback), and subscription features.
  */
-export function RouteGuard({ children, allowedRoles, requiredFeature }: RouteGuardProps) {
+export function RouteGuard({
+  children,
+  allowedRoles,
+  requiredPermission,
+  requiredFeature,
+}: RouteGuardProps) {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
 
@@ -71,7 +140,14 @@ export function RouteGuard({ children, allowedRoles, requiredFeature }: RouteGua
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (!isRoleAuthorized(user?.role, allowedRoles)) {
+  // Dual-check (ADR-017 / BL-302): When user.permissions is present and requiredPermission is specified,
+  // enforce capability check; otherwise fall back to allowedRoles.
+  const isAuthorized =
+    requiredPermission && Array.isArray(user?.permissions)
+      ? hasFrontendPermission(user.permissions, requiredPermission)
+      : isRoleAuthorized(user?.role, allowedRoles);
+
+  if (!isAuthorized) {
     const fallbackPath = getRoleFallbackPath(user?.role);
     return <Navigate to={fallbackPath} replace />;
   }

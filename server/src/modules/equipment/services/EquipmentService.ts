@@ -3,7 +3,7 @@ import { subscriptionRepository, SubscriptionRepository } from '@modules/subscri
 import { planRepository, PlanRepository } from '@modules/subscriptions';
 import { nextcloudService, NextcloudService, vaultwardenService, VaultwardenService } from '@modules/system';
 import { rmmPatchService, RmmPatchService, AgentHelloPayload, agentGateway } from '@modules/rmm';
-import { ticketRepository, TicketRepository } from '@modules/tickets';
+import { ticketRepository, TicketRepository } from '@modules/helpdesk';
 import { HELPDESK_SUPPORT_FEATURE_CODE } from '@shared/config/constants';
 import { env } from '@shared/config/env';
 import { DeviceVaultDetails } from '@shared/contracts';

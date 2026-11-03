@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import fs from 'fs';
 import path from 'path';
 import { db, pool } from './index';
-import * as schema from './schema';
+import * as schema from './index';
 import { logger } from '@shared/utils/logger';
 
 // Deterministic seed for reproducible mock dataset

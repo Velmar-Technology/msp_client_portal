@@ -8,7 +8,6 @@ import { publicRoutes } from "./publicRoutes";
 import { getDiscoveredFeatureRoutes } from "./featureRegistry";
 import { authRoutes } from "@/features/auth";
 import { dashboardRoutes } from "@/features/dashboard";
-import { ticketRoutes } from "@/features/tickets";
 import { billingRoutes } from "@/features/billing";
 import { subscriptionRoutes } from "@/features/subscriptions";
 import { equipmentRoutes } from "@/features/equipment";
@@ -33,7 +32,11 @@ function applyGuards(routes: AppRouteObject[]): RouteObject[] {
     let element = route.element;
     if (element && !isPublic) {
       element = (
-        <RouteGuard allowedRoles={handle?.allowedRoles} requiredFeature={handle?.requiredFeature}>
+        <RouteGuard
+          allowedRoles={handle?.allowedRoles}
+          requiredPermission={handle?.requiredPermission}
+          requiredFeature={handle?.requiredFeature}
+        >
           {element}
         </RouteGuard>
       );
@@ -56,7 +59,6 @@ function applyGuards(routes: AppRouteObject[]): RouteObject[] {
 
 const protectedFeatureRoutes: RouteObject[] = applyGuards([
   ...dashboardRoutes,
-  ...ticketRoutes,
   ...billingRoutes,
   ...subscriptionRoutes,
   ...equipmentRoutes,

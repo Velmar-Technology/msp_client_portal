@@ -19,7 +19,7 @@ vi.mock('@modules/rmm/repositories/RmmAlertRepository', () => {
   };
 });
 
-vi.mock('@modules/tickets/repositories/TicketRepository', () => {
+vi.mock('@modules/helpdesk/tickets/repositories/TicketRepository', () => {
   return {
     ticketRepository: {
       updateStatus: mocks.ticketUpdateStatus,
@@ -29,7 +29,7 @@ vi.mock('@modules/tickets/repositories/TicketRepository', () => {
   };
 });
 
-vi.mock('@modules/tickets/repositories/TicketEventRepository', () => {
+vi.mock('@modules/helpdesk/tickets/repositories/TicketEventRepository', () => {
   return {
     ticketEventRepository: {
       create: mocks.eventCreate,
@@ -37,7 +37,7 @@ vi.mock('@modules/tickets/repositories/TicketEventRepository', () => {
   };
 });
 
-vi.mock('@modules/tickets/services/TicketCreationService', () => {
+vi.mock('@modules/helpdesk/tickets/services/TicketCreationService', () => {
   return {
     ticketCreationService: {
       createTicketFromAlert: mocks.createTicketFromAlert,

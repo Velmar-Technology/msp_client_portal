@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import type { NavKey } from '@shared/contracts';
 import type { CrumbResolver } from '@/components/layout/routeCrumbs';
+import { hasFrontendPermission } from './routeUtils';
 import type { AppRouteObject } from './types';
 
 export type SidebarRole = 'CLIENT' | 'TECHNICIAN' | 'ADMIN';
@@ -11,6 +12,7 @@ export interface FeatureNavSubItem {
   labelKey: string;
   counterKey?: NavKey;
   order?: number;
+  requiredPermission?: string | string[];
 }
 
 export interface FeatureNavEntry {
@@ -26,6 +28,8 @@ export interface FeatureNavEntry {
   order: number;
   /** Roles that should see this item in their sidebar */
   roles: SidebarRole[];
+  /** Optional Dynamic RBAC capability (or array of alternative capabilities) required to display this item when `user.permissions` is present */
+  requiredPermission?: string | string[];
   /** Optional subscription feature code required for entitlement gating */
   requiredFeature?: string;
   /** Roles for which `requiredFeature` gating applies in the sidebar (defaults to ['CLIENT']) */
@@ -226,20 +230,32 @@ export function getDiscoveredFeatureRoutes(): AppRouteObject[] {
 /**
  * Merges auto-discovered feature navigation entries (both top-level group items and
  * hierarchical `parentTo` child sub-items) into a role's base navigation list.
+ * Supports dual-check Dynamic RBAC capability filtering when `userPermissions` is provided (`BL-302`).
  *
  * @param baseItems - Core static navigation items for the role
  * @param role - Active user role ('CLIENT' | 'TECHNICIAN' | 'ADMIN')
  * @param manifests - Optional manifest override for testing
+ * @param userPermissions - Optional dynamic RBAC permissions held by the user
  * @returns Merged and ordered navigation items ready for Sidebar rendering
  */
 export function mergeFeatureNavItems<T extends BaseNavItem>(
   baseItems: T[],
   role: SidebarRole,
-  manifests: FeatureManifest[] = getDiscoveredFeatureManifests()
+  manifests: FeatureManifest[] = getDiscoveredFeatureManifests(),
+  userPermissions?: string[]
 ): T[] {
-  const discoveredEntries = manifests
-    .flatMap((manifest) => manifest.navItems ?? [])
-    .filter((entry) => entry.roles.includes(role));
+  const allRawEntries = manifests.flatMap((manifest) => manifest.navItems ?? []);
+  const parentContainerPaths = new Set(
+    allRawEntries.map((e) => e.parentTo).filter((p): p is string => Boolean(p))
+  );
+
+  const discoveredEntries = allRawEntries.filter((entry) => {
+    if (!entry.roles.includes(role)) return false;
+    if (entry.requiredPermission && Array.isArray(userPermissions)) {
+      return hasFrontendPermission(userPermissions, entry.requiredPermission);
+    }
+    return true;
+  });
 
   if (discoveredEntries.length === 0) {
     return baseItems;
@@ -339,7 +355,13 @@ export function mergeFeatureNavItems<T extends BaseNavItem>(
 
   const merged: T[] = [];
   for (const group of groupOrder) {
-    const groupEntries = buckets.get(group) ?? [];
+    const groupEntries = (buckets.get(group) ?? []).filter((wrapped) => {
+      // Hide parent container items if all of their child sub-items were filtered out
+      if (parentContainerPaths.has(wrapped.item.to)) {
+        return Boolean(wrapped.item.items && wrapped.item.items.length > 0);
+      }
+      return true;
+    });
     groupEntries.sort((a, b) => a.order - b.order);
     groupEntries.forEach((entry, index) => {
       if (index === 0) {

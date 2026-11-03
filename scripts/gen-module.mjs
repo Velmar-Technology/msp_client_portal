@@ -30,11 +30,22 @@ if (!rawPath) {
 const clientOnly = flags.has('--client-only');
 const serverOnly = flags.has('--server-only');
 const withRepo = flags.has('--with-repo');
+const isContainer = flags.has('--container') || flags.has('--is-group');
 
 const groupArg = args.find((a) => a.startsWith('--group='));
 const orderArg = args.find((a) => a.startsWith('--order='));
+const rolesArg = args.find((a) => a.startsWith('--roles='));
 const navGroup = groupArg ? groupArg.split('=')[1] : 'operations';
 const navOrder = orderArg ? Number(orderArg.split('=')[1]) : 55;
+// Least Privilege (BL-302 / ADR-017): Deny-by-Default — only ADMIN is granted access unless --roles is explicitly provided
+const allowedRoles = rolesArg
+  ? rolesArg
+      .split('=')[1]
+      .split(',')
+      .map((r) => r.trim().toUpperCase())
+      .filter((r) => ['ADMIN', 'TECHNICIAN', 'CLIENT'].includes(r))
+  : ['ADMIN'];
+const rolesLiteral = `[${allowedRoles.map((r) => `'${r}'`).join(', ')}]`;
 
 const segments = rawPath
   .trim()
@@ -71,6 +82,12 @@ const fullUrlPath = `/${segments.join('/')}`;
 const routeMountPrefix = `/${leafKebab}`;
 const clientRoutePath = isHierarchical ? leafKebab : `/${leafKebab}`;
 const permScope = segments.map(toCamel).join(':');
+const techPermsLiteral = allowedRoles.includes('TECHNICIAN')
+  ? `['${permScope}:read', '${permScope}:create', '${permScope}:update']`
+  : '[]';
+const clientPermsLiteral = allowedRoles.includes('CLIENT')
+  ? `['${permScope}:read']`
+  : '[]';
 
 const contractsTargetDir = path.join(ROOT_DIR, 'packages', 'contracts', 'src', ...segments);
 const serverTargetDir = path.join(ROOT_DIR, 'server', 'src', 'modules', ...segments);
@@ -85,8 +102,107 @@ function writeGeneratedFile(filePath, content) {
 }
 
 console.log(
-  `\x1b[36mScaffolding ADR-017 Zero-Touch ${isHierarchical ? 'Hierarchical ' : ''}Module:\x1b[0m ${manifestId} (${leafPascal})\n`
+  `\x1b[36mScaffolding ADR-017 Zero-Touch ${isContainer ? 'Parent Container ' : isHierarchical ? 'Hierarchical ' : ''}Module:\x1b[0m ${manifestId} (${leafPascal})\n`
 );
+
+if (isContainer) {
+  if (!clientOnly) {
+    if (fs.existsSync(serverTargetDir)) {
+      console.error(`\x1b[31mError:\x1b[0m Server module directory already exists: ${serverTargetDir}`);
+      process.exit(1);
+    }
+    writeGeneratedFile(
+      path.join(serverTargetDir, 'manifest.ts'),
+      `import type { ServerModuleManifest } from '@shared/registry/moduleManifest.types';
+
+/**
+ * Self-registering backend container manifest for ${leafPascal} parent domain (ADR-017).
+ * Child sub-modules inherit \`basePrefix: '${fullUrlPath}'\` and register their own atomic RBAC permissions.
+ */
+export const moduleManifest: ServerModuleManifest = {
+  id: '${manifestId}',${parentId ? `\n  parentId: '${parentId}',` : ''}
+  basePrefix: '${fullUrlPath}',
+};
+`
+    );
+    writeGeneratedFile(
+      path.join(serverTargetDir, 'index.ts'),
+      `export { moduleManifest } from './manifest';\n`
+    );
+  }
+
+  if (!serverOnly) {
+    if (fs.existsSync(clientTargetDir)) {
+      console.error(`\x1b[31mError:\x1b[0m Client feature directory already exists: ${clientTargetDir}`);
+      process.exit(1);
+    }
+    writeGeneratedFile(
+      path.join(clientTargetDir, 'locales', 'en_US.json'),
+      JSON.stringify({ nav: { [leafCamel]: leafPascal } }, null, 2) + '\n'
+    );
+    writeGeneratedFile(
+      path.join(clientTargetDir, 'locales', 'es_DO.json'),
+      JSON.stringify({ nav: { [leafCamel]: leafPascal } }, null, 2) + '\n'
+    );
+    writeGeneratedFile(
+      path.join(clientTargetDir, 'routes.tsx'),
+      `import type { AppRouteObject } from '@/routes/types';
+
+export const ${leafCamel}Routes: AppRouteObject[] = [
+  {
+    path: '${clientRoutePath}',
+    handle: {
+      crumb: (t) => ({ label: t('nav.${leafCamel}'), to: '${fullUrlPath}' }),
+      allowedRoles: ${rolesLiteral},
+    },
+  },
+];
+`
+    );
+    writeGeneratedFile(
+      path.join(clientTargetDir, 'manifest.ts'),
+      `import { Boxes } from 'lucide-react';
+import type { FeatureManifest } from '@/routes/featureRegistry';
+import { ${leafCamel}Routes } from './routes';
+
+/**
+ * Self-registering parent container manifest for ${leafPascal} (ADR-017).
+ */
+export const featureManifest: FeatureManifest = {
+  id: '${manifestId}',${parentId ? `\n  parentId: '${parentId}',` : ''}
+  routes: ${leafCamel}Routes,
+  navItems: [
+    {
+      to: '${fullUrlPath}',${parentTo ? `\n      parentTo: '${parentTo}',` : ''}
+      icon: Boxes,
+      labelKey: '${leafCamel}',
+      group: '${navGroup}',
+      order: ${navOrder},
+      roles: ${rolesLiteral},
+    },
+  ],
+};
+`
+    );
+    writeGeneratedFile(
+      path.join(clientTargetDir, 'index.ts'),
+      `export { ${leafCamel}Routes } from './routes';\nexport { featureManifest } from './manifest';\n`
+    );
+  }
+
+  const { syncContractsBarrel } = require('../packages/contracts/scripts/sync-barrel.js');
+  const { syncServerRegistry } = require('../server/scripts/sync-registry.cjs');
+  syncContractsBarrel();
+  syncServerRegistry();
+
+  for (const file of createdFiles) {
+    console.log(`  \x1b[32m+\x1b[0m ${file}`);
+  }
+  console.log(
+    `\n\x1b[32mSuccess!\x1b[0m Parent container "${manifestId}" (${relPath}) scaffolded with zero edits to central tracked files (ADR-017).\n`
+  );
+  process.exit(0);
+}
 
 // ---------------------------------------------------------------------------
 // 1. Scaffold Shared Contracts (`packages/contracts/src/<path>/`)
@@ -469,7 +585,7 @@ router.get('/:id', requirePermission('${permScope}:read'), (req, res) =>
 
 router.post(
   '/',
-  requirePermission('${permScope}:manage'),
+  requirePermission('${permScope}:create'),
   validate(Create${leafPascal}InputSchema),
   (req, res) => ${leafCamel}Controller.create(req, res)
 );
@@ -485,7 +601,8 @@ export default router;
 import ${leafCamel}Routes from './routes/${leafCamel}.routes';
 
 /**
- * Self-registering backend manifest for ${leafPascal} (ADR-017).
+ * Self-registering backend manifest for ${leafPascal} (ADR-017 / BL-302).
+ * Enforces Least Privilege atomic CRUD capabilities and Deny-by-Default role grants.
  */
 export const moduleManifest: ServerModuleManifest = {
   id: '${manifestId}',${parentId ? `\n  parentId: '${parentId}',` : ''}
@@ -496,9 +613,14 @@ export const moduleManifest: ServerModuleManifest = {
     },
   ],
   permissions: {
-    admin: ['${permScope}:read', '${permScope}:manage'],
-    technician: ['${permScope}:read', '${permScope}:manage'],
-    client: ['${permScope}:read'],
+    admin: [
+      '${permScope}:read',
+      '${permScope}:create',
+      '${permScope}:update',
+      '${permScope}:delete',
+    ],
+    technician: ${techPermsLiteral},
+    client: ${clientPermsLiteral},
   },
 };
 `
@@ -591,7 +713,8 @@ export const ${leafCamel}Routes: AppRouteObject[] = [
     ),
     handle: {
       crumb: (t) => ({ label: t('nav.${leafCamel}'), to: '${fullUrlPath}' }),
-      allowedRoles: ['CLIENT', 'ADMIN', 'TECHNICIAN'],
+      allowedRoles: ${rolesLiteral},
+      requiredPermission: '${permScope}:read',
     },
   },
 ];
@@ -606,7 +729,7 @@ import type { FeatureManifest } from '@/routes/featureRegistry';
 import { ${leafCamel}Routes } from './routes';
 
 /**
- * Self-registering Feature Manifest for ${leafPascal} (ADR-017).
+ * Self-registering Feature Manifest for ${leafPascal} (ADR-017 / BL-302).
  */
 export const featureManifest: FeatureManifest = {
   id: '${manifestId}',${parentId ? `\n  parentId: '${parentId}',` : ''}
@@ -616,7 +739,8 @@ export const featureManifest: FeatureManifest = {
       to: '${fullUrlPath}',${parentTo ? `\n      parentTo: '${parentTo}',` : `\n      icon: Boxes,\n      group: '${navGroup}',`}
       labelKey: '${leafCamel}',
       order: ${navOrder},
-      roles: ['CLIENT', 'ADMIN'],
+      roles: ${rolesLiteral},
+      requiredPermission: '${permScope}:read',
     },
   ],
 };

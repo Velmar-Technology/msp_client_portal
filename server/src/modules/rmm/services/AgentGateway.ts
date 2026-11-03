@@ -6,7 +6,7 @@ import { metricsService } from '@shared/metrics/metricsService';
 import { TelemetryBufferService, telemetryBufferService } from './TelemetryBufferService';
 import { AgentClusterBroker, agentClusterBroker } from './AgentClusterBroker';
 import { EquipmentRepository, equipmentRepository } from '@modules/equipment';
-import { TicketQueryService, ticketQueryService } from '@modules/tickets';
+import { TicketQueryService, ticketQueryService } from '@modules/helpdesk';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

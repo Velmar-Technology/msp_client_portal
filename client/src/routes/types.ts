@@ -15,6 +15,12 @@ export interface AppRouteHandle {
    */
   allowedRoles?: string[];
   /**
+   * Dynamic RBAC permission capability (or array of alternative capabilities) required to access this route.
+   * Evaluated when `user.permissions` is present; falls back to `allowedRoles` otherwise.
+   * @see BL-302
+   */
+  requiredPermission?: string | string[];
+  /**
    * Subscription feature code required to view this route.
    */
   requiredFeature?: FeatureCode;

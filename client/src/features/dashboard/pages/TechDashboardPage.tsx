@@ -32,7 +32,7 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from "@/hooks/useAuth";
-import { ticketService, useSLATimer, type TicketItem as Ticket } from "@/features/tickets";
+import { ticketService, useSLATimer, type TicketItem as Ticket } from '@/features/helpdesk';
 import { userService } from "@/features/users";
 import { earningsService, type TechnicianEarning, type TechnicianEarningsSummary } from "@/features/financial";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';

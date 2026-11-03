@@ -1,0 +1,698 @@
+import { useState, useMemo, useCallback } from "react";
+import { Plus, Eye, MoreHorizontal, Ban, ChevronRight, List, LayoutGrid, CheckCheck, MessageSquare } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Page } from "@/components/Page";
+import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
+import type { ColumnDef, Column } from "@tanstack/react-table";
+import { useQueryClient } from "@tanstack/react-query";
+import { NAV_COUNTER_QUERY_KEYS } from "@/features/nav";
+import { useUrlState } from "@/hooks/useUrlState";
+import { useTicketsPage } from "../hooks/useTicketsPage";
+import type { TicketItem as Ticket, TicketResponseItem as TicketResponse } from "../api/ticketService";
+import { ticketService } from "../api/ticketService";
+import { useTranslation } from "react-i18next";
+import { NewTicketModal, TicketKanbanBoard } from "../components";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { priorityColor } from "@/constants/tickets";
+import { cn } from "@/lib/utils";
+import { useTicketReadStore } from "@/store/useTicketReadStore";
+
+// 1. Decoupled Hover Card Title Sub-component with Read/Unread Indicator
+export function TicketTitleWithHoverCard({ ticket, userId }: { ticket: Ticket; userId?: string }) {
+  const { t } = useTranslation();
+  const [lastResponse, setLastResponse] = useState<TicketResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const isRead = useTicketReadStore((state) => state.isTicketRead(ticket.id, userId));
+  const markAsRead = useTicketReadStore((state) => state.markAsRead);
+
+  const handleOpenChange = async (open: boolean) => {
+    if (open) {
+      markAsRead(ticket.id, userId);
+      if (!hasLoaded && !loading) {
+        setLoading(true);
+        try {
+          const responses = await ticketService.getResponses(ticket.id);
+          if (responses.length > 0) {
+            const sorted = [...responses].sort(
+              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+            );
+            setLastResponse(sorted[0]);
+          }
+          setHasLoaded(true);
+        } catch (err) {
+          console.error("Failed to load last response", err);
+        } finally {
+          setLoading(false);
+        }
+      }
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-1.5 min-w-0">
+      {!isRead && (
+        <span
+          className="h-1.5 w-1.5 rounded-full bg-primary shrink-0 inline-block animate-pulse"
+          title={t("tickets.unread", "Unread")}
+          aria-label={t("tickets.unread", "Unread")}
+        />
+      )}
+      <HoverCard onOpenChange={handleOpenChange}>
+        <HoverCardTrigger asChild>
+          <span
+            className={cn(
+              "text-xs truncate max-w-xs block cursor-pointer hover:underline",
+              isRead ? "font-normal text-muted-foreground hover:text-foreground" : "font-semibold text-foreground"
+            )}
+          >
+            {ticket.title}
+          </span>
+        </HoverCardTrigger>
+        <HoverCardContent className="w-72 bg-card border border-border p-3 shadow-md rounded-md">
+          <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
+            <h4 className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
+              {t("ticketDetail.responsesTitle") || "Last Response"}
+            </h4>
+            {loading ? (
+              <div className="flex justify-center py-2">
+                <div className="w-3.5 h-3.5 border-2 border-border border-t-primary rounded-full animate-spin" />
+              </div>
+            ) : lastResponse ? (
+              <div className="space-y-1">
+                <div className="flex justify-between items-center text-[9px] text-muted-foreground font-medium">
+                  <span className="truncate max-w-37.5">
+                    {lastResponse.user_name} ({lastResponse.user_role})
+                  </span>
+                  <span>{new Date(lastResponse.created_at).toLocaleDateString()}</span>
+                </div>
+                <ScrollArea className="h-16 bg-muted/40 p-1.5 rounded border border-border">
+                  <p className="text-[10px] leading-relaxed text-foreground text-left font-normal whitespace-pre-wrap">
+                    {lastResponse.message}
+                  </p>
+                </ScrollArea>
+              </div>
+            ) : (
+              <p className="text-[10px] text-muted-foreground italic">
+                {t("ticketDetail.noResponses") || "No responses yet."}
+              </p>
+            )}
+          </div>
+        </HoverCardContent>
+      </HoverCard>
+    </div>
+  );
+}
+
+// 2. Main Tickets Page Component
+export function TicketsPage() {
+  const {
+    t,
+    user,
+    tickets,
+    loading,
+    total,
+    page,
+    totalPages,
+    limit,
+    setPage,
+    handleLimitChange,
+    sorting,
+    handleSortingChange,
+    searchQuery,
+    setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    categoryFilter,
+    setCategoryFilter,
+    priorityFilter,
+    setPriorityFilter,
+    dateRangeFilter,
+    setDateRangeFilter,
+    showNewTicket,
+    setShowNewTicket,
+    ticketToCancel,
+    setTicketToCancel,
+    showBulkCancelAlert,
+    setShowBulkCancelAlert,
+    alertWarningMessage,
+    setAlertWarningMessage,
+    navigate,
+    canCreateTicket,
+    handleBulkCancelClick,
+    confirmCancelIndividual,
+    confirmBulkCancel,
+    handleTicketCreated,
+    handleTicketAction,
+    setSelectedTickets,
+    handleMarkAllAsRead,
+  } = useTicketsPage();
+
+  const { getParam, setParam } = useUrlState();
+  const viewParam = getParam("view", "list") as "list" | "kanban";
+  const [viewMode, setViewMode] = useState<"list" | "kanban">(viewParam === "kanban" ? "kanban" : "list");
+
+  const handleViewChange = useCallback(
+    (mode: "list" | "kanban") => {
+      setViewMode(mode);
+      setParam("view", mode === "list" ? null : mode);
+    },
+    [setParam],
+  );
+
+  const rawMarkTicketAsRead = useTicketReadStore((state) => state.markAsRead);
+  const isTicketReadInStore = useTicketReadStore((state) => state.isTicketRead);
+  const queryClient = useQueryClient();
+
+  const markTicketAsRead = useCallback(
+    (ticketId: string, userId?: string) => {
+      const alreadyRead = isTicketReadInStore(ticketId, userId);
+      rawMarkTicketAsRead(ticketId, userId);
+
+      if (!alreadyRead) {
+        queryClient.setQueryData(
+          NAV_COUNTER_QUERY_KEYS.all,
+          (old: Record<string, { count: number; latestAt: string | null }> | undefined) => {
+            if (!old || !old.tickets || old.tickets.count <= 0) return old;
+            return {
+              ...old,
+              tickets: {
+                ...old.tickets,
+                count: Math.max(0, old.tickets.count - 1),
+              },
+            };
+          },
+        );
+      }
+    },
+    [rawMarkTicketAsRead, isTicketReadInStore, queryClient],
+  );
+
+  const columns = useMemo<ColumnDef<Ticket>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("tickets.colTitle")} />
+        ),
+        cell: ({ row }) => <TicketTitleWithHoverCard ticket={row.original} userId={user?.id} />,
+      },
+      ...(user?.role === "ADMIN" || user?.role === "TECHNICIAN"
+        ? [
+            {
+              accessorKey: "client_name",
+              header: ({ column }: { column: Column<Ticket, unknown> }) => (
+                <DataTableColumnHeader column={column} title={t("tickets.colClient")} />
+              ),
+              cell: ({ row }: { row: { original: Ticket } }) => (
+                <span className="text-xs font-medium text-foreground">{row.original.client_name || "-"}</span>
+              ),
+            },
+          ]
+        : []),
+      {
+        accessorKey: "category",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("tickets.colCategory")} />
+        ),
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">{t(`tickets.categories.${row.original.category}`)}</span>
+        ),
+      },
+      {
+        accessorKey: "priority",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("tickets.colPriority")} />
+        ),
+        cell: ({ row }) => (
+          <span className={`text-xs font-semibold ${priorityColor[row.original.priority] || "text-foreground"}`}>
+            {t(`tickets.priorities.${row.original.priority}`)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title={t("tickets.colStatus")} />
+        ),
+        cell: ({ row }) => {
+          const status = row.original.status;
+          const isResolved = status === "RESOLVED" || status === "RESOLVED_AUTOMATED";
+          const isPendingOrProgress = status === "IN_PROGRESS" || status === "AWAITING_PAYMENT";
+          const isCancelled = status === "CANCELLED";
+          const isOpen = status === "OPEN";
+
+          const badgeClasses = isResolved
+            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-500/20"
+            : isPendingOrProgress
+              ? "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-amber-500/20"
+              : isCancelled
+                ? "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400 border-red-500/20"
+                : isOpen
+                  ? "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border-blue-500/20"
+                  : "bg-muted text-muted-foreground border-border";
+
+          const dotClass = isResolved
+            ? "bg-emerald-500"
+            : isPendingOrProgress
+              ? "bg-amber-500"
+              : isCancelled
+                ? "bg-red-500"
+                : isOpen
+                  ? "bg-blue-500"
+                  : "bg-muted-foreground";
+
+          return (
+            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-medium border ${badgeClasses}`}>
+              <span className={`mr-1 h-1 w-1 rounded-full ${dotClass}`} />
+              {t(`tickets.statuses.${status}`)}
+            </span>
+          );
+        },
+      },
+      {
+        id: "actions",
+        header: () => (
+          <div className="text-right">
+            <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+              {t("tickets.colActions")}
+            </span>
+          </div>
+        ),
+        enableSorting: false,
+        cell: ({ row }) => {
+          const tItem = row.original;
+          const canCancel = tItem.status !== "CLOSED" && tItem.status !== "CANCELLED" && tItem.status !== "RESOLVED";
+
+          return (
+            <div className="flex items-center justify-end gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  markTicketAsRead(tItem.id, user?.id);
+                  navigate(`/helpdesk/tickets/${tItem.id}`);
+                }}
+                className="h-7 px-2 text-xs font-semibold gap-1 cursor-pointer"
+              >
+                <span>{t("tickets.viewDetails")}</span>
+                <ChevronRight className="h-3 w-3" />
+              </Button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                    className="h-7 w-7 cursor-pointer"
+                  >
+                    <MoreHorizontal className="h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 bg-card text-foreground border border-border">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      markTicketAsRead(tItem.id, user?.id);
+                      navigate(`/helpdesk/tickets/${tItem.id}`);
+                    }}
+                    className="text-xs cursor-pointer"
+                  >
+                    <Eye className="h-3.5 w-3.5 mr-1" />
+                    {t("tickets.viewDetails")}
+                  </DropdownMenuItem>
+                  {canCancel && (
+                    <>
+                      <DropdownMenuSeparator className="bg-border" />
+                      <DropdownMenuItem
+                        onClick={() => handleTicketAction("cancel", tItem)}
+                        className="text-xs text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+                      >
+                        <Ban className="h-3.5 w-3.5 mr-1 text-destructive" />
+                        {t("tickets.cancelTicket")}
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          );
+        },
+      },
+    ],
+    [t, user, navigate, handleTicketAction, markTicketAsRead],
+  );
+
+  const statusFilterOptions = useMemo(
+    () => [
+      { value: "OPEN", label: t("tickets.filterOpen") || "Open" },
+      { value: "IN_PROGRESS", label: t("tickets.filterInProgress") || "In Progress" },
+      { value: "RESOLVED", label: t("tickets.filterResolved") || "Resolved" },
+      { value: "CLOSED", label: t("tickets.filterClosed") || "Closed" },
+      { value: "CANCELLED", label: t("tickets.filterCancelled") || "Cancelled" },
+    ],
+    [t]
+  );
+
+  const priorityFilterOptions = useMemo(
+    () => [
+      { value: "LOW", label: t("tickets.priorities.LOW") || "Low" },
+      { value: "MEDIUM", label: t("tickets.priorities.MEDIUM") || "Medium" },
+      { value: "HIGH", label: t("tickets.priorities.HIGH") || "High" },
+      { value: "CRITICAL", label: t("tickets.priorities.CRITICAL") || "Critical" },
+    ],
+    [t]
+  );
+
+  const categoryFilterOptions = useMemo(
+    () => [
+      { value: "REPAIR", label: t("tickets.categories.REPAIR") || "Hardware Repair" },
+      { value: "WARRANTY", label: t("tickets.categories.WARRANTY") || "Warranty Replacement" },
+      { value: "SERVICE_OUTAGE", label: t("tickets.categories.SERVICE_OUTAGE") || "Service Outage" },
+      { value: "PREVENTATIVE_MAINTENANCE", label: t("tickets.categories.PREVENTATIVE_MAINTENANCE") || "Maintenance" },
+      { value: "HELPDESK", label: t("tickets.categories.HELPDESK") || "IT Helpdesk" },
+      { value: "AI", label: t("tickets.categories.AI") || "AI & Automation" },
+    ],
+    [t]
+  );
+
+  const dateRangeFilterOptions = useMemo(
+    () => [
+      { value: "today", label: t("tickets.filterToday") || "Today" },
+      { value: "7d", label: t("tickets.filterLast7Days") || "Last 7 Days" },
+      { value: "30d", label: t("tickets.filterLast30Days") || "Last 30 Days" },
+      { value: "month", label: t("tickets.filterThisMonth") || "This Month" },
+    ],
+    [t]
+  );
+
+  const hasActiveFilters = Boolean(
+    searchQuery.trim() ||
+    statusFilter ||
+    priorityFilter ||
+    categoryFilter ||
+    (dateRangeFilter && dateRangeFilter !== "all")
+  );
+
+  const handleClearAllFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("");
+    setPriorityFilter("");
+    setCategoryFilter("");
+    setDateRangeFilter("all");
+  };
+
+  return (
+    <Page
+      activeView={viewMode}
+      onViewChange={handleViewChange}
+      defaultView={viewMode}
+      availableViews={[
+        { value: "list", label: t("resources.viewList", "List"), icon: List, title: t("resources.viewList", "List") },
+        { value: "kanban", label: t("tickets.kanban", "Kanban"), icon: LayoutGrid, title: t("tickets.kanban", "Kanban") },
+      ]}
+      totalCount={total}
+      defaultPage={page}
+      defaultPageSize={limit}
+    >
+      <div className="flex flex-col gap-5">
+        {/* Header Row: Title & Subtitle + Primary Actions */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-1">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground font-heading">
+              {t("tickets.title")}
+            </h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {t("tickets.subtitle")}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {tickets.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleMarkAllAsRead}
+                className="h-8 px-3 rounded-xl text-xs font-semibold gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
+                title={t("tickets.markAllAsRead", "Mark all as read")}
+              >
+                <CheckCheck className="h-3.5 w-3.5" />
+                <span>{t("tickets.markAllAsRead", "Mark all as read")}</span>
+              </Button>
+            )}
+            {canCreateTicket && (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setShowNewTicket(true)}
+                className="h-8 px-3.5 rounded-xl text-xs font-semibold gap-1.5 cursor-pointer shadow-2xs"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>{t("tickets.newTicket")}</span>
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* ElevenLabs Wide Search Bar */}
+        <Page.SearchInput
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder={t("tickets.searchPlaceholder") || "Search tickets..."}
+        />
+
+        {/* ElevenLabs + Filter Pills Row with ViewSwitcher on the right */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Page.FilterPill
+              label={t("tickets.colStatus") || "Status"}
+              value={statusFilter}
+              options={statusFilterOptions}
+              onChange={setStatusFilter}
+              onClear={() => setStatusFilter("")}
+            />
+            <Page.FilterPill
+              label={t("tickets.colPriority") || "Priority"}
+              value={priorityFilter}
+              options={priorityFilterOptions}
+              onChange={setPriorityFilter}
+              onClear={() => setPriorityFilter("")}
+            />
+            <Page.FilterPill
+              label={t("tickets.colCategory") || "Category"}
+              value={categoryFilter}
+              options={categoryFilterOptions}
+              onChange={setCategoryFilter}
+              onClear={() => setCategoryFilter("")}
+            />
+            <Page.FilterPill
+              label={t("tickets.colDateRange") || "Date"}
+              value={dateRangeFilter === "all" ? "" : dateRangeFilter}
+              options={dateRangeFilterOptions}
+              onChange={setDateRangeFilter}
+              onClear={() => setDateRangeFilter("all")}
+            />
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={handleClearAllFilters}
+                className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                {t("tickets.clearFilters") || "Clear all"}
+              </Button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <Page.ViewSwitcher
+              value={viewMode}
+              onChange={handleViewChange}
+              size="sm"
+              options={[
+                { value: "list", label: t("resources.viewList", "List"), icon: List, title: t("resources.viewList", "List") },
+                { value: "kanban", label: t("tickets.kanban", "Kanban"), icon: LayoutGrid, title: t("tickets.kanban", "Kanban") },
+              ]}
+            />
+          </div>
+        </div>
+
+        {/* Content Area: Card Wrapped or Empty State */}
+        {!loading && tickets.length === 0 ? (
+          <Page.ContentCard>
+            <Page.EmptyState
+              icon={MessageSquare}
+              title={t("tickets.noTicketsFound") || "No tickets found"}
+              description={
+                hasActiveFilters
+                  ? (t("tickets.noTicketsFilteredDesc") || "No tickets match your active search and filter criteria.")
+                  : (t("tickets.noTicketsDesc") || "No tickets have been created yet.")
+              }
+              primaryAction={
+                canCreateTicket
+                  ? {
+                      label: t("tickets.newTicket") || "New Ticket",
+                      icon: Plus,
+                      onClick: () => setShowNewTicket(true),
+                    }
+                  : undefined
+              }
+              secondaryAction={
+                hasActiveFilters
+                  ? {
+                      label: t("tickets.clearFilters") || "Clear all filters",
+                      onClick: handleClearAllFilters,
+                    }
+                  : undefined
+              }
+            />
+          </Page.ContentCard>
+        ) : (
+          <>
+            <Page.View type="list">
+              <Page.ContentCard>
+                <DataTable
+                  columns={columns}
+                  data={tickets}
+                  loading={loading}
+                  noDataMessage={t("tickets.noTicketsFound")}
+                  onRowClick={(ticket) => {
+                    markTicketAsRead(ticket.id, user?.id);
+                    navigate(`/helpdesk/tickets/${ticket.id}`);
+                  }}
+                  sorting={sorting}
+                  onSortingChange={handleSortingChange}
+                  enableSorting
+                  manualSorting
+                  enableRowSelection
+                  onSelectedRowsChange={setSelectedTickets}
+                  bulkActions={[
+                    {
+                      label: t("tickets.bulkCancel"),
+                      onClick: handleBulkCancelClick,
+                      variant: "destructive",
+                    },
+                  ]}
+                  pagination={{
+                    page,
+                    totalPages,
+                    totalItems: total,
+                    limit,
+                    onPageChange: setPage,
+                    onLimitChange: handleLimitChange,
+                  }}
+                />
+              </Page.ContentCard>
+            </Page.View>
+
+            <Page.View type="kanban">
+              <TicketKanbanBoard
+                tickets={tickets}
+                loading={loading}
+                userId={user?.id}
+                onTicketClick={(ticket) => {
+                  markTicketAsRead(ticket.id, user?.id);
+                  navigate(`/helpdesk/tickets/${ticket.id}`);
+                }}
+              />
+            </Page.View>
+          </>
+        )}
+      </div>
+
+      {/* New Ticket Modal */}
+      {showNewTicket && <NewTicketModal onClose={() => setShowNewTicket(false)} onCreated={handleTicketCreated} />}
+
+      {/* Individual Cancel Alert */}
+      <AlertDialog open={!!ticketToCancel} onOpenChange={(open) => !open && setTicketToCancel(null)}>
+        <AlertDialogContent className="bg-card border border-border text-foreground max-w-sm rounded-lg p-5">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-sm font-bold font-heading">{t("tickets.cancelTicket")}</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
+              {t("tickets.confirmCancel")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 gap-2 flex justify-end">
+            <AlertDialogCancel className="h-7 px-3 rounded-md text-xs font-semibold cursor-pointer">
+              {t("tickets.modalCancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="h-7 px-3 rounded-md text-xs font-semibold cursor-pointer bg-destructive text-destructive-foreground hover:bg-destructive/90 border-0"
+              onClick={confirmCancelIndividual}
+            >
+              {t("tickets.cancelTicket")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Cancel Alert */}
+      <AlertDialog open={showBulkCancelAlert} onOpenChange={setShowBulkCancelAlert}>
+        <AlertDialogContent className="bg-card border border-border text-foreground max-w-sm rounded-lg p-5">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-sm font-bold font-heading">{t("tickets.bulkCancel")}</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
+              {t("tickets.confirmBulkCancel")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 gap-2 flex justify-end">
+            <AlertDialogCancel className="h-7 px-3 rounded-md text-xs font-semibold cursor-pointer">
+              {t("tickets.modalCancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="h-7 px-3 rounded-md text-xs font-semibold cursor-pointer bg-destructive text-destructive-foreground hover:bg-destructive/90 border-0"
+              onClick={confirmBulkCancel}
+            >
+              {t("tickets.bulkCancel")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Warning Info Alert */}
+      <AlertDialog open={!!alertWarningMessage} onOpenChange={(open) => !open && setAlertWarningMessage(null)}>
+        <AlertDialogContent className="bg-card border border-border text-foreground max-w-sm rounded-lg p-5">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-sm font-bold font-heading">
+              {t("dashboard.technicalSupport") || "Warning"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
+              {alertWarningMessage}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 flex justify-end">
+            <AlertDialogAction
+              className="h-7 px-3 rounded-md text-xs font-semibold cursor-pointer"
+              onClick={() => setAlertWarningMessage(null)}
+            >
+              {t("common.close") || "OK"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Page>
+  );
+}
+
+export default TicketsPage;

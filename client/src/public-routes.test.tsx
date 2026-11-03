@@ -35,7 +35,7 @@ vi.mock("@/features/subscriptions", () => ({
   },
 }));
 
-vi.mock("@/features/tickets", () => ({
+vi.mock('@/features/helpdesk', () => ({
   ticketService: {
     getAll: vi.fn().mockResolvedValue({ data: [] }),
   },

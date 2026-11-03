@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import { permissionService } from '@modules/auth';
+import { permissionService, matchesHierarchicalPermission } from '@modules/auth';
 import { UnauthorizedError, ForbiddenError } from '@shared/errors';
 
 /**
  * Capability-based Authorization middleware factory.
- * Verifies that the authenticated caller has ALL specified permission capabilities.
+ * Verifies that the authenticated caller has ALL specified permission capabilities
+ * (evaluated via `matchesHierarchicalPermission` under strict Least Privilege).
  *
  * @example
  * ```ts
@@ -12,10 +13,10 @@ import { UnauthorizedError, ForbiddenError } from '@shared/errors';
  * ```
  *
  * @param permissions - One or more required permission codes
- * @param service - Optional PermissionService injection for testing
  * @returns Express middleware function
  * @throws {UnauthorizedError} When req.user is absent
  * @throws {ForbiddenError} When user lacks one or more required permissions
+ * @see BL-302
  */
 export function requirePermission(
   ...permissions: string[]
@@ -32,11 +33,7 @@ export function requirePermission(
     // Save resolved permissions on request context
     req.user.permissions = userPerms;
 
-    if (userPerms.includes('*')) {
-      return next();
-    }
-
-    const missing = permissions.filter((p) => !userPerms.includes(p));
+    const missing = permissions.filter((p) => !matchesHierarchicalPermission(userPerms, p));
     if (missing.length > 0) {
       throw new ForbiddenError(
         `Access denied. Missing required capability: ${missing.join(', ')}`
@@ -49,7 +46,8 @@ export function requirePermission(
 
 /**
  * Capability-based Authorization middleware factory for ANY matching permission.
- * Verifies that the authenticated caller has AT LEAST ONE of the specified permission capabilities.
+ * Verifies that the authenticated caller has AT LEAST ONE of the specified permission capabilities
+ * (evaluated via `matchesHierarchicalPermission` under strict Least Privilege).
  *
  * @example
  * ```ts
@@ -60,6 +58,7 @@ export function requirePermission(
  * @returns Express middleware function
  * @throws {UnauthorizedError} When req.user is absent
  * @throws {ForbiddenError} When user lacks all of the specified permissions
+ * @see BL-302
  */
 export function requireAnyPermission(
   ...permissions: string[]
@@ -75,7 +74,7 @@ export function requireAnyPermission(
 
     req.user.permissions = userPerms;
 
-    if (userPerms.includes('*') || permissions.some((p) => userPerms.includes(p))) {
+    if (permissions.some((p) => matchesHierarchicalPermission(userPerms, p))) {
       return next();
     }
 

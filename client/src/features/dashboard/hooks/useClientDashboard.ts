@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ticketService } from "@/features/tickets";
+import { ticketService } from '@/features/helpdesk';
 import { subscriptionService } from "@/features/subscriptions";
 import type { Subscription } from "@/features/subscriptions";
 import { invoiceService, type Invoice } from "@/features/billing";

@@ -18,6 +18,7 @@ export const featureManifest: FeatureManifest = {
       group: 'operations',
       order: 25,
       roles: ['CLIENT', 'ADMIN'],
+      requiredPermission: 'assets:read',
       requiredFeature: FEATURE_CODES.ASSET_LIFECYCLE,
       featureGatedRoles: ['CLIENT'],
     },

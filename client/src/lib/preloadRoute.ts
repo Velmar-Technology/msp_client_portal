@@ -1,5 +1,5 @@
 import { queryClient } from "@/lib/queryClient";
-import { ticketQueryOptions } from "@/features/tickets";
+import { ticketQueryOptions } from "@/features/helpdesk";
 import { billingQueryOptions } from "@/features/billing";
 import { subscriptionQueryOptions } from "@/features/subscriptions";
 import { equipmentQueryOptions } from "@/features/equipment";
@@ -11,7 +11,7 @@ import { equipmentQueryOptions } from "@/features/equipment";
  * queryOptions from the feature gateways).
  */
 export const routeQueryPreloaders: Record<string, () => Promise<unknown>> = {
-  "/tickets": () => queryClient.prefetchQuery(ticketQueryOptions.list({})),
+  "/helpdesk/tickets": () => queryClient.prefetchQuery(ticketQueryOptions.list({})),
   "/billing": () => queryClient.prefetchQuery(billingQueryOptions.invoiceList({ page: 1, limit: 10 })),
   "/plans": () => queryClient.prefetchQuery(subscriptionQueryOptions.plans()),
   "/devices": () => queryClient.prefetchQuery(equipmentQueryOptions.myDevices()),

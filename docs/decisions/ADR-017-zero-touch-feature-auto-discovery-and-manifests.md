@@ -105,28 +105,41 @@ Feature translations live alongside the feature or sub-feature in `locales/en_US
 
 ---
 
-### 4. Backend Module Hierarchy & Hierarchical RBAC (`server/src/modules/**/`)
+### 4. Backend Module Hierarchy & Dynamic RBAC Least Privilege (`server/src/modules/**/`)
 
 Each backend module or sub-module colocates its Drizzle schema (`*.schema.ts`) and `ServerModuleManifest` (`manifest.ts`):
 
 ```typescript
-// server/src/modules/assets/manifest.ts
+// server/src/modules/helpdesk/tickets/manifest.ts
 export const moduleManifest: ServerModuleManifest = {
-  id: 'assets',
-  routes: [{ prefix: '/assets', router: assetRoutes }],
+  id: 'helpdesk.tickets',
+  parentId: 'helpdesk',
+  routes: [{ prefix: '/tickets', router: ticketRoutes }],
   permissions: {
-    admin: ['assets:read', 'assets:manage'],
-    technician: ['assets:read', 'assets:manage'],
-    client: ['assets:read'],
+    admin: [
+      'helpdesk:tickets:read',
+      'helpdesk:tickets:create',
+      'helpdesk:tickets:update',
+      'helpdesk:tickets:delete',
+      'helpdesk:tickets:manage',
+    ],
+    technician: [
+      'helpdesk:tickets:read',
+      'helpdesk:tickets:create',
+      'helpdesk:tickets:update',
+    ],
+    client: ['helpdesk:tickets:read', 'helpdesk:tickets:create'],
   },
 };
 ```
 
-* **Hierarchical Gateway Prefixing (`resolveModuleRouteMounts`):** Child modules declaring `parentId: 'assets'` automatically mount their routes under the parent's prefix (e.g., `prefix: '/consumables'` $\rightarrow$ `/assets/consumables`).
-* **Hierarchical RBAC Resolution (`matchesHierarchicalPermission` in `PermissionService.ts`):**
-  1. **Namespace Wildcards:** Holding `'assets:*'` or `'crm:leads:*'` grants any capability under that prefix.
-  2. **Action Dominance:** Within the same scope or from a parent scope to a child scope, `manage` $\supset$ `{write, create, update, delete, read}` and `write` $\supset$ `{create, update, read}`.
-  3. **Parent-to-Child Scope Inheritance:** Holding `'assets:manage'` automatically grants `'assets:consumables:manage'` and `'assets:consumables:read'`; holding `'assets:read'` automatically grants `'assets:consumables:read'` (without granting `'assets:consumables:manage'`).
+* **Hierarchical Gateway Prefixing (`resolveModuleRouteMounts`):** Child modules declaring `parentId: 'helpdesk'` automatically mount their routes under the parent's prefix (e.g., `prefix: '/tickets'` $\rightarrow$ `/helpdesk/tickets`).
+* **Dynamic RBAC & Principle of Least Privilege (`BL-302` / `ADR-014`):**
+  1. **Atomic CRUD Capabilities & Deny-by-Default Scaffolding:** Modules declare granular atomic capabilities (`<scope>:read`, `<scope>:create`, `<scope>:update`, `<scope>:delete`). `npm run gen:module` defaults to **Deny-by-Default** (`roles: ['ADMIN']`, `technician: []`, `client: []`) unless `--roles=CLIENT,TECHNICIAN,ADMIN` is explicitly passed.
+  2. **Explicit Sub-Module Scopes (No Implicit Parent Leakage):** In `matchesHierarchicalPermission` (`PermissionService.ts`) and `hasFrontendPermission` (`routeUtils.tsx`), a parent capability (`helpdesk:read` or `helpdesk:manage`) does **NOT** implicitly grant access to child sub-modules (`helpdesk:tickets:read`). Child sub-modules require their own explicit capability or an explicit namespace wildcard (`helpdesk:*`).
+  3. **Same-Scope Action Dominance:** Within the **exact same module scope**, `manage` $\supset$ `{write, create, update, delete, read}` and `write` $\supset$ `{create, update, read}` (e.g., `helpdesk:tickets:manage` satisfies `helpdesk:tickets:read` and `helpdesk:tickets:create`).
+  4. **Frontend Dual-Check Capability Gating (`RouteGuard` & `useSidebar`):** Frontend `FeatureNavEntry` and `AppRouteHandle` support `requiredPermission`. When `user.permissions` is populated from Dynamic DB RBAC, both `RouteGuard` and `mergeFeatureNavItems` enforce `hasFrontendPermission(user.permissions, requiredPermission)` (falling back to `allowedRoles` only when `user.permissions` is undefined).
+  5. **Idempotent DB Catalog Sync (`PermissionService.syncPermissionCatalog()`):** Auto-discovered `registeredModulePermissions` in `permissions.generated.ts` are merged and idempotently upserted (`ON CONFLICT (code) DO NOTHING`) into the PostgreSQL `permissions` table so newly scaffolded modules immediately appear in Dynamic RBAC and Role Mining (`BL-302`).
 
 ---
 

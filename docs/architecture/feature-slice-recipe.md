@@ -1,225 +1,198 @@
-# Canonical Feature Slice Recipe (Contract-First Monolith)
+# Canonical Feature Slice Recipe (Zero-Touch Contract-First Monolith)
 
-This document defines the standard, high-velocity engineering recipe for adding or refactoring features in the `msp_client_portal` repository. It is designed to prevent cross-layer drift, eliminate boilerplate, and stop reinventing the wheel.
-
----
-
-## The 4-Step Vertical Slice Workflow
-
-```
-[ Step 1: @shared/contracts ]
-        │  Define input/output Zod schemas once
-        ▼
-[ Step 2: Express Route & Service ]
-        │  Validate with contract schema, execute query in Service
-        ▼
-[ Step 3: TanStack Query Hook ]
-        │  useQuery / useMutation with cache invalidation
-        ▼
-[ Step 4: React UI Component ]
-           Consume typed data with zero manual loading/error boilerplate
-```
+This document defines the standard, high-velocity engineering recipe for adding or extending features in the `msp_client_portal` repository. Per [ADR-001](../decisions/ADR-001-contract-first-monolith-and-tanstack-query.md), [ADR-002](../decisions/ADR-002-frontend-colocated-feature-architecture.md), [ADR-003](../decisions/ADR-003-sota-react-router-data-mode-and-feature-manifests.md), and [ADR-017](../decisions/ADR-017-zero-touch-feature-auto-discovery-and-manifests.md), adding a new feature or nested child sub-feature requires **zero manual edits to central tracked files**.
 
 ---
 
-### Step 1: Define the Contract in `@shared/contracts`
+## Quick Start: One-Command Full-Stack Scaffolding
 
-Always start by defining input and response schemas in `packages/contracts/src/<module>/<module>.contract.ts`.
+Run `npm run gen:module` from the workspace root to scaffold the entire vertical slice across `packages/contracts`, `server`, and `client` (including unit tests, Drizzle schema, RBAC permissions, routes, sidebar nav items, and bilingual `en_US`/`es_DO` locales):
+
+```bash
+# 1. Scaffold a top-level full-stack feature (contracts + server + client + tests)
+npm run gen:module warranties
+
+# 2. Scaffold a hierarchical child sub-feature under an existing parent ('assets')
+npm run gen:module -- assets/warranties
+
+# 3. Optional flags
+npm run gen:module -- assets/warranties --with-repo
+npm run gen:module -- reports --client-only --group=management --order=45
+npm run gen:module -- webhooks --server-only
+```
+
+---
+
+## The 4-Layer Zero-Touch Vertical Slice Anatomy
+
+```
+[ Layer 1: packages/contracts/src/<path>/<name>.contract.ts ]
+        │  Auto-discovered by sync-barrel.js -> @shared/contracts
+        ▼
+[ Layer 2: server/src/modules/<path>/ (<name>.schema.ts + manifest.ts) ]
+        │  Auto-discovered by sync-registry.cjs -> Drizzle DB + API Gateway + RBAC
+        ▼
+[ Layer 3: client/src/features/<path>/locales/{en_US,es_DO}.json ]
+        │  Auto-discovered by import.meta.glob in i18n.ts
+        ▼
+[ Layer 4: client/src/features/<path>/manifest.ts ]
+           Auto-discovered by featureRegistry.ts -> AppRouter + Sidebar
+```
+
+---
+
+### Step 1: Define the Contract (`packages/contracts/src/<path>/<name>.contract.ts`)
+
+Create your Zod input, update, filter, and response schemas in `packages/contracts/src/<domain>/<domain>.contract.ts` (or nested `packages/contracts/src/<parent>/<child>/<child>.contract.ts`):
 
 ```typescript
-// packages/contracts/src/devices/devices.contract.ts
+// packages/contracts/src/assets/assets.contract.ts
 import { z } from 'zod';
 
-export const RegisterDeviceInputSchema = z.object({
-  deviceName: z.string().min(3).max(100),
-  slotIndex: z.number().int().min(0),
-  macAddress: z.string().regex(/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/, 'Invalid MAC address'),
+export const CreateAssetInputSchema = z.object({
+  name: z.string().min(1).max(255),
+  asset_type: z.enum(['HARDWARE', 'SOFTWARE', 'NETWORK', 'PERIPHERAL']).default('HARDWARE'),
+  status: z.enum(['ACTIVE', 'MAINTENANCE', 'IN_STORAGE', 'DECOMMISSIONED']).default('ACTIVE'),
 });
 
-export type RegisterDeviceInput = z.infer<typeof RegisterDeviceInputSchema>;
-
-export const DeviceResponseSchema = z.object({
-  id: z.string().uuid(),
-  deviceName: z.string(),
-  status: z.enum(['ACTIVE', 'PENDING_ACTIVATION', 'DECOMMISSIONED']),
-  createdAt: z.string(),
-});
-
-export type DeviceContract = z.infer<typeof DeviceResponseSchema>;
+export type CreateAssetInput = z.infer<typeof CreateAssetInputSchema>;
 ```
 
-Export your contract in `packages/contracts/src/index.ts` and build packages:
+Build the contracts package (which automatically runs `scripts/sync-barrel.js` to update the git-ignored `contracts.generated.ts` barrel):
 ```bash
 npm run build:packages
 ```
+> **Note:** You **never** need to manually edit `packages/contracts/src/index.ts`.
 
 ---
 
-### Step 2: Server Route Validation & Pragmatic Service
+### Step 2: Colocate Backend Schema, Service, Routes & Manifest (`server/src/modules/<path>/`)
 
-Attach the shared Zod schema directly to your Express route with `validate()`:
+Every backend module encapsulates its Drizzle schema, service, controller, Express router, and self-registering manifest inside `server/src/modules/<path>/`:
+
+```
+server/src/modules/<domain>/
+├── <domain>.schema.ts          # Drizzle pgTable definitions (auto-merged into @shared/db)
+├── manifest.ts                 # ServerModuleManifest (Gateway route prefix + RBAC permissions)
+├── controllers/
+│   └── <Domain>Controller.ts   # Express 5 async HTTP handlers (no try/catch boilerplate)
+├── services/
+│   ├── <Domain>Service.ts      # Business logic & constructor-injected dependencies
+│   └── <Domain>Service.test.ts # Unit tests
+├── routes/
+│   └── <domain>.routes.ts      # Express router with requirePermission() & validate()
+└── index.ts                    # Public module gateway
+```
+
+#### 2.1 Colocated Drizzle Schema (`<domain>.schema.ts`)
+Define your tables in `server/src/modules/<path>/<name>.schema.ts`. Both `@shared/db` and `drizzle.config.ts` automatically discover `*.schema.ts` files across all modules—do **not** edit `server/src/shared/db/schema.ts`.
+
+#### 2.2 Self-Registering Backend Manifest (`manifest.ts`)
+Export `moduleManifest` from `server/src/modules/<path>/manifest.ts`:
 
 ```typescript
-// server/src/modules/devices/routes/device.routes.ts
-import { Router } from 'express';
-import { validate } from '@shared/middleware/validationMiddleware';
-import { RegisterDeviceInputSchema } from '@shared/contracts';
-import { deviceController } from '../controllers/DeviceController';
+// server/src/modules/assets/manifest.ts
+import type { ServerModuleManifest } from '@shared/registry/moduleManifest.types';
+import assetRoutes from './routes/asset.routes';
 
-const router = Router();
-
-router.post('/', validate(RegisterDeviceInputSchema), (req, res) => deviceController.register(req, res));
-
-export default router;
-```
-
-#### Pragmatic Service Guidelines: When do you need a Repository?
-* **Direct Drizzle in Domain Service (Preferred for 90% of features):** For straightforward inserts, updates, and relational lookups (`db.query.devices.findMany({ with: { user: true } })`), query Drizzle directly inside the Domain Service. Do not create an empty 1-line wrapper class.
-* **Dedicated Repository (Only when justified):** Use a custom repository only when you have complex raw SQL, window functions, recursive CTEs, or complex multi-table transactional batching.
-
----
-
-### Step 3: Frontend Colocated Feature Module (`client/src/features/<feature>/`)
-
-Per [ADR-002](../decisions/ADR-002-frontend-colocated-feature-architecture.md), colocate your query hooks, services, tables, dialogs, and route pages inside `client/src/features/<feature>/`.
-
-#### Automated Feature Scaffolding:
-You can instantly stamp out the canonical vertical slice anatomy using the built-in generator:
-```bash
-npm -w client run gen:feature <domain-name>
-# Example: npm -w client run gen:feature devices
-```
-
-This generates the compliant 7-part anatomy with zero manual boilerplate:
-```
-client/src/features/devices/
-├── api/
-│   ├── useDeviceQueries.ts    # TanStack Query hooks, query keys & mutations
-│   └── deviceService.ts       # Axios client service
-├── components/
-│   ├── DeviceTable.tsx        # Domain-specific data table
-│   └── DeviceModal.tsx        # Domain-specific form dialog
-├── hooks/
-│   ├── useDeviceFilters.ts    # URL sync (useUrlState / useSearchParams)
-│   └── useDeviceModals.ts     # Ephemeral modal open/close state
-├── pages/
-│   └── DevicesPage.tsx        # Top-level route component
-├── types.ts                   # ONLY local ephemeral UI state types (no duplicate entity types!)
-└── index.ts                   # Public API gateway (exports ONLY public pages, components, & hooks)
-```
-
-#### The ADR-002 Invariant Rules Enforced by CI:
-1. **Single Contract Truth:** `types.ts` is strictly prohibited from declaring or duplicating backend entities or schemas (`*Input`, `*Response`, `*Contract`, `*Payload`, `*Filter`, `*DTO`). Import directly from `@shared/contracts`.
-2. **Public Gateway Invariant:** Cross-feature imports must target the feature root (`@/features/<domain>`). Deep imports into feature internals (`@/features/<domain>/components/...` or relative cross-feature paths) are blocked by ESLint and `npm -w client run test:arch`.
-3. **Query Invalidation Invariant:** Mutations must invalidate their domain query keys on success to eliminate manual state synchronizations.
-
-#### Query Hook Implementation (`features/devices/api/useDeviceQueries.ts`):
-```typescript
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { deviceService } from './deviceService';
-import type { RegisterDeviceInput } from '@shared/contracts';
-
-export const DEVICE_QUERY_KEYS = {
-  all: ['devices'] as const,
-  lists: () => [...DEVICE_QUERY_KEYS.all, 'list'] as const,
-  detail: (id: string) => [...DEVICE_QUERY_KEYS.all, 'detail', id] as const,
-};
-
-export function useDevices() {
-  return useQuery({
-    queryKey: DEVICE_QUERY_KEYS.lists(),
-    queryFn: () => deviceService.getAll(),
-  });
-}
-
-export function useRegisterDevice() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: RegisterDeviceInput) => deviceService.register(data),
-    onSuccess: () => {
-      // Automatically invalidates cache; UI updates without manual re-fetch loops
-      queryClient.invalidateQueries({ queryKey: DEVICE_QUERY_KEYS.lists() });
-    },
-  });
-}
-```
-
----
-
-### Step 4: React UI Component & Route Page
-
-In your component, consume the query hook directly. Form mutations validate using `zodResolver` with schemas imported straight from `@shared/contracts`:
-
-```tsx
-// client/src/features/devices/pages/DevicesPage.tsx
-import { useDevices, useRegisterDevice } from '../api/useDevices';
-import { DeviceTable } from '../components/DeviceTable';
-import { TablePageSkeleton } from '@/components/shared/TablePageSkeleton';
-import type { RegisterDeviceInput } from '@shared/contracts';
-
-export function DevicesPage() {
-  const { data: devices, isLoading, error } = useDevices();
-  const registerDevice = useRegisterDevice();
-
-  if (isLoading) return <TablePageSkeleton />;
-  if (error) return <ErrorMessage message={error.message} />;
-
-  const handleCreate = async (formData: RegisterDeviceInput) => {
-    await registerDevice.mutateAsync(formData);
-    // Table is already fresh! Zero manual state tracking required.
-  };
-
-  return <DeviceTable data={devices} onCreate={handleCreate} />;
-}
-```
-
----
-
-### Step 5: Colocate Feature Route Manifest (`routes.tsx`) per ADR-003
-
-Every feature defines its route tree in `client/src/features/<feature>/routes.tsx` wired with TanStack Query loaders (`createPrefetchLoader` / `createEnsureDataLoader`) and metadata handles:
-
-```tsx
-// client/src/features/devices/routes.tsx
-import type { RouteObject } from 'react-router-dom';
-import { lazyWithRetry } from '@/lib/lazyWithRetry';
-import { RouteSuspenseWrapper, TablePageSkeleton } from '@/components/skeletons';
-import { createPrefetchLoader } from '@/routes/routeUtils';
-import { deviceQueryOptions } from './api/useDevices';
-
-const DevicesPage = lazyWithRetry(() =>
-  import('./pages/DevicesPage').then((m) => ({ default: m.DevicesPage }))
-);
-
-export const deviceRoutes: RouteObject[] = [
-  {
-    path: '/devices',
-    element: (
-      <RouteSuspenseWrapper fallback={<TablePageSkeleton />}>
-        <DevicesPage />
-      </RouteSuspenseWrapper>
-    ),
-    loader: createPrefetchLoader(() => deviceQueryOptions.list()),
-    handle: {
-      crumb: (t) => ({ label: t('nav.devices'), to: '/devices' }),
-      allowedRoles: ['CLIENT', 'ADMIN', 'TECHNICIAN'],
-    },
+export const moduleManifest: ServerModuleManifest = {
+  id: 'assets',
+  // Optional for child sub-modules:
+  // parentId: 'assets', // Prefixes routes under parent (e.g. '/consumables' -> '/assets/consumables')
+  routes: [
+    { prefix: '/assets', router: assetRoutes },
+  ],
+  permissions: {
+    admin: ['assets:read', 'assets:manage'],
+    technician: ['assets:read', 'assets:manage'],
+    client: ['assets:read'],
   },
-];
+};
 ```
 
-Re-export `deviceRoutes` in `client/src/features/devices/index.ts` and attach to `client/src/routes/appRouter.tsx`.
+> **Hierarchical RBAC Inheritance:** `PermissionService` automatically cascades parent permissions to child scopes:
+> - Namespace wildcards (`assets:*`) grant any child capability (`assets:consumables:manage`).
+> - Action dominance (`manage` $\supset$ `write` $\supset$ `read`) cascades from parent to child: holding `assets:manage` automatically grants `assets:consumables:manage` and `assets:consumables:read`; holding `assets:read` automatically grants `assets:consumables:read`.
 
 ---
 
-## Summary of Golden Rules
-1. **Never write manual response types in frontend:** Import entity contracts directly from `@shared/contracts`.
-2. **Never duplicate Zod schemas:** Define once in `@shared/contracts` and consume in both Express route validators and React Hook Form `zodResolver`.
-3. **Colocate feature files (`client/src/features/<feature>/`):** Keep api hooks, tables, modals, routes, and pages together for a given business domain.
-4. **Colocate Route Manifests (ADR-003):** Every domain exports a `routes.tsx` manifest and re-exports it from `index.ts`.
-5. **Keep Zustand for client UI only:** Modals, drawers, and theme preferences live in Zustand. Server cache data lives in TanStack Query.
-6. **URL is the single source of truth for navigation:** Filters, pagination, tabs, and drawer inspection IDs sync via `useUrlState`.
-7. **Avoid 1-line pass-through repositories:** Keep domain logic and straightforward queries together in domain services.
-8. **Verify boundaries mechanically:** Run `npm -w client run test:arch` and `npm -w client run lint` to assert zero deep imports and zero contract drift.
+### Step 3: Colocate Frontend Feature, Locales & Manifest (`client/src/features/<path>/`)
 
+Every frontend feature (or nested child sub-feature) lives in `client/src/features/<path>/`:
+
+```
+client/src/features/<domain>/
+├── locales/
+│   ├── en_US.json              # English strings + { "nav": { "<domain>": "..." } }
+│   └── es_DO.json              # Spanish strings + { "nav": { "<domain>": "..." } }
+├── api/
+│   ├── use<Domain>Queries.ts   # TanStack Query hooks, query keys & mutations
+│   └── <domain>Service.ts      # Axios client service
+├── components/
+│   ├── <Domain>Table.tsx       # Domain-specific data table
+│   └── <Domain>Modal.tsx       # Domain-specific form dialog
+├── hooks/
+│   ├── use<Domain>Filters.ts   # URL sync (useUrlState / useSearchParams)
+│   └── use<Domain>Modals.ts    # Ephemeral modal open/close state
+├── pages/
+│   ├── <Domain>Page.tsx        # Top-level route component
+│   └── <Domain>Page.test.tsx   # Component unit tests
+├── routes.tsx                  # AppRouteObject[] definitions
+├── manifest.ts                 # Self-registering FeatureManifest (routes + sidebar navItems)
+├── types.ts                    # ONLY local ephemeral UI state types
+└── index.ts                    # Public API gateway
+```
+
+#### 3.1 Self-Registering Frontend Manifest (`manifest.ts`)
+Export `featureManifest` from `client/src/features/<path>/manifest.ts`. Vite's `import.meta.glob` in `client/src/routes/featureRegistry.ts` automatically registers its routes in `appRouter.tsx` and merges its `navItems` into `useSidebar.ts`:
+
+```typescript
+// Top-level feature: client/src/features/assets/manifest.ts
+import { Boxes } from 'lucide-react';
+import { FEATURE_CODES } from '@/constants/subscriptions';
+import type { FeatureManifest } from '@/routes/featureRegistry';
+import { assetsRoutes } from './routes';
+
+export const featureManifest: FeatureManifest = {
+  id: 'assets',
+  routes: assetsRoutes,
+  navItems: [
+    {
+      to: '/assets',
+      icon: Boxes,
+      labelKey: 'assets',
+      group: 'operations', // 'management' | 'operations' | 'account'
+      order: 25,           // Numeric position within the sidebar group
+      roles: ['CLIENT', 'ADMIN'],
+      requiredFeature: FEATURE_CODES.ASSET_LIFECYCLE,
+      featureGatedRoles: ['CLIENT'],
+    },
+  ],
+};
+```
+
+#### 3.2 Hierarchical Sub-Features (`parentId` & `parentTo`)
+To create a child sub-feature (e.g., `client/src/features/assets/warranties/manifest.ts`):
+- Set `parentId: 'assets'` on `FeatureManifest` to automatically prefix relative route paths (`/assets/warranties`) and chain parent breadcrumbs (`Home > Assets > Warranties`). Set `mountInsideParentOutlet: true` if the child route should render inside the parent component's `<Outlet />`.
+- Set `parentTo: '/assets'` (or `'/settings-group'`, `'/account-group'`) on `navItems` to inject the link as a collapsible sub-item under the parent sidebar entry sorted by `order`.
+
+---
+
+## Verification Checklist (Definition of Done)
+
+```bash
+# 1. Verify 100% en_US / es_DO locale parity and zero unmapped t("...") keys
+npm -w client run i18n:check
+
+# 2. Verify ADR-002 / ADR-017 architectural boundaries
+npm -w client run test:arch
+
+# 3. Build packages, backend, and frontend
+npm run build:packages
+npm -w server run build
+npm -w client run build
+
+# 4. Run unit test suites
+npm -w server run test
+npm -w client run test:run
+```

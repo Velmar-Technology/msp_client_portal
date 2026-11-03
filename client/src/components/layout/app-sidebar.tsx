@@ -586,7 +586,7 @@ export function AppSidebar() {
 
   useEffect(() => {
     const secondaryPreloaders = [
-      routePreloaders["/tickets"],
+      routePreloaders["/helpdesk/tickets"],
       routePreloaders["/devices"],
       routePreloaders["/plans"],
       routePreloaders["/billing"],
@@ -659,15 +659,15 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={checkIsActive("/help")}
+                  isActive={checkIsActive("/helpdesk/kb")}
                   tooltip={t("nav.help")}
                   className={navItemButtonClass}
                 >
                   <NavLink
-                    to="/help"
+                    to="/helpdesk/kb"
                     className="flex items-center gap-2.5"
-                    onMouseEnter={() => preloadRoute("/help")}
-                    onFocus={() => preloadRoute("/help")}
+                    onMouseEnter={() => preloadRoute("/helpdesk/kb")}
+                    onFocus={() => preloadRoute("/helpdesk/kb")}
                   >
                     <HelpCircle width={32} height={32} viewBox="0 0 24 24" className="shrink-0" strokeWidth={1.5} />
                     <span className="truncate group-data-[collapsible=icon]:hidden">{t("nav.help")}</span>

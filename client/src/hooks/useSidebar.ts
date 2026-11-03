@@ -3,7 +3,6 @@ import { useLocation } from "react-router-dom";
 import i18n from "i18next";
 import {
   LayoutDashboard,
-  Ticket,
   User,
   Users,
   Shield,
@@ -49,7 +48,6 @@ const baseClientNavItems: NavItem[] = [
   { to: "/password-manager", icon: KeyRound, labelKey: "passwordManager", requiredFeature: FEATURE_CODES.PASSWORD_MANAGER, order: 40 },
   { to: "/settings/ai", icon: Sparkles, labelKey: "cafAiSettings", requiredFeature: FEATURE_CODES.CAF_EDUCATION_AGENT, order: 50 },
   { to: "/maintenance", icon: Calendar, labelKey: "maintenance", requiredFeature: FEATURE_CODES.RMM_PATCH_MANAGEMENT, counterKey: "maintenance", order: 60 },
-  { to: "/tickets", icon: Ticket, labelKey: "myTickets", counterKey: "tickets", order: 70 },
   {
     to: "/account-group",
     icon: User,
@@ -68,7 +66,6 @@ const baseClientNavItems: NavItem[] = [
 const baseTechNavItems: NavItem[] = [
   { to: "/tech/dashboard", icon: LayoutDashboard, labelKey: "dashboard", groupLabelKey: "sidebar.groups.operations", order: 10 },
   { to: "/maintenance", icon: Calendar, labelKey: "maintenance", counterKey: "maintenance", order: 60 },
-  { to: "/tickets", icon: Ticket, labelKey: "myTickets", counterKey: "tickets", order: 70 },
   {
     to: "/account-group",
     icon: User,
@@ -93,7 +90,6 @@ const baseAdminNavItems: NavItem[] = [
   { to: "/password-manager", icon: KeyRound, labelKey: "passwordManager", order: 40 },
   { to: "/settings/ai", icon: Sparkles, labelKey: "cafAiSettings", order: 50 },
   { to: "/maintenance", icon: Calendar, labelKey: "maintenance", counterKey: "maintenance", order: 60 },
-  { to: "/tickets", icon: Ticket, labelKey: "allTickets", counterKey: "tickets", order: 70 },
   {
     to: "/settings-group",
     icon: Settings,
@@ -177,6 +173,15 @@ export function useSidebar() {
 
   const navItems = useMemo(() => {
     if (!user || isPublicLegalPage) return [];
+    if (Array.isArray(user.permissions)) {
+      if (user.role === "ADMIN") {
+        return mergeFeatureNavItems(baseAdminNavItems, "ADMIN", undefined, user.permissions);
+      }
+      if (user.role === "TECHNICIAN") {
+        return mergeFeatureNavItems(baseTechNavItems, "TECHNICIAN", undefined, user.permissions);
+      }
+      return mergeFeatureNavItems(baseClientNavItems, "CLIENT", undefined, user.permissions);
+    }
     if (user.role === "ADMIN") return adminNavItems;
     if (user.role === "TECHNICIAN") return techNavItems;
     return clientNavItems;

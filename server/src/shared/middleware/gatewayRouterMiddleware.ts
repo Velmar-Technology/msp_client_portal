@@ -2,7 +2,6 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { invoiceRoutes, expenseRoutes } from '@modules/billing';
 import { subscriptionRoutes, planRoutes } from '@modules/subscriptions';
 import { equipmentRoutes } from '@modules/equipment';
-import { ticketRoutes } from '@modules/tickets';
 import { authRoutes, userRoutes, authzRoutes, tenantRoutes } from '@modules/auth';
 import { rmmRoutes, alertRoutes, maintenanceRoutes } from '@modules/rmm';
 import { systemRoutes } from '@modules/system';
@@ -31,7 +30,6 @@ gatewayClusterRouter.use('/workspaces/equipment', equipmentRoutes);
 
 // 3. Directly mapped standard domain routes
 gatewayClusterRouter.use('/auth', authRoutes);
-gatewayClusterRouter.use('/tickets', ticketRoutes);
 gatewayClusterRouter.use('/users', userRoutes);
 gatewayClusterRouter.use('/tenants', tenantRoutes);
 gatewayClusterRouter.use('/subscriptions', subscriptionRoutes);

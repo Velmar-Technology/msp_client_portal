@@ -17,9 +17,6 @@ const PasswordManagerPage = lazyWithRetry(() =>
 const ByokSettingsPage = lazyWithRetry(() =>
   import("./pages/ByokSettingsPage").then((m) => ({ default: m.ByokSettingsPage }))
 );
-const HelpPage = lazyWithRetry(() =>
-  import("@/routes/_app/help").then((m) => ({ default: m.HelpPage || m.default }))
-);
 
 /**
  * Settings & Preferences Domain Route Manifest (ADR-002 / ADR-003)
@@ -77,17 +74,6 @@ export const settingsRoutes: AppRouteObject[] = [
       crumb: (t) => ({ label: t("nav.cafAiSettings", { defaultValue: "IA & Calidad CAF" }), to: "/settings/ai" }),
       allowedRoles: ["CLIENT", "ADMIN"],
       requiredFeature: FEATURE_CODES.CAF_EDUCATION_AGENT,
-    },
-  },
-  {
-    path: "/help",
-    element: (
-      <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
-        <HelpPage />
-      </RouteSuspenseWrapper>
-    ),
-    handle: {
-      crumb: (t) => ({ label: t("nav.help"), to: "/help" }),
     },
   },
 ];

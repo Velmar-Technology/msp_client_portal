@@ -9,7 +9,8 @@ import {
   index,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import { tenants, users, subscriptionEquipment, tickets } from '@shared/db/schema';
+import { tenants, users, subscriptionEquipment } from '@shared/db/schema';
+import { tickets } from '@modules/helpdesk/tickets/tickets.schema';
 
 // ---- IT Assets ----
 export const assets = pgTable(

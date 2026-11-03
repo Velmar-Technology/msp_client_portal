@@ -454,7 +454,7 @@ export function TopNav() {
           <Button
             variant="outline"
             size="xs"
-            onClick={() => navigate("/help")}
+            onClick={() => navigate("/helpdesk/kb")}
             className="h-7 rounded-full px-3 text-xs font-normal border-border/70 hover:bg-muted/60 text-foreground cursor-pointer shadow-2xs"
           >
             {t("topNav.docs")}

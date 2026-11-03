@@ -11,7 +11,7 @@ import {
   rmmAlerts,
   leads,
   leadActivities,
-} from '@shared/db/schema';
+} from '@shared/db';
 import { and, gte, lte, eq, desc } from 'drizzle-orm';
 import {
   ActionSequence,
