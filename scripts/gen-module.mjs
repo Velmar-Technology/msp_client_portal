@@ -23,6 +23,7 @@ if (!rawPath) {
   console.log('  npm run gen:module warranties');
   console.log('  npm run gen:module assets/warranties');
   console.log('  npm run gen:module assets/warranties --with-repo');
+  console.log('  npm run gen:module assets/warranties --with-migration');
   console.log('  npm run gen:module reports --client-only\n');
   process.exit(1);
 }
@@ -30,6 +31,7 @@ if (!rawPath) {
 const clientOnly = flags.has('--client-only');
 const serverOnly = flags.has('--server-only');
 const withRepo = flags.has('--with-repo');
+const withMigration = flags.has('--with-migration');
 const isContainer = flags.has('--container') || flags.has('--is-group');
 
 const groupArg = args.find((a) => a.startsWith('--group='));
@@ -638,6 +640,59 @@ export { default as ${leafCamel}Routes } from './routes/${leafCamel}.routes';
 export { moduleManifest } from './manifest';
 `
   );
+
+  // Optional Migration (--with-migration)
+  if (withMigration) {
+    const migrationsDir = path.join(ROOT_DIR, 'server', 'src', 'shared', 'db', 'migrations');
+    let nextNum = 1;
+    if (fs.existsSync(migrationsDir)) {
+      const existingFiles = fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql'));
+      let maxNum = 0;
+      for (const f of existingFiles) {
+        const match = f.match(/^(\d{3})_/);
+        if (match) {
+          const parsed = parseInt(match[1], 10);
+          if (parsed > maxNum) maxNum = parsed;
+        }
+      }
+      nextNum = maxNum + 1;
+    }
+    const prefix = String(nextNum).padStart(3, '0');
+    const migrationFileName = `${prefix}_create_${tableSnake}_table.sql`;
+    const migrationFilePath = path.join(migrationsDir, migrationFileName);
+
+    writeGeneratedFile(
+      migrationFilePath,
+      `-- Migration ${prefix}: Create ${tableSnake} table with multi-tenant RLS (ADR-017 / BL-302)
+
+CREATE TABLE IF NOT EXISTS ${tableSnake} (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_${tableSnake}_tenant ON ${tableSnake}(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_${tableSnake}_status ON ${tableSnake}(status);
+
+-- Enable fail-closed Row-Level Security (RLS) according to BL-302 standards
+ALTER TABLE ${tableSnake} ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ${tableSnake} FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS tenant_isolation_policy ON ${tableSnake};
+CREATE POLICY tenant_isolation_policy ON ${tableSnake} FOR ALL USING (
+    current_setting('app.is_system_admin', true) = 'true' OR
+    tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
+) WITH CHECK (
+    current_setting('app.is_system_admin', true) = 'true' OR
+    tenant_id = NULLIF(current_setting('app.current_tenant_id', true), '')::uuid
+);
+`
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------

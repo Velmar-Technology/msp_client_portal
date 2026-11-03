@@ -140,7 +140,10 @@ helpdesk:tickets:delete,helpdesk,Delete support tickets,ADMIN
 helpdesk:tickets:manage,helpdesk,Full management of helpdesk tickets,ADMIN
 ```
 
-* **Compile-Time Parsing (`sync-registry.cjs`):** `parseSecurityCsv` reads every `server/src/modules/**/security.csv` and emits `registeredSecurityRules` and `registeredModulePermissions` into `server/src/shared/registry/permissions.generated.ts`.
+* **Compile-Time Parsing & Type Emission (`sync-registry.cjs`):** `parseSecurityCsv` reads every `server/src/modules/**/security.csv` and emits:
+  1. `server/src/shared/registry/permissions.generated.ts` containing `registeredSecurityRules`, `registeredModulePermissions`, and `ALL_SYSTEM_PERMISSION_CODES`.
+  2. `packages/contracts/src/auth/permissions.generated.ts` exporting `SystemPermissionCode` union types and `packages/contracts/src/auth/permissions.contract.ts` exporting `PermissionRequirement`.
+  3. This ensures express middleware (`requirePermission(...)`) and client manifests (`requiredPermission: '...'`) have 100% compile-time autocomplete and typo protection.
 * **Idempotent PostgreSQL Synchronization (`PermissionService.syncPermissionCatalog()`):**
   1. Upserts all `(code, module, description)` rows into `permissions` (`ON CONFLICT (code) DO NOTHING`).
   2. Calls `PermissionRepository.seedRolePermissions` to ensure default system roles exist and inserts `(role_id, permission_id)` into `role_permissions` (`ON CONFLICT DO NOTHING` so custom Admin edits in PostgreSQL are never overwritten).
@@ -149,6 +152,34 @@ helpdesk:tickets:manage,helpdesk,Full management of helpdesk tickets,ADMIN
 1. **Atomic CRUD Capabilities & Deny-by-Default Scaffolding:** `npm run gen:module <path>` automatically scaffolds `server/src/modules/<path>/security.csv` with atomic `:read`, `:create`, `:update`, `:delete` rows and defaults to **Deny-by-Default** (`ADMIN` only unless `--roles=CLIENT,TECHNICIAN,ADMIN` is explicitly passed). Passing `--container` (`--is-group`) scaffolds a pure parent container without dummy DB tables or CRUD routes.
 2. **Explicit Sub-Module Scopes (No Implicit Parent Leakage):** In `matchesHierarchicalPermission` (`PermissionService.ts`) and `hasFrontendPermission` (`routeUtils.tsx`), a parent capability (`helpdesk:read` or `helpdesk:manage`) does **NOT** implicitly grant access to child sub-modules (`helpdesk:tickets:read`). Child sub-modules require their own explicit capability or an explicit namespace wildcard (`helpdesk:*`).
 3. **Same-Scope Action Dominance:** Within the **exact same module scope**, `manage` $\supset$ `{write, create, update, delete, read}` and `write` $\supset$ `{create, update, read}` (e.g., `helpdesk:tickets:manage` satisfies `helpdesk:tickets:read` and `helpdesk:tickets:create`).
+
+---
+
+### 5. Database Migration & Schema Evolution Playbook
+
+#### A. Generating Migrations for New Features (`--with-migration`)
+When scaffolding new domains or tables:
+1. Run `npm run gen:module <path> --with-migration`.
+2. The CLI inspects `server/src/shared/db/migrations/` for existing `(\d{3})_*.sql` files, determines the next sequential index (e.g. `052`), and creates `server/src/shared/db/migrations/${nextNum}_create_${table}_table.sql`.
+3. The generated SQL migration includes:
+   - DDL creating the table with UUID primary key and `tenant_id` foreign key referencing `tenants(id) ON DELETE CASCADE`.
+   - Indexing on `tenant_id` and `status`.
+   - Fail-closed PostgreSQL Row-Level Security (`ENABLE ROW LEVEL SECURITY; FORCE ROW LEVEL SECURITY;`) and tenancy isolation policy (`BL-302`).
+4. Execute `npm -w server run db:migrate` to apply the migration.
+5. In Git workflows, committing migration files in `server/src/shared/db/migrations/` is protected by `scripts/check-protected-paths.mjs` and requires `ALLOW_PROTECTED_CHANGES=1` when intentional.
+
+#### B. Colocated Drizzle Schemas & Cyclic Dependency Prevention
+* Every domain schema resides in `server/src/modules/<domain>/<name>.schema.ts` and is automatically re-exported in `server/src/shared/db/schemas.generated.ts`.
+* **Zero Gateway Cycle Invariant:** Pure `*.schema.ts` files must **never** import from module root index gateways (`@modules/<domain>`), as doing so loads controllers and services that require `@shared/db`, creating an uninstantiated class circular deadlock. Cross-module Drizzle foreign keys must import peer schema files directly (e.g., `import { tickets } from '@modules/helpdesk/tickets/tickets.schema'`).
+
+#### C. Legacy Schema Decoupling Protocol
+To migrate tables from the monolithic `server/src/shared/db/schema.ts` into modular ADR-017 directories:
+1. **Never rename existing tables or modify existing SQL migration files.**
+2. Move table declarations from `server/src/shared/db/schema.ts` into `server/src/modules/<domain>/<domain>.schema.ts`.
+3. Retain core identity and foundation tables (`tenants`, `users`, `roles`, `permissions`, `user_roles`) in `schema.ts`.
+4. Run `npm run sync` (`node server/scripts/sync-registry.cjs`) to update `schemas.generated.ts`.
+5. Since `server/src/shared/db/index.ts` re-exports both base schema and `schemas.generated.ts`, legacy imports (`import { leads } from '@shared/db'`) remain 100% backward-compatible.
+6. Extract permission strings into `server/src/modules/<domain>/security.csv` and register module endpoints in `manifest.ts`.
 
 ---
 

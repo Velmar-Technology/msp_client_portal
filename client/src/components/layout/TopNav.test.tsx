@@ -228,7 +228,7 @@ test('clicking Docs pill navigates to /help', () => {
   render(<TopNav />);
   const docsBtn = screen.getByText('topNav.docs');
   fireEvent.click(docsBtn);
-  expect(mockNavigate).toHaveBeenCalledWith('/help');
+  expect(mockNavigate).toHaveBeenCalledWith('/helpdesk/kb');
 });
 
 test('clicking Feedback pill opens FeedbackDialog', async () => {

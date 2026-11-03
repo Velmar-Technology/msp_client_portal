@@ -8,6 +8,13 @@ vi.mock('@modules/auth', () => ({
   permissionService: {
     getUserPermissions: vi.fn(),
   },
+  matchesHierarchicalPermission: vi.fn((granted: string[], required: string) => {
+    for (const g of granted) {
+      if (g === '*' || g === required) return true;
+      if (g.endsWith(':*') && required.startsWith(g.slice(0, -1))) return true;
+    }
+    return false;
+  }),
 }));
 
 describe('requirePermission & requireAnyPermission middlewares', () => {

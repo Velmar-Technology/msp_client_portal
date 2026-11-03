@@ -98,7 +98,7 @@ export class ConsumableService {
     isOut: boolean
   ): Promise<void> {
     try {
-      const tenantUsers = await this.userRepo.findByTenantId(tenantId);
+      const tenantUsers = await this.userRepo.findAllWithFilters({});
       const targetStaff = tenantUsers.filter(
         (u) => u.role === 'ADMIN' || u.role === 'TECHNICIAN'
       );
@@ -118,7 +118,6 @@ export class ConsumableService {
           type: 'SYSTEM',
           title,
           message,
-          read: false,
         });
       }
 
@@ -210,7 +209,7 @@ export class ConsumableService {
       total_quantity: initialQty,
       min_quantity: minQty,
       location: input.location ?? null,
-      purchase_cost: input.purchaseCost ? String(input.purchaseCost) : null,
+      purchase_cost: input.purchaseCost ? Number(input.purchaseCost) : null,
       alert_state: alertState,
     };
 
@@ -246,7 +245,7 @@ export class ConsumableService {
     if (input.minQuantity !== undefined) updatePayload.min_quantity = input.minQuantity;
     if (input.location !== undefined) updatePayload.location = input.location;
     if (input.purchaseCost !== undefined) {
-      updatePayload.purchase_cost = input.purchaseCost ? String(input.purchaseCost) : null;
+      updatePayload.purchase_cost = input.purchaseCost ? Number(input.purchaseCost) : null;
     }
 
     await this.repo.update(id, tenantId, updatePayload);
@@ -380,7 +379,7 @@ export class ConsumableService {
       alert_state: newAlertState,
     };
     if (input.unitCost !== undefined && input.unitCost !== null) {
-      updatePayload.purchase_cost = String(input.unitCost);
+      updatePayload.purchase_cost = Number(input.unitCost);
     }
 
     await this.repo.update(id, tenantId, updatePayload);

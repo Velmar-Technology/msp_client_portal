@@ -7,7 +7,7 @@ import {
   AssetContract,
   AssetListResponse,
 } from '@shared/contracts';
-import { Asset, NewAsset } from '@shared/db';
+import { NewAsset } from '@shared/db';
 
 /**
  * Domain service managing IT asset inventory, lifecycle transitions, and client hardware mappings.

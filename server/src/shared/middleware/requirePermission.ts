@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import type { PermissionRequirement } from '@shared/contracts';
 import { permissionService, matchesHierarchicalPermission } from '@modules/auth';
 import { UnauthorizedError, ForbiddenError } from '@shared/errors';
 
@@ -19,7 +20,7 @@ import { UnauthorizedError, ForbiddenError } from '@shared/errors';
  * @see BL-302
  */
 export function requirePermission(
-  ...permissions: Array<string | string[]>
+  ...permissions: Array<PermissionRequirement | PermissionRequirement[]>
 ) {
   const flatPermissions = permissions.flat();
   return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
@@ -62,7 +63,7 @@ export function requirePermission(
  * @see BL-302
  */
 export function requireAnyPermission(
-  ...permissions: Array<string | string[]>
+  ...permissions: Array<PermissionRequirement | PermissionRequirement[]>
 ) {
   const flatPermissions = permissions.flat();
   return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {

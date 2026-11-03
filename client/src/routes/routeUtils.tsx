@@ -7,6 +7,7 @@ import {
   type LoaderFunctionArgs,
 } from "react-router-dom";
 import type { FetchQueryOptions } from "@tanstack/react-query";
+import type { PermissionRequirement } from "@shared/contracts";
 import { useAuth } from "@/hooks/useAuth";
 import { RouteSuspenseWrapper, ContentPageSkeleton } from "@/components/skeletons";
 import { FeatureRouteGuard } from "@/components/shared/FeatureRouteGuard";
@@ -57,7 +58,7 @@ const FRONTEND_IMPLIED_ACTIONS: Record<string, ReadonlySet<string>> = {
  */
 export function hasFrontendPermission(
   userPermissions: string[] | undefined,
-  requiredPermission?: string | string[]
+  requiredPermission?: PermissionRequirement | PermissionRequirement[]
 ): boolean {
   if (!requiredPermission) return true;
   if (!userPermissions) return true;
@@ -116,7 +117,7 @@ export function RouteLoadingSpinner() {
 export interface RouteGuardProps {
   children: React.ReactNode;
   allowedRoles?: string[];
-  requiredPermission?: string | string[];
+  requiredPermission?: PermissionRequirement | PermissionRequirement[];
   requiredFeature?: FeatureCode;
 }
 

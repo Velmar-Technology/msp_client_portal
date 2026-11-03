@@ -7,7 +7,7 @@ import { ZabbixService, zabbixService } from '@modules/rmm/services/ZabbixServic
 import { AgentGateway, agentGateway } from '@modules/rmm/services/AgentGateway';
 import { PatchCorrelationService, patchCorrelationService } from '@modules/rmm/services/PatchCorrelationService';
 import { NotFoundError, ForbiddenError } from '@shared/errors';
-import { RmmPatchItem, RmmDeviceTelemetry, RmmOverviewStats, RmmPatchStatus, RmmPatchSeverity } from '@shared/types';
+import { RmmPatchItem, RmmDeviceTelemetry, RmmOverviewStats, RmmPatchStatus } from '@shared/types';
 import { logger } from '@shared/utils/logger';
 
 /**

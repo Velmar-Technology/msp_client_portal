@@ -11,6 +11,8 @@ const translations: Record<string, string> = {
   "nav.account": "Account",
   "nav.allTickets": "All Tickets",
   "nav.myTickets": "My Tickets",
+  "nav.helpdesk": "Helpdesk",
+  "nav.kb": "Help Center",
   "nav.devices": "Devices",
   "nav.resources": "Resources",
   "nav.maintenance": "Maintenance",
@@ -30,7 +32,12 @@ const translations: Record<string, string> = {
   "footer.privacy": "Privacy",
 };
 
-const t = (key: string) => translations[key] ?? key;
+const t = (key: string, options?: Record<string, unknown>) => {
+  if (key === "ticketDetail.ticketId" && options?.id) {
+    return `Ticket ID #${String(options.id).slice(0, 8)}`;
+  }
+  return translations[key] ?? key;
+};
 const user = { role: "CLIENT" } as const;
 
 describe("resolvePageName", () => {
@@ -38,16 +45,16 @@ describe("resolvePageName", () => {
     expect(resolvePageName("/devices", t, user)).toBe("Devices");
     expect(resolvePageName("/resources", t, user)).toBe("Resources");
     expect(resolvePageName("/maintenance", t, user)).toBe("Maintenance");
-    expect(resolvePageName("/help", t, user)).toBe("Help Center");
+    expect(resolvePageName("/helpdesk/kb", t, user)).toBe("Help Center");
   });
 
-  it("resolves role-conditional ticket list labels", () => {
-    expect(resolvePageName("/tickets", t, { role: "ADMIN" })).toBe("All Tickets");
-    expect(resolvePageName("/tickets", t, { role: "CLIENT" })).toBe("My Tickets");
+  it("resolves role-conditional ticket list labels under ADR-017 helpdesk hierarchy", () => {
+    expect(resolvePageName("/helpdesk/tickets", t, { role: "ADMIN" })).toBe("All Tickets");
+    expect(resolvePageName("/helpdesk/tickets", t, { role: "CLIENT" })).toBe("My Tickets");
   });
 
   it("resolves dynamic detail routes to their leaf crumb", () => {
-    const pageName = resolvePageName("/tickets/abcdef1234567890", t, user);
+    const pageName = resolvePageName("/helpdesk/tickets/abcdef1234567890", t, user);
     expect(pageName).toBe("Ticket ID #abcdef12");
   });
 
@@ -79,6 +86,6 @@ describe("resolvePageName", () => {
   });
 
   it("falls back to the default branch when user is null", () => {
-    expect(resolvePageName("/tickets", t, null)).toBe("My Tickets");
+    expect(resolvePageName("/helpdesk/tickets", t, null)).toBe("My Tickets");
   });
 });

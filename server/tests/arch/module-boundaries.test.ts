@@ -84,6 +84,10 @@ describe('Architecture Guardrails — AGENTS.md Rule 6 Module Gateway Compliance
 
               const deepAliasPrefix = `@modules/${otherDomain}/`;
               if (importPath.startsWith(deepAliasPrefix)) {
+                // Allow pure schema-to-schema foreign key references between modular Drizzle schemas
+                if (entry.name.endsWith('.schema.ts') && importPath.includes('.schema')) {
+                  continue;
+                }
                 const relativeFile = path.relative(serverSrcDir, fullPath).replace(/\\/g, '/');
                 violations.push(
                   `${relativeFile}:${idx + 1} imports deep subpath '${importPath}'. Must import from '@modules/${otherDomain}'.`

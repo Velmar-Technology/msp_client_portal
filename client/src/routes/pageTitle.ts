@@ -1,5 +1,6 @@
 import { matchPath } from "react-router-dom";
 import { routeCrumbs, type CrumbResolver } from "@/components/layout/routeCrumbs";
+import { getDiscoveredFeatureRoutes } from "@/routes/featureRegistry";
 
 /**
  * i18next-compatible translating function signature.
@@ -24,8 +25,8 @@ const PAGE_TITLE_OVERRIDES: Array<{ path: string; title: CrumbResolver }> = [
 
 /**
  * Resolves the current page name for a pathname by reusing the breadcrumb
- * resolvers (`routeCrumbs`) so the browser tab stays consistent with the
- * visible breadcrumb UI, with overrides for routes breadcrumbs don't cover.
+ * resolvers (`routeCrumbs`) and discovered feature routes so the browser tab stays
+ * consistent with the visible breadcrumb UI, with overrides for routes breadcrumbs don't cover.
  *
  * @param pathname - Current `location.pathname` to resolve a title for.
  * @param t - i18next translate function used by crumb resolvers.
@@ -50,5 +51,24 @@ export function resolvePageName(pathname: string, t: TranslateFn, user: TitleUse
     return override;
   }
 
-  return resolve(routeCrumbs.map(({ path, crumb }) => ({ path, title: crumb })));
+  const staticMatch = resolve(routeCrumbs.map(({ path, crumb }) => ({ path, title: crumb })));
+  if (staticMatch) {
+    return staticMatch;
+  }
+
+  // Auto-discovered ADR-017 hierarchical feature routes
+  try {
+    const discovered = getDiscoveredFeatureRoutes();
+    for (const r of discovered) {
+      if (!r.path || !r.handle?.crumb) continue;
+      const match = matchPath({ path: r.path, end: true }, pathname);
+      if (match) {
+        const crumbs = r.handle.crumb(t, match.params, user);
+        const leaf = Array.isArray(crumbs) ? crumbs[crumbs.length - 1] : crumbs;
+        return leaf?.label ?? null;
+      }
+    }
+  } catch {}
+
+  return null;
 }

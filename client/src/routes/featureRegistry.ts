@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import type { NavKey } from '@shared/contracts';
+import type { NavKey, PermissionRequirement } from '@shared/contracts';
 import type { CrumbResolver } from '@/components/layout/routeCrumbs';
 import { hasFrontendPermission } from './routeUtils';
 import type { AppRouteObject } from './types';
@@ -12,7 +12,7 @@ export interface FeatureNavSubItem {
   labelKey: string;
   counterKey?: NavKey;
   order?: number;
-  requiredPermission?: string | string[];
+  requiredPermission?: PermissionRequirement | PermissionRequirement[];
 }
 
 export interface FeatureNavEntry {
@@ -29,7 +29,7 @@ export interface FeatureNavEntry {
   /** Optional fallback roles when `user.permissions` is not hydrated; superseded by `requiredPermission` under Dynamic RBAC (`BL-302`) */
   roles?: SidebarRole[];
   /** Dynamic RBAC capability (or array of alternative capabilities) required to display this item (`BL-302`) */
-  requiredPermission?: string | string[];
+  requiredPermission?: PermissionRequirement | PermissionRequirement[];
   /** Optional subscription feature code required for entitlement gating */
   requiredFeature?: string;
   /** Roles for which `requiredFeature` gating applies in the sidebar (defaults to ['CLIENT']) */
