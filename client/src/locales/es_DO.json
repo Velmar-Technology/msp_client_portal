@@ -74,7 +74,8 @@
     "upgradeBadge": "Mejorar",
     "counters": {
       "ariaLabel": "{{count}} elementos nuevos"
-    }
+    },
+    "assets": "Activos"
   },
   "spotlight": {
     "trigger": "Buscar",
@@ -868,7 +869,10 @@
     "processName": "Proceso",
     "recentSystemErrors": "Errores Recientes del Sistema",
     "hideRawTelemetry": "Ocultar JSON Crudo",
-    "showRawTelemetry": "Mostrar JSON Crudo"
+    "showRawTelemetry": "Mostrar JSON Crudo",
+    "priorityDesc": "Nivel de urgencia según SLA",
+    "categoryDesc": "Clasificación de dominio del problema",
+    "assignedSpecialistDesc": "Técnico asignado a este requerimiento"
   },
   "techDashboard": {
     "subtitle": "Gestione sus tickets asignados, controle los SLA y actualice los estados de los tickets.",
@@ -2435,5 +2439,140 @@
     "syncActive": "Sincronización en tiempo real activa",
     "syncReconnecting": "Intentando reconexión en vivo",
     "syncOffline": "Sincronización en tiempo real desconectada"
+  },
+  "assets": {
+    "title": "Inventario de Activos",
+    "description": "Monitorea y gestiona hardware, equipos de red y licencias de software.",
+    "newAsset": "Nuevo Activo",
+    "searchPlaceholder": "Buscar por nombre, modelo, serie...",
+    "statusFilter": "Estado",
+    "metrics": {
+      "total": "Total de Activos",
+      "active": "Activos y Desplegados",
+      "maintenance": "En Mantenimiento"
+    },
+    "tabs": {
+      "all": "Todos",
+      "hardware": "Hardware",
+      "network": "Redes",
+      "software": "Software",
+      "peripheral": "Periféricos",
+      "itAssets": "Equipos TI",
+      "consumables": "Consumibles y Suministros"
+    },
+    "status": {
+      "all": "Todos los Estados",
+      "active": "Activo",
+      "maintenance": "Mantenimiento",
+      "inStorage": "En Almacén",
+      "decommissioned": "Desincorporado"
+    },
+    "headers": {
+      "name": "Activo",
+      "type": "Tipo",
+      "status": "Estado",
+      "makeModel": "Marca / Modelo",
+      "serial": "Número de Serie",
+      "assigned": "Asignado A"
+    },
+    "empty": {
+      "title": "No se encontraron activos de TI",
+      "description": "Comienza registrando equipos de hardware, software o dispositivos de red."
+    },
+    "modal": {
+      "createTitle": "Registrar Nuevo Activo de TI",
+      "editTitle": "Editar Activo de TI"
+    },
+    "fields": {
+      "name": "Nombre del Activo",
+      "type": "Tipo",
+      "status": "Estado",
+      "manufacturer": "Fabricante",
+      "model": "Modelo",
+      "serialNumber": "Serie / Etiqueta",
+      "notes": "Notas y Procedimientos"
+    },
+    "placeholders": {
+      "name": "ej., Router Principal, Laptop Desarrollo",
+      "notes": "Detalles opcionales de despliegue o ubicación"
+    },
+    "messages": {
+      "createSuccess": "Activo registrado exitosamente",
+      "updateSuccess": "Activo actualizado exitosamente",
+      "deleteSuccess": "Activo eliminado exitosamente",
+      "deleteError": "Error al eliminar activo",
+      "error": "Error al guardar activo. Por favor intenta de nuevo."
+    },
+    "deleteConfirm": {
+      "title": "¿Eliminar Activo?",
+      "description": "Esto eliminará {{name}} del inventario activo. Los enlaces con dispositivos quedarán desvinculados."
+    },
+    "consumables": {
+      "newConsumable": "Agregar Consumible",
+      "kpiTotal": "Total de Consumibles",
+      "kpiLowStock": "Alertas de Stock Bajo",
+      "kpiOutOfStock": "Agotados",
+      "searchPlaceholder": "Buscar consumibles por nombre, categoría, SKU...",
+      "emptyList": "No se encontraron consumibles registrados.",
+      "outOfStock": "Agotado",
+      "lowStock": "Stock Bajo",
+      "inStock": "En Stock",
+      "afterCheckout": "Después de Despacho:",
+      "currentStock": "Stock Actual:",
+      "newStock": "Nuevo Nivel de Stock:",
+      "colItem": "Artículo / Nombre",
+      "colCategory": "Categoría",
+      "colStock": "Nivel de Stock",
+      "colStatus": "Estado",
+      "colLocation": "Ubicación",
+      "colCost": "Costo Unitario",
+      "checkoutBtn": "Despachar",
+      "restockBtn": "Reabastecer",
+      "viewHistory": "Historial de Despachos",
+      "createTitle": "Agregar Consumible o Suministro",
+      "editTitle": "Editar Consumible",
+      "nameLabel": "Nombre del Artículo *",
+      "categoryLabel": "Categoría *",
+      "selectCategory": "Seleccionar Categoría",
+      "manufacturerLabel": "Fabricante",
+      "modelLabel": "Número de Modelo",
+      "skuLabel": "SKU / Nro. de Artículo",
+      "quantityLabel": "Cantidad en Stock *",
+      "minQuantityLabel": "Umbral Mínimo de Alerta *",
+      "locationLabel": "Ubicación de Almacén",
+      "costLabel": "Costo Unitario ($)",
+      "addButton": "Agregar Artículo",
+      "checkoutTitle": "Despachar Consumible",
+      "notesLabel": "Notas / Destinatario",
+      "checkoutNotesPlaceholder": "ej. Entregado a Contabilidad para impresora HP",
+      "insufficientStock": "No se puede despachar más del stock disponible",
+      "checkoutConfirm": "Confirmar Despacho",
+      "checkoutSuccess": "Se despacharon {{count}} unidades exitosamente",
+      "checkoutError": "Error al despachar consumible",
+      "restockTitle": "Reabastecer Consumible",
+      "quantityToAdd": "Cantidad a Agregar *",
+      "poLabel": "Orden de Compra / Factura #",
+      "restockNotesPlaceholder": "ej. Recibido de suplidor lote #44",
+      "confirmRestock": "Confirmar Reabastecimiento",
+      "restockSuccess": "Se reabastecieron {{count}} unidades. Total actual: {{total}}",
+      "restockError": "Error al reabastecer consumible",
+      "historyTitle": "Historial de Despachos",
+      "noHistory": "No hay despachos registrados para este artículo.",
+      "deleteConfirmTitle": "¿Eliminar Artículo Consumible?",
+      "deleteConfirmDesc": "Esto eliminará \"{{name}}\" del inventario activo. El historial de despachos se mantendrá.",
+      "createdSuccess": "Consumible registrado con éxito",
+      "updatedSuccess": "Consumible actualizado con éxito",
+      "deletedSuccess": "Consumible eliminado con éxito",
+      "actionError": "Error al procesar consumible",
+      "categories": {
+        "toner": "Tóner y Tinta",
+        "cables": "Cables y Adaptadores",
+        "peripherals": "Periféricos",
+        "batteries": "Baterías",
+        "paper": "Papel y Medios",
+        "tools": "Herramientas y Limpieza",
+        "other": "Otro"
+      }
+    }
   }
 }

@@ -11,6 +11,7 @@ import { ticketRoutes } from "@/features/tickets";
 import { billingRoutes } from "@/features/billing";
 import { subscriptionRoutes } from "@/features/subscriptions";
 import { equipmentRoutes } from "@/features/equipment";
+import { assetsRoutes } from "@/features/assets";
 import { rmmRoutes } from "@/features/rmm";
 import { crmRoutes } from "@/features/crm";
 import { financialRoutes } from "@/features/financial";
@@ -59,6 +60,7 @@ const protectedFeatureRoutes: RouteObject[] = applyGuards([
   ...billingRoutes,
   ...subscriptionRoutes,
   ...equipmentRoutes,
+  ...assetsRoutes,
   ...rmmRoutes,
   ...crmRoutes,
   ...financialRoutes,

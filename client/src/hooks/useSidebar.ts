@@ -16,6 +16,7 @@ import {
   Target,
   KeyRound,
   Sparkles,
+  Boxes,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -43,6 +44,7 @@ export interface NavItem {
 const clientNavItems: NavItem[] = [
   { to: "/dashboard", icon: LayoutDashboard, labelKey: "dashboard", groupLabelKey: "sidebar.groups.operations" },
   { to: "/devices", icon: Laptop, labelKey: "devices", requiredFeature: FEATURE_CODES.RMM_PATCH_MANAGEMENT, counterKey: "devices" },
+  { to: "/assets", icon: Boxes, labelKey: "assets", requiredFeature: FEATURE_CODES.ASSET_LIFECYCLE },
   { to: "/resources", icon: Download, labelKey: "resources", requiredFeature: FEATURE_CODES.CLOUD_STORAGE },
   { to: "/password-manager", icon: KeyRound, labelKey: "passwordManager", requiredFeature: FEATURE_CODES.PASSWORD_MANAGER },
   { to: "/settings/ai", icon: Sparkles, labelKey: "cafAiSettings", requiredFeature: FEATURE_CODES.CAF_EDUCATION_AGENT },
@@ -85,6 +87,7 @@ const adminNavItems: NavItem[] = [
   { to: "/admin/users", icon: Users, labelKey: "userManagement" },
   { to: "/admin/api-status", icon: Activity, labelKey: "apiStatus" },
   { to: "/devices", icon: Laptop, labelKey: "devices", groupLabelKey: "sidebar.groups.operations", counterKey: "devices" },
+  { to: "/assets", icon: Boxes, labelKey: "assets" },
   { to: "/resources", icon: Download, labelKey: "resources" },
   { to: "/password-manager", icon: KeyRound, labelKey: "passwordManager" },
   { to: "/settings/ai", icon: Sparkles, labelKey: "cafAiSettings" },

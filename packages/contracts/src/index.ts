@@ -6,3 +6,4 @@ export * from './billing/billing.contract';
 export * from './rmm';
 export * from './byok/byok.contract';
 export * from './nav/nav.contract';
+export * from './assets/assets.contract';

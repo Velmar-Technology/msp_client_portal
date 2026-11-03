@@ -9,6 +9,7 @@ import { systemRoutes } from '@modules/system';
 import { notificationRoutes, notificationPreferenceRoutes } from '@modules/notifications';
 import { crmRoutes } from '@modules/crm';
 import { navRoutes } from '@modules/nav';
+import { assetRoutes } from '@modules/assets';
 
 /**
  * Express router acting as the API Gateway Layer Cluster Dispatcher.
@@ -46,6 +47,8 @@ gatewayClusterRouter.use('/rmm', rmmRoutes);
 gatewayClusterRouter.use('/crm', crmRoutes);
 gatewayClusterRouter.use('/nav', navRoutes);
 gatewayClusterRouter.use('/authz', authzRoutes);
+gatewayClusterRouter.use('/assets', assetRoutes);
+
 
 /**
  * Middleware ensuring standard Gateway Header (`X-User-Id`, `X-Tenant-Id`) propagation on all cluster requests.
