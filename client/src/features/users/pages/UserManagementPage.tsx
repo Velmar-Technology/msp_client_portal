@@ -1,8 +1,4 @@
 import { Users } from "lucide-react";
-import { PageSearchInput } from "@/components/shared/PageSearchInput";
-import { PageFilterPill } from "@/components/shared/PageFilterPill";
-import { PageContentCard } from "@/components/shared/PageContentCard";
-import { PageEmptyState } from "@/components/shared/PageEmptyState";
 import { useState, useMemo } from "react";
 import { Page } from "@/components/Page";
 import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
@@ -372,7 +368,7 @@ export function UserManagementPage() {
         </div>
 
         {/* ElevenLabs Wide Search Input */}
-        <PageSearchInput
+        <Page.SearchInput
           value={searchQuery}
           onChange={handleSearchChange}
           placeholder={t("userManagement.searchPlaceholder") || "Search users by ID, name or email..."}
@@ -380,7 +376,7 @@ export function UserManagementPage() {
 
         {/* ElevenLabs + Filter Pills Row */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar flex-wrap">
-          <PageFilterPill
+          <Page.FilterPill
             label={t("userManagement.colRole") || "Role"}
             value={roleFilter}
             options={[
@@ -392,7 +388,7 @@ export function UserManagementPage() {
             onClear={() => handleRoleFilterChange("" as RoleFilter)}
           />
 
-          <PageFilterPill
+          <Page.FilterPill
             label={t("userManagement.colStatus") || "Status"}
             value={statusFilter === "all" ? "" : statusFilter}
             options={[
@@ -416,9 +412,9 @@ export function UserManagementPage() {
         </div>
 
         {/* ElevenLabs Unified Card Container: Empty State or DataTable */}
-        <PageContentCard>
+        <Page.ContentCard>
           {!loading && users.length === 0 ? (
-            <PageEmptyState
+            <Page.EmptyState
               icon={Users}
               title={t("userManagement.noUsersFound") || "No users found"}
               description={
@@ -450,7 +446,7 @@ export function UserManagementPage() {
               }}
             />
           )}
-        </PageContentCard>
+        </Page.ContentCard>
       </div>
 
       <AlertDialog open={bulkRoleModalOpen} onOpenChange={setBulkRoleModalOpen}>

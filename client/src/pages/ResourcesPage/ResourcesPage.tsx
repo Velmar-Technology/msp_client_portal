@@ -9,10 +9,7 @@ import { useResourcesPage } from "@/hooks/useResourcesPage";
 import type { ResourceItem } from "@/lib/resourceCatalog";
 import { RESOURCE_CATEGORY_ICONS as CATEGORY_ICONS } from "@/constants/resources";
 
-import { PageSearchInput } from "@/components/shared/PageSearchInput";
-import { PageFilterPill } from "@/components/shared/PageFilterPill";
-import { PageContentCard } from "@/components/shared/PageContentCard";
-import { PageEmptyState } from "@/components/shared/PageEmptyState";
+
 
 export type ResourceViewMode = "tiled" | "list";
 
@@ -162,7 +159,7 @@ export function ResourcesPage() {
         </div>
 
         {/* ElevenLabs Wide Search Bar */}
-        <PageSearchInput
+        <Page.SearchInput
           value={searchTerm}
           onChange={setSearchTerm}
           placeholder={t("resources.searchPlaceholder") || "Search resources..."}
@@ -170,7 +167,7 @@ export function ResourcesPage() {
 
         {/* ElevenLabs + Filter Pills Row */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar flex-wrap">
-          <PageFilterPill
+          <Page.FilterPill
             label={t("resources.filterByOs") || "OS"}
             value={selectedOs === "ALL" ? "" : selectedOs}
             options={osFilterOptions}
@@ -192,15 +189,15 @@ export function ResourcesPage() {
 
         {/* Populated Content or Empty State Card */}
         {!loading && filteredResources.length === 0 ? (
-          <PageContentCard>
-            <PageEmptyState
+          <Page.ContentCard>
+            <Page.EmptyState
               icon={FileText}
               title={t("resources.emptyTitle") || "No resources found"}
               description={t("resources.emptyDesc") || "No resources match your search or filter criteria."}
               actionLabel={hasActiveFilters ? (t("resources.clearFilters") || "Clear all filters") : undefined}
               onAction={hasActiveFilters ? handleClearAll : undefined}
             />
-          </PageContentCard>
+          </Page.ContentCard>
         ) : (
           <>
             {/* TILED (GRID) VIEW */}
