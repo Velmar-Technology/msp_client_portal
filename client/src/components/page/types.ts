@@ -230,9 +230,11 @@ export interface PageNotebookProps extends Omit<React.ComponentPropsWithoutRef<"
   defaultTab?: string;
   activeTab?: string;
   onTabChange?: (tab: string) => void;
+  /** Alias for onTabChange */
+  onChange?: (tab: string) => void;
   syncUrl?: boolean;
   paramKey?: string;
-  variant?: "default" | "line" | "pill";
+  variant?: "default" | "line" | "pill" | "bubble";
   tabs?: PageTabItem[];
   tabsListClassName?: string;
   children?: React.ReactNode;

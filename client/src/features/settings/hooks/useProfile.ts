@@ -7,14 +7,15 @@ import { useUrlState } from "@/hooks/useUrlState";
 
 export function useProfile() {
   const { t, i18n } = useTranslation();
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
   const { getParam, setParam } = useUrlState();
 
-  const activeTab = getParam("tab", "account");
+  const rawTab = getParam("tab", "profile");
+  const activeTab = rawTab === "account" ? "profile" : rawTab;
 
   const setActiveTab = useCallback(
     (tab: string) => {
-      setParam("tab", tab === "account" ? null : tab);
+      setParam("tab", tab === "profile" ? null : tab);
     },
     [setParam]
   );
@@ -95,6 +96,32 @@ export function useProfile() {
       setSaving(false);
     }
   }, [name, email, language, phoneNumber, rnc, t, i18n, updateUser]);
+
+  const updateSingleField = useCallback(
+    async (patch: { name?: string; email?: string; language?: string; phoneNumber?: string; rnc?: string }): Promise<boolean> => {
+      setSaving(true);
+      try {
+        await userService.updateProfile(patch);
+        updateUser(patch);
+        if (patch.language) {
+          await i18n.changeLanguage(patch.language);
+        }
+        if (patch.name !== undefined) setName(patch.name);
+        if (patch.email !== undefined) setEmail(patch.email);
+        if (patch.phoneNumber !== undefined) setPhoneNumber(patch.phoneNumber);
+        if (patch.rnc !== undefined) setRnc(patch.rnc);
+        if (patch.language !== undefined) setLanguage(patch.language);
+        toast.success(t("profile.success"));
+        return true;
+      } catch {
+        toast.error(t("profile.error"));
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [t, i18n, updateUser]
+  );
 
   const formatRelativeTime = useCallback((isoDate: string): string => {
     const now = Date.now();
@@ -268,6 +295,8 @@ return {
      handleAvatarChange,
      handlePasswordChange,
      handleSave,
+     updateSingleField,
+     logout,
      handleOpenGenerateDialog,
      handleCloseGenerateDialog,
      handleGenerateApiKey,

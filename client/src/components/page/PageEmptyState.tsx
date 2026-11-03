@@ -1,8 +1,14 @@
 import * as React from "react";
-import { Users, RotateCcw } from "lucide-react";
+import { Users, RotateCcw, ArrowLeftRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+export interface PageConnectedIcons {
+  from: LucideIcon | React.ComponentType<{ className?: string }>;
+  to: LucideIcon | React.ComponentType<{ className?: string }>;
+  label?: string;
+}
 
 export interface PageEmptyStateAction {
   /** Button label */
@@ -18,6 +24,8 @@ export interface PageEmptyStateAction {
 export interface PageEmptyStateProps {
   /** Center icon */
   icon?: React.ComponentType<{ className?: string }>;
+  /** Connected dual-icon integration flow (e.g. [ Box ] <--> [ Pause ]) */
+  connectedIcons?: PageConnectedIcons;
   /** Empty state heading */
   title: string;
   /** Empty state explanatory text */
@@ -44,6 +52,7 @@ export interface PageEmptyStateProps {
  */
 export function PageEmptyState({
   icon: Icon = Users,
+  connectedIcons,
   title,
   description,
   actionLabel,
@@ -71,9 +80,26 @@ export function PageEmptyState({
       data-testid="page-empty-state"
       data-slot="page-empty-state"
     >
-      <div className="size-11 rounded-2xl bg-muted/60 border border-border/70 flex items-center justify-center text-muted-foreground/80 mb-3 shadow-2xs">
-        <Icon className="size-5" />
-      </div>
+      {connectedIcons ? (
+        <div
+          className="flex items-center justify-center gap-3 mb-4"
+          data-testid="empty-state-connected-icons"
+        >
+          <div className="size-11 rounded-2xl bg-muted/60 border border-border/70 flex items-center justify-center text-muted-foreground/80 shadow-2xs">
+            <connectedIcons.from className="size-5" />
+          </div>
+          <div className="flex items-center text-muted-foreground/60">
+            <ArrowLeftRight className="size-4" />
+          </div>
+          <div className="size-11 rounded-2xl bg-muted/60 border border-border/70 flex items-center justify-center text-muted-foreground/80 shadow-2xs">
+            <connectedIcons.to className="size-5" />
+          </div>
+        </div>
+      ) : (
+        <div className="size-11 rounded-2xl bg-muted/60 border border-border/70 flex items-center justify-center text-muted-foreground/80 mb-3 shadow-2xs">
+          <Icon className="size-5" />
+        </div>
+      )}
 
       <h3 className="text-sm font-semibold text-foreground tracking-tight mb-1">
         {title}

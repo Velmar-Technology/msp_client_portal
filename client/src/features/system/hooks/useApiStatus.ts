@@ -12,10 +12,19 @@ export function useApiStatus() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeSection, setActiveSection] = useState<"SERVICES" | "ENV_VARS">("SERVICES");
+
+  // Services filters
   const [searchQuery, setSearchQuery] = useState("");
   const [statusTab, setStatusTab] = useState<"ALL" | "OPERATIONAL" | "DEGRADED" | "DOWN">("ALL");
+  const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
+  const [latencyFilter, setLatencyFilter] = useState<string>("ALL");
+
+  // Env vars filters
   const [envSearchQuery, setEnvSearchQuery] = useState("");
   const [envStatusTab, setEnvStatusTab] = useState<"ALL" | "CONFIGURED" | "DEFAULT_PLACEHOLDER" | "MISSING">("ALL");
+  const [envCategoryFilter, setEnvCategoryFilter] = useState<string>("ALL");
+  const [envSensitivityFilter, setEnvSensitivityFilter] = useState<string>("ALL");
+
   const [isAutoRefresh, setIsAutoRefresh] = useState(true);
 
   // Pagination state for Services table
@@ -59,23 +68,31 @@ export function useApiStatus() {
   // Reset pagination when search query or filter tab changes
   useEffect(() => {
     setServicesPage(1);
-  }, [searchQuery, statusTab]);
+  }, [searchQuery, statusTab, categoryFilter, latencyFilter]);
 
   useEffect(() => {
     setEnvVarsPage(1);
-  }, [envSearchQuery, envStatusTab]);
+  }, [envSearchQuery, envStatusTab, envCategoryFilter, envSensitivityFilter]);
 
   // Derive filtered services during render (React 19 compiler-friendly)
   const filteredServices = data
     ? data.services.filter((item: ApiStatusItem) => {
+        const q = searchQuery.toLowerCase();
         const matchesSearch =
-          item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.endpoint.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.category.toLowerCase().includes(searchQuery.toLowerCase());
+          !q ||
+          item.name.toLowerCase().includes(q) ||
+          item.endpoint.toLowerCase().includes(q) ||
+          item.category.toLowerCase().includes(q);
 
-        const matchesTab = statusTab === "ALL" || item.status === statusTab;
+        const matchesTab = statusTab === "ALL" || !statusTab || item.status === statusTab;
+        const matchesCategory = categoryFilter === "ALL" || !categoryFilter || item.category === categoryFilter;
 
-        return matchesSearch && matchesTab;
+        let matchesLatency = true;
+        if (latencyFilter === "FAST") matchesLatency = item.latencyMs < 50;
+        else if (latencyFilter === "NORMAL") matchesLatency = item.latencyMs >= 50 && item.latencyMs <= 200;
+        else if (latencyFilter === "SLOW") matchesLatency = item.latencyMs > 200;
+
+        return matchesSearch && matchesTab && matchesCategory && matchesLatency;
       })
     : [];
 
@@ -88,14 +105,20 @@ export function useApiStatus() {
     ? data.envVariables.filter((item: EnvVarStatusItem) => {
         const q = envSearchQuery.toLowerCase();
         const matchesSearch =
+          !q ||
           item.key.toLowerCase().includes(q) ||
           item.category.toLowerCase().includes(q) ||
           item.description.toLowerCase().includes(q) ||
           item.valueDisplay.toLowerCase().includes(q);
 
-        const matchesTab = envStatusTab === "ALL" || item.status === envStatusTab;
+        const matchesTab = envStatusTab === "ALL" || !envStatusTab || item.status === envStatusTab;
+        const matchesCategory = envCategoryFilter === "ALL" || !envCategoryFilter || item.category === envCategoryFilter;
 
-        return matchesSearch && matchesTab;
+        let matchesSensitivity = true;
+        if (envSensitivityFilter === "SECRET") matchesSensitivity = Boolean(item.isSecret);
+        else if (envSensitivityFilter === "PUBLIC") matchesSensitivity = !item.isSecret;
+
+        return matchesSearch && matchesTab && matchesCategory && matchesSensitivity;
       })
     : [];
 
@@ -126,10 +149,18 @@ export function useApiStatus() {
     setSearchQuery,
     statusTab,
     setStatusTab,
+    categoryFilter,
+    setCategoryFilter,
+    latencyFilter,
+    setLatencyFilter,
     envSearchQuery,
     setEnvSearchQuery,
     envStatusTab,
     setEnvStatusTab,
+    envCategoryFilter,
+    setEnvCategoryFilter,
+    envSensitivityFilter,
+    setEnvSensitivityFilter,
     isAutoRefresh,
     setIsAutoRefresh,
     filteredServices,
@@ -149,4 +180,3 @@ export function useApiStatus() {
     refresh: () => fetchStatus(true),
   };
 }
-

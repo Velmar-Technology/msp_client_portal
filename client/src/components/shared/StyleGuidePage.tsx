@@ -45,7 +45,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { Info, AlertTriangle, CheckCircle2, Laptop, Cloud, MoreHorizontal, Users, PlayCircle } from 'lucide-react';
+import { Info, AlertTriangle, CheckCircle2, Laptop, Cloud, MoreHorizontal, Users, PlayCircle, Sparkles, Copy, KeyRound } from 'lucide-react';
 import {
   GlowCard,
   GlowCardHeader,
@@ -176,6 +176,66 @@ export const StyleGuidePage: React.FC = () => {
             <div className="p-4 text-xs text-muted-foreground">Historical run diagnostics and traces</div>
           </Page.Tab>
         </Page.Tabs>
+      </section>
+
+      {/* API Keys & Integration Flow Pattern */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold text-foreground">API Keys, Callout Banner & Integration Flow</h2>
+          <p className="text-xs text-muted-foreground">Standalone bubble tabs, callout banner, and connected dual-icon integration flow empty state.</p>
+        </div>
+
+        <Page.Tabs
+          variant="bubble"
+          defaultTab="keys"
+          tabs={[
+            {
+              id: "keys",
+              label: (
+                <span className="flex items-center gap-1.5">
+                  <KeyRound className="size-3.5" />
+                  <span>API keys</span>
+                </span>
+              ),
+            },
+            {
+              id: "services",
+              label: (
+                <span className="flex items-center gap-1.5">
+                  <Users className="size-3.5" />
+                  <span>Service accounts</span>
+                </span>
+              ),
+            },
+          ]}
+        />
+
+        <Page.Banner
+          icon={Sparkles}
+          title="Let your coding agent set this up."
+          description="One prompt signs you in, creates a key, and adds the SDK to your project."
+          action={{
+            label: "Copy prompt",
+            icon: Copy,
+            onClick: () => {},
+          }}
+          onDismiss={() => {}}
+        />
+
+        <Page.ContentCard>
+          <Page.EmptyState
+            connectedIcons={{
+              from: Cloud,
+              to: Laptop,
+            }}
+            title="API Keys"
+            description="An API key lets you connect to our API and use its features. You can create multiple keys with different access levels."
+            primaryAction={{
+              label: "Create Key",
+              onClick: () => {},
+            }}
+          />
+        </Page.ContentCard>
       </section>
 
       <section className="space-y-4">

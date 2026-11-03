@@ -61,6 +61,7 @@ export function PageNotebook({
   defaultTab,
   activeTab: controlledTab,
   onTabChange,
+  onChange,
   syncUrl = false,
   paramKey = "tab",
   variant = "line",
@@ -118,14 +119,15 @@ export function PageNotebook({
   const isControlled = controlledTab !== undefined;
   const currentTab = isControlled ? controlledTab : internalTab;
 
+  const callback = onTabChange || onChange;
   const handleTabChange = React.useCallback(
     (newTab: string) => {
       if (!isControlled) {
         setInternalTab(newTab);
       }
-      onTabChange?.(newTab);
+      callback?.(newTab);
     },
-    [isControlled, onTabChange]
+    [isControlled, callback]
   );
 
   return (
@@ -146,6 +148,8 @@ export function PageNotebook({
               ? "border-b border-border/60 w-full justify-start rounded-none bg-transparent p-0 h-9 gap-2"
               : variant === "pill"
               ? "inline-flex h-8 bg-muted/60 p-0.5 rounded-xl border border-border/40 gap-0.5"
+              : variant === "bubble"
+              ? "inline-flex h-auto bg-transparent p-0 gap-1.5 border-0 w-auto justify-start self-start"
               : "h-8 bg-muted p-0.5 rounded-md",
             tabsListClassName
           )}
@@ -167,6 +171,8 @@ export function PageNotebook({
                     ? "h-8 px-3 text-xs font-semibold rounded-none border-b-2 border-transparent transition-all data-active:border-primary data-active:text-primary data-active:bg-transparent hover:text-foreground cursor-pointer select-none"
                     : variant === "pill"
                     ? "h-7 px-3 text-xs font-medium rounded-lg transition-all cursor-pointer select-none text-muted-foreground hover:text-foreground data-active:bg-background data-active:text-foreground data-active:shadow-2xs data-active:font-semibold"
+                    : variant === "bubble"
+                    ? "flex-none shrink-0 h-7 px-3.5 text-xs font-medium rounded-full border transition-all cursor-pointer select-none gap-1.5 border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 data-active:border-border/80 data-active:bg-background data-active:text-foreground data-active:shadow-2xs data-active:font-semibold"
                     : "h-7 px-3 text-xs font-semibold rounded-sm transition-all cursor-pointer select-none"
                 )}
               >

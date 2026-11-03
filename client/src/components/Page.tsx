@@ -32,6 +32,8 @@ import { PageFilterPill } from "./page/PageFilterPill";
 import { PageTogglePill } from "./page/PageTogglePill";
 import { PageContentCard } from "./page/PageContentCard";
 import { PageEmptyState } from "./page/PageEmptyState";
+import { PageBanner } from "./page/PageBanner";
+import { PageSettingRow, PageSettingGroup } from "./page/PageSettingRow";
 import { PageGraph } from "./page/PageGraph";
 import {
   PageHeader,
@@ -241,6 +243,10 @@ export const Page = Object.assign(PageRoot, {
   TogglePill: PageTogglePill,
   ContentCard: PageContentCard,
   EmptyState: PageEmptyState,
+  Banner: PageBanner,
+  Callout: PageBanner,
+  SettingRow: PageSettingRow,
+  SettingGroup: PageSettingGroup,
   Provider: PageProvider,
   usePageContext,
   usePageView,

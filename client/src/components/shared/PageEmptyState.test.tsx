@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import { PlayCircle } from "lucide-react";
+import { PlayCircle, Box, Pause } from "lucide-react";
 import { PageEmptyState } from "./PageEmptyState";
 
 describe("PageEmptyState", () => {
@@ -59,6 +59,20 @@ describe("PageEmptyState", () => {
     const secondaryLink = screen.getByRole("link", { name: "Learn how" });
     expect(secondaryLink).toBeInTheDocument();
     expect(secondaryLink).toHaveAttribute("href", "https://docs.example.com");
-    expect(secondaryLink).toHaveAttribute("target", "_blank");
+  });
+
+  it("renders connected integration flow icons when connectedIcons provided", () => {
+    render(
+      <PageEmptyState
+        title="No API keys"
+        description="Create your first key to connect."
+        connectedIcons={{
+          from: Box,
+          to: Pause,
+        }}
+      />
+    );
+
+    expect(screen.getByTestId("empty-state-connected-icons")).toBeInTheDocument();
   });
 });

@@ -22,3 +22,5 @@ export * from "./PageFilterPill";
 export * from "./PageTogglePill";
 export * from "./PageContentCard";
 export * from "./PageEmptyState";
+export * from "./PageBanner";
+export * from "./PageSettingRow";
