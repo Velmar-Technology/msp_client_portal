@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   AlertCircle,
@@ -57,6 +58,7 @@ export function TicketDetailPage() {
   const { t, i18n } = useTranslation();
   const { getParam, setParam } = useUrlState();
   const activeSideTab = getParam('sideTab') || 'properties';
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     user,
@@ -493,28 +495,29 @@ export function TicketDetailPage() {
                     action={
                       <div className="flex items-center gap-2">
                         <input
+                          ref={fileInputRef}
                           type="file"
-                          id="ticket-file-upload-input"
                           className="hidden"
                           multiple
-                          onChange={(e) => handleFileUpload(e.target.files)}
+                          onChange={(e) => {
+                            handleFileUpload(e.target.files);
+                            e.target.value = '';
+                          }}
                           disabled={uploading}
                         />
                         <Button
-                          asChild
                           variant="outline"
                           size="sm"
                           disabled={uploading}
                           className="h-7 px-3 text-xs font-semibold cursor-pointer"
+                          onClick={() => fileInputRef.current?.click()}
                         >
-                          <label htmlFor="ticket-file-upload-input">
-                            {uploading ? (
-                              <div className="w-3 h-3 border-2 border-primary/20 border-t-primary rounded-full animate-spin mr-1" />
-                            ) : (
-                              <Paperclip className="w-3.5 h-3.5 mr-1 text-muted-foreground" />
-                            )}
-                            {uploading ? t('ticketDetail.uploading') : t('ticketDetail.uploadAttachment')}
-                          </label>
+                          {uploading ? (
+                            <div className="w-3 h-3 border-2 border-primary/20 border-t-primary rounded-full animate-spin mr-1" />
+                          ) : (
+                            <Paperclip className="w-3.5 h-3.5 mr-1 text-muted-foreground" />
+                          )}
+                          {uploading ? t('ticketDetail.uploading') : t('ticketDetail.uploadAttachment')}
                         </Button>
                       </div>
                     }
