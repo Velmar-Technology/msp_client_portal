@@ -1,11 +1,9 @@
-import { useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   AlertCircle,
   ArrowLeft,
   Clock,
   Moon,
-  Paperclip,
   Download,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -41,7 +39,11 @@ import {
   TicketTimeline,
   FilePreviewModal,
 } from '../components';
-import { formatFileSize, getAttachmentIcon, getAttachmentUrl } from '../components/ticketUtils';
+import {
+  formatFileSize,
+  getAttachmentIcon,
+  getAttachmentUrl,
+} from '../components/ticketUtils';
 
 /**
  * Modern Ticket Detail view following the Profile Page & ADR-016 standards.
@@ -58,7 +60,6 @@ export function TicketDetailPage() {
   const { t, i18n } = useTranslation();
   const { getParam, setParam } = useUrlState();
   const activeSideTab = getParam('sideTab') || 'properties';
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     user,
@@ -72,7 +73,6 @@ export function TicketDetailPage() {
     assigning,
     statusUpdating,
     sendingResponse,
-    uploading,
     responseText,
     setResponseText,
     responseFiles,
@@ -91,7 +91,6 @@ export function TicketDetailPage() {
     handleStatusChange,
     handleAssign,
     handleSendResponse,
-    handleFileUpload,
   } = useTicketDetail(id);
 
   const sla = useSLATimer(ticket);
@@ -493,33 +492,11 @@ export function TicketDetailPage() {
                         : t('ticketDetail.noAttachments')
                     }
                     action={
-                      <div className="flex items-center gap-2">
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          className="hidden"
-                          multiple
-                          onChange={(e) => {
-                            handleFileUpload(e.target.files);
-                            e.target.value = '';
-                          }}
-                          disabled={uploading}
-                        />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={uploading}
-                          className="h-7 px-3 text-xs font-semibold cursor-pointer"
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          {uploading ? (
-                            <div className="w-3 h-3 border-2 border-primary/20 border-t-primary rounded-full animate-spin mr-1" />
-                          ) : (
-                            <Paperclip className="w-3.5 h-3.5 mr-1 text-muted-foreground" />
-                          )}
-                          {uploading ? t('ticketDetail.uploading') : t('ticketDetail.uploadAttachment')}
-                        </Button>
-                      </div>
+                      attachments.length > 0 ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-medium border bg-muted text-muted-foreground border-border/80">
+                          {attachments.length}
+                        </span>
+                      ) : null
                     }
                   />
                 </Page.SettingGroup>

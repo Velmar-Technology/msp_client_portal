@@ -834,6 +834,7 @@
     "sendingResponse": "Sending...",
     "responseSuccess": "Response sent successfully",
     "responseError": "Failed to send response",
+    "messageRequiredWithAttachments": "Please include a message explaining your attached file(s).",
     "previewNotAvailable": "Preview not available for this file type.",
     "downloadFile": "Download File",
     "previewFile": "Preview file",

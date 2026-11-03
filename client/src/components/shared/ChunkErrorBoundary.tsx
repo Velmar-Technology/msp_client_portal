@@ -62,13 +62,13 @@ export class ChunkErrorBoundary extends Component<ChunkErrorBoundaryProps, State
       }
 
       return (
-        <div className="w-full flex items-center justify-center p-6 min-h-60">
+        <div className="w-full flex-1 my-auto min-h-[60vh] flex items-center justify-center p-6">
           <div
             role="alert"
             aria-live="assertive"
-            className="w-full max-w-md rounded-xl border border-destructive/20 bg-destructive/5 p-6 text-foreground shadow-xs animate-fade-in flex flex-col items-center text-center space-y-3"
+            className="w-full max-w-md rounded-2xl border border-border/80 bg-card p-6 text-foreground shadow-xs animate-fade-in flex flex-col items-center text-center space-y-4"
           >
-            <div className="rounded-full bg-destructive/10 p-3 text-destructive shrink-0 inline-flex items-center justify-center">
+            <div className="rounded-2xl bg-destructive/10 border border-destructive/20 p-3 text-destructive shrink-0 inline-flex items-center justify-center shadow-2xs">
               <AlertTriangle className="h-6 w-6" />
             </div>
             <div className="space-y-1.5 min-w-0">

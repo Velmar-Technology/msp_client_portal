@@ -834,6 +834,7 @@
     "sendingResponse": "Enviando...",
     "responseSuccess": "Respuesta enviada con éxito",
     "responseError": "Error al enviar la respuesta",
+    "messageRequiredWithAttachments": "El archivo adjunto no se puede enviar solo. Debe incluir un mensaje junto con el archivo.",
     "previewNotAvailable": "Vista previa no disponible para este tipo de archivo.",
     "downloadFile": "Descargar Archivo",
     "previewFile": "Ver archivo",
