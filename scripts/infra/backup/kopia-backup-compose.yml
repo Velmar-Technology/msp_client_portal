@@ -6,10 +6,13 @@ services:
     container_name: msp_kopia_backup
     restart: unless-stopped
     entrypoint: ["/bin/sh", "-c"]
-    command: ["sleep infinity"]
+    command: ["sed -i 's/\\r$$//' /app/config/backup-scheduler.sh 2>/dev/null; exec /bin/sh /app/config/backup-scheduler.sh"]
     environment:
-      - TZ=${TZ:-America/Santo_Domingo}
-      - KOPIA_PASSWORD=${KOPIA_REPOSITORY_PASSWORD:-}
+      - TZ=America/Santo_Domingo
+      - KOPIA_PASSWORD=VelmarKopiaNextcloud2026!SecureBackup
+      - KOPIA_REPOSITORY_PASSWORD=VelmarKopiaNextcloud2026!SecureBackup
+      - KOPIA_SERVER_USERNAME=admin
+      - KOPIA_SERVER_PASSWORD=VelmarKopia2026!SecureUI
       - KOPIA_CACHE_DIRECTORY=/app/cache
       - KOPIA_CONFIG_PATH=/app/config/repository.config
       - GOOGLE_APPLICATION_CREDENTIALS=/app/config/gdrive-service-account.json
@@ -23,11 +26,32 @@ services:
       - /mnt/.ix-apps/app_mounts/kopia_staging:/staging
       # Host Docker socket for atomic occ and pg_dump orchestration
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      # Backup runner script mount
-      - ./backup-nextcloud-runner.sh:/scripts/backup-nextcloud-runner.sh:ro
     ports:
-      # Optional local Kopia Web UI / API inside WireGuard network (or localhost)
-      - "127.0.0.1:51515:51515"
+      - "0.0.0.0:51515:51515"
+    networks:
+      - default
+      - reverse-proxy
+    labels:
+      - "traefik.enable=true"
+      # Exempt static assets from Basic Auth to prevent multiple auth prompts
+      - "traefik.http.routers.kopia-assets.entrypoints=websecure"
+      - "traefik.http.routers.kopia-assets.rule=Host(`kopia.mitefree.net`) && PathPrefix(`/assets`)"
+      - "traefik.http.routers.kopia-assets.tls=true"
+      - "traefik.http.routers.kopia-assets.priority=150"
+      - "traefik.http.routers.kopia-assets.service=kopia-svc"
+
+      # Protect all views and API with Basic Auth
+      - "traefik.http.routers.kopia-main.entrypoints=websecure"
+      - "traefik.http.routers.kopia-main.rule=Host(`kopia.mitefree.net`)"
+      - "traefik.http.routers.kopia-main.tls=true"
+      - "traefik.http.routers.kopia-main.priority=100"
+      - "traefik.http.routers.kopia-main.service=kopia-svc"
+      - "traefik.http.routers.kopia-main.middlewares=kopia-auth"
+      - "traefik.http.middlewares.kopia-auth.basicauth.users=admin:{SHA}srmtS9uPw/LN3yf6/8tv0gTRNOI="
+      - "traefik.http.middlewares.kopia-auth.basicauth.realm=Kopia Admin Panel"
+
+      # Service loadbalancer
+      - "traefik.http.services.kopia-svc.loadbalancer.server.port=51515"
     deploy:
       resources:
         limits:
@@ -36,3 +60,8 @@ services:
         reservations:
           cpus: '0.10'
           memory: 64M
+
+networks:
+  default:
+  reverse-proxy:
+    external: true
