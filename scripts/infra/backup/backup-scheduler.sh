@@ -10,6 +10,7 @@ start_kopia_server() {
     --insecure \
     --ui \
     --address="http://0.0.0.0:51515" \
+    --disable-csrf-token-checks \
     --without-password \
     --allow-extremely-dangerous-unauthenticated-server-on-the-network \
     >> /app/logs/kopia-server.log 2>&1 &
