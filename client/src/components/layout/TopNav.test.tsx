@@ -216,19 +216,10 @@ test('allows user to find ticket when prefixed with hash like "#ce9d703a"', asyn
 
 
 
-test('renders Breadcrumbs and action pills (Feedback, Docs, Ask)', () => {
+test('renders Breadcrumbs and action pills (Feedback)', () => {
   render(<TopNav />);
   expect(screen.getByText('topNav.home')).toBeInTheDocument();
   expect(screen.getByText('topNav.feedback')).toBeInTheDocument();
-  expect(screen.getByText('topNav.docs')).toBeInTheDocument();
-  expect(screen.getByText('topNav.ask')).toBeInTheDocument();
-});
-
-test('clicking Docs pill navigates to /help', () => {
-  render(<TopNav />);
-  const docsBtn = screen.getByText('topNav.docs');
-  fireEvent.click(docsBtn);
-  expect(mockNavigate).toHaveBeenCalledWith('/helpdesk/kb');
 });
 
 test('clicking Feedback pill opens FeedbackDialog', async () => {
@@ -236,11 +227,4 @@ test('clicking Feedback pill opens FeedbackDialog', async () => {
   const feedbackBtn = screen.getByText('topNav.feedback');
   fireEvent.click(feedbackBtn);
   expect(await screen.findByText('topNav.feedbackTitle')).toBeInTheDocument();
-});
-
-test('clicking Ask pill opens AiCopilotDrawer', async () => {
-  render(<TopNav />);
-  const askBtn = screen.getByText('topNav.ask');
-  fireEvent.click(askBtn);
-  expect(await screen.findByText('topNav.aiCopilotTitle')).toBeInTheDocument();
 });

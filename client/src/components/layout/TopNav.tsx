@@ -9,7 +9,6 @@ import {
   Bell,
   HelpCircle,
   Loader2,
-  Navigation,
   Sun,
   Moon,
   Laptop,
@@ -21,7 +20,6 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/shared/useTheme";
 import { TopNavBreadcrumbs } from "@/components/layout/TopNavBreadcrumbs";
 import { FeedbackDialog } from "@/components/layout/FeedbackDialog";
-import { AiCopilotDrawer } from "@/components/layout/AiCopilotDrawer";
 import { FolderMenu } from "@/components/layout/FolderMenu";
 import { UserPresenceAvatar } from "@/components/shared/UserPresenceAvatar";
 import { useConnectionStatus } from "@/hooks/useConnectionStatus";
@@ -396,7 +394,6 @@ export function TopNav() {
     t,
     user,
     logout,
-    navigate,
     showUserMenu,
     setShowUserMenu,
     searchQuery,
@@ -413,7 +410,6 @@ export function TopNav() {
   } = useTopNav();
 
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
 
   return (
     <header className="flex justify-between items-center w-full px-4 md:px-6 h-11 bg-background/80 backdrop-blur-md border-b border-border/80 sticky top-0 z-30 transition-colors">
@@ -451,25 +447,6 @@ export function TopNav() {
             {t("topNav.feedback")}
           </Button>
 
-          <Button
-            variant="outline"
-            size="xs"
-            onClick={() => navigate("/helpdesk/kb")}
-            className="h-7 rounded-full px-3 text-xs font-normal border-border/70 hover:bg-muted/60 text-foreground cursor-pointer shadow-2xs"
-          >
-            {t("topNav.docs")}
-          </Button>
-
-          <Button
-            variant="outline"
-            size="xs"
-            onClick={() => setIsCopilotOpen(true)}
-            className="h-7 rounded-full px-3 text-xs font-normal border-border/70 hover:bg-muted/60 text-foreground flex items-center gap-1.5 cursor-pointer shadow-2xs group"
-          >
-            <Navigation className="size-3 text-sky-500 fill-sky-500 rotate-45 group-hover:scale-110 transition-transform" />
-            <span>{t("topNav.ask")}</span>
-          </Button>
-
           <FolderMenu />
         </div>
 
@@ -489,7 +466,6 @@ export function TopNav() {
 
       {/* Overlay Modals & Drawers */}
       <FeedbackDialog open={isFeedbackOpen} onOpenChange={setIsFeedbackOpen} />
-      <AiCopilotDrawer open={isCopilotOpen} onOpenChange={setIsCopilotOpen} />
     </header>
   );
 }
