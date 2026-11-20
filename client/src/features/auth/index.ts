@@ -15,5 +15,8 @@ export * from './api/useTenants';
 export * from './hooks/useAuthFilters';
 export * from './hooks/useAuthModals';
 
+// Components
+export * from './components/GoogleLoginButton';
+
 // Ephemeral UI Types
 export * from './types';

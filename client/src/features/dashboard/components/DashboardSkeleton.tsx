@@ -1,5 +1,5 @@
 import { Page } from "@/components/Page";
-import { StatsGrid } from "@/components/stats-grid";
+import { StatsGrid } from "@/components/shared/StatsGrid";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
 

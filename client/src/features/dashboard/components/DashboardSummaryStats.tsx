@@ -4,7 +4,7 @@ import { MetricCard } from "@/components/shared";
 import { Link } from "react-router-dom";
 import { StorageQuota } from "./StorageQuota";
 import { useClientDashboard } from "../hooks/useClientDashboard";
-import { StatsGrid } from "@/components/stats-grid";
+import { StatsGrid } from "@/components/shared/StatsGrid";
 
 export function DashboardSummaryStats() {
   const { t } = useTranslation();

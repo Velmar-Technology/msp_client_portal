@@ -2,9 +2,10 @@ import { useMemo, useState, useCallback, type SyntheticEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Shield, AlertTriangle, Minus, Plus } from "lucide-react";
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import type { Plan, Subscription } from "@/features/subscriptions";
-import { OrderSummary } from "@/components/checkout/OrderSummary";
-import { PaymentFields } from "@/components/checkout/PaymentFields";
+import type { Plan } from "../api/planService";
+import type { Subscription } from "../api/subscriptionService";
+import { OrderSummary } from "./OrderSummary";
+import { PaymentFields } from "./PaymentFields";
 
 export interface CheckoutStateProps {
   acceptedTos: boolean;

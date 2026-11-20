@@ -14,8 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatRelativeTime } from "@/lib/formatRelativeTime";
-import { rmmService, type RmmDeviceTelemetry, usePatchManagementModal } from "@/features/rmm";
-import { PatchTable } from "@/components/devices/PatchTable";
+import { rmmService, type RmmDeviceTelemetry, usePatchManagementModal, PatchTable } from "@/features/rmm";
 
 export interface DeviceRmmModalProps {
   isOpen: boolean;

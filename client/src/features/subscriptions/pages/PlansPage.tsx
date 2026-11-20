@@ -27,7 +27,7 @@ import { ActiveSubscriptionsDashboard } from "../components/ActiveSubscriptionsD
 import { DeletePlanAlertDialog } from "../components/DeletePlanAlertDialog";
 import { ChangeTierPanel } from "../components/ChangeTierPanel";
 import { SUBSCRIPTION_STATUS_COLORS } from "@/constants/subscriptions";
-import CheckoutSheet from "@/components/checkout-sheet";
+import CheckoutSheet from "../components/CheckoutSheet";
 
 type SubDialogAction = "add_device" | "remove_device" | "cancel" | "pay";
 
@@ -592,7 +592,7 @@ export function PlansPage() {
           autoRenew={autoRenew}
           setAutoRenew={setAutoRenew}
           open={checkoutOpen}
-          onOpenChange={(open) => { if (!open) closeCheckout(); }}
+          onOpenChange={(open: boolean) => { if (!open) closeCheckout(); }}
           deviceDelta={checkoutDeviceDelta}
           onDeviceDeltaChange={setCheckoutDeviceDelta}
           showStepper={checkoutAction === "add_device" || checkoutAction === "remove_device"}

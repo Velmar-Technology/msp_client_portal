@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Page } from '@/components/Page';
 import { MetricCard } from '@/components/shared';
-import { StatsGrid } from '@/components/stats-grid';
+import { StatsGrid } from '@/components/shared/StatsGrid';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/ui/data-table';
 import { Button } from '@/components/ui/button';

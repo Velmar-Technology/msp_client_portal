@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { Plan } from "../api/planService";
 import type { Subscription } from "../api/subscriptionService";
 import type { BillingCycle } from "../types";
-import { CheckoutSheet } from "@/components/checkout-sheet";
+import { CheckoutSheet } from "./CheckoutSheet";
 
 export interface PaymentSectionProps {
   currentPlan: Plan;

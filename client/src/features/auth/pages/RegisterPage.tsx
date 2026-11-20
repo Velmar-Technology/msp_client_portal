@@ -5,7 +5,7 @@ import { Eye, EyeOff, AlertCircle, Globe, User, ShieldCheck } from "lucide-react
 import logoUrl from "@/assets/logo.png";
 import { useTranslation } from "react-i18next";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { GoogleLoginButton } from "@/components/auth/GoogleLoginButton";
+import { GoogleLoginButton } from "../components/GoogleLoginButton";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";

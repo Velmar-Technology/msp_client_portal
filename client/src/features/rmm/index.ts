@@ -8,6 +8,9 @@ export * from './routes';
 
 // Components (lazy wrapper: modal chunk loads on demand behind its own Suspense)
 export { ScheduleMaintenanceModal } from './components/ScheduleMaintenanceModal.lazy';
+export * from './components/PatchTable';
+export * from './components/PatchSeverityBadge';
+export * from './components/PatchStatusBadge';
 
 // Services & API Queries
 export * from './api/rmmService';
