@@ -9,9 +9,11 @@ import {
   ChevronRight,
   Clock,
   ShieldAlert,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageShell } from '@/components/layout/PageShell';
+import { PageSearchInput, PageFilterPill } from '@/components/shared';
 import { DialogShell } from '@/components/layout/DialogShell';
 import { Button } from '@/components/ui/button';
 import {
@@ -349,27 +351,45 @@ export function BillingPage() {
     ],
   );
 
+  const statusFilterOptions = useMemo(
+    () => [
+      { value: 'PENDING', label: t('tickets.filterAwaitingPayment') },
+      { value: 'PAID', label: t('tickets.filterResolved') },
+      { value: 'OVERDUE', label: i18n.language === 'es_DO' ? 'Vencida' : 'Overdue' },
+      {
+        value: 'CANCELLED',
+        label: t('billing.statusCancelled') || (i18n.language === 'es_DO' ? 'Cancelada' : 'Cancelled'),
+      },
+    ],
+    [t, i18n.language],
+  );
+
+  const hasActiveFilters = Boolean(search || (statusFilter && statusFilter !== 'all'));
+  const handleClearAllFilters = useCallback(() => {
+    handleSearchChange('');
+    handleStatusFilterChange('');
+  }, [handleSearchChange, handleStatusFilterChange]);
+
   return (
     <PageShell
       variant="full"
       title={t('billing.title')}
       subtitle={t('billing.subtitle')}
     >
-
       {/* BL-702 Non-Payment Scale & Emergency Grace Alert Card */}
       {isDelinquent && (
         <div
           data-testid="billing-non-payment-alert"
-          className="mb-6 rounded-xl border border-destructive/30 bg-linear-to-r from-destructive/10 via-destructive/5 to-transparent p-4 sm:p-5 shadow-xs"
+          className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 p-4 shadow-subtle"
         >
           <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
             <div className="flex items-start gap-3.5">
-              <div className="p-2.5 rounded-xl bg-destructive/15 text-destructive shrink-0 mt-0.5">
-                <ShieldAlert className="h-5 w-5" />
+              <div className="p-2 rounded-lg bg-destructive/15 text-destructive shrink-0 mt-0.5">
+                <ShieldAlert className="h-4 w-4" />
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-sm font-bold font-heading text-destructive">
+                  <h3 className="text-sm font-semibold font-heading text-destructive">
                     {t('billing.nonPaymentAlertTitle', 'Account Delinquent — Action Required')}
                   </h3>
                   <Badge
@@ -406,7 +426,7 @@ export function BillingPage() {
                   variant="outline"
                   size="sm"
                   data-testid="request-grace-btn"
-                  className="h-7 text-xs font-semibold gap-1.5 border-amber-500/40 hover:bg-amber-500/15 text-amber-800 dark:text-amber-200 cursor-pointer"
+                  className="h-7 px-3 text-xs font-medium gap-1.5 border-amber-500/40 hover:bg-amber-500/15 text-amber-800 dark:text-amber-200 cursor-pointer shadow-subtle rounded-lg"
                   onClick={() => setIsGraceConfirmOpen(true)}
                   disabled={requestGraceMutation.isPending}
                 >
@@ -426,7 +446,7 @@ export function BillingPage() {
                   type="button"
                   size="sm"
                   data-testid="pay-overdue-balance-btn"
-                  className="h-7 text-xs font-semibold gap-1.5 bg-destructive hover:bg-destructive/90 text-white cursor-pointer"
+                  className="h-7 px-3 text-xs font-medium gap-1.5 bg-destructive hover:bg-destructive/90 text-white cursor-pointer shadow-subtle rounded-lg"
                   onClick={() => openPayModal(overdueInvoice)}
                 >
                   <CreditCard className="h-3 w-3" />
@@ -438,43 +458,57 @@ export function BillingPage() {
         </div>
       )}
 
-      <DataTable
-        columns={columns}
-        data={invoices}
-        loading={loading}
-        noDataMessage={t('billing.noInvoices')}
-        defaultSorting={[{ id: 'invoice_date', desc: true }]}
-        search={{
-          value: search,
-          onChange: handleSearchChange,
-          placeholder: t('billing.searchPlaceholder') || 'Search invoices...',
-        }}
-        filters={[
-          {
-            id: 'status',
-            value: statusFilter,
-            onChange: handleStatusFilterChange,
-            options: [
-              { value: 'PENDING', label: t('tickets.filterAwaitingPayment') },
-              { value: 'PAID', label: t('tickets.filterResolved') },
-              { value: 'OVERDUE', label: i18n.language === 'es_DO' ? 'Vencida' : 'Overdue' },
-              {
-                value: 'CANCELLED',
-                label: t('billing.statusCancelled') || (i18n.language === 'es_DO' ? 'Cancelada' : 'Cancelled'),
-              },
-            ],
-            placeholder: t('billing.allStatuses') || 'All Statuses',
-          },
-        ]}
-        pagination={{
-          page,
-          totalPages,
-          totalItems: total,
-          limit,
-          onPageChange: setPage,
-          onLimitChange: handleLimitChange,
-        }}
-      />
+      {/* Integrated Filter Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
+        <div className="w-full sm:w-72">
+          <PageSearchInput
+            value={search}
+            onChange={handleSearchChange}
+            placeholder={t('billing.searchPlaceholder') || 'Search invoices...'}
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <PageFilterPill
+            label={t('billing.tableStatus')}
+            value={statusFilter && statusFilter !== 'all' ? statusFilter : ''}
+            options={statusFilterOptions}
+            onChange={handleStatusFilterChange}
+            onClear={() => handleStatusFilterChange('')}
+          />
+
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={handleClearAllFilters}
+              className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer rounded-full"
+            >
+              <X className="size-3 mr-1" />
+              {t('common.clearFilters', 'Clear all')}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Edge-to-Edge Table */}
+      <div className="rounded-lg border border-border/70 overflow-hidden bg-card shadow-subtle">
+        <DataTable
+          columns={columns}
+          data={invoices}
+          loading={loading}
+          noDataMessage={t('billing.noInvoices')}
+          defaultSorting={[{ id: 'invoice_date', desc: true }]}
+          pagination={{
+            page,
+            totalPages,
+            totalItems: total,
+            limit,
+            onPageChange: setPage,
+            onLimitChange: handleLimitChange,
+          }}
+        />
+      </div>
       <InvoiceDetailsModal
         isOpen={showDetailsModal}
         onClose={closeDetailsModal}
