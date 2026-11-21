@@ -16,7 +16,7 @@ export const featureManifest: FeatureManifest = {
   routes: usersRoutes,
   navItems: [
     {
-      to: "/users",
+      to: "/base/users",
       icon: Users,
       labelKey: "userManagement",
       group: "management",

@@ -24,16 +24,16 @@ export const settingsRoutes: AppRouteObject[] = [
       </RouteSuspenseWrapper>
     ),
     handle: {
-      crumb: (t) => ({ label: t("nav.settings", { defaultValue: "Settings" }), to: "/settings" }),
+      crumb: (t) => ({ label: t("nav.settings", { defaultValue: "Settings" }), to: "/base/settings" }),
       requiredPermission: "settings:read",
     },
   },
   {
     path: "/profile",
-    element: <Navigate to="/settings?tab=profile" replace />,
+    element: <Navigate to="/base/settings?tab=profile" replace />,
   },
   {
     path: "/notifications/preferences",
-    element: <Navigate to="/settings?tab=notifications" replace />,
+    element: <Navigate to="/base/settings?tab=notifications" replace />,
   },
 ];

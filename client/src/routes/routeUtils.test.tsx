@@ -75,7 +75,7 @@ describe("routeUtils", () => {
       expect(screen.getByLabelText("Loading page content")).toBeInTheDocument();
     });
 
-    it("should redirect to /login when unauthenticated", () => {
+    it("should redirect to /base/login when unauthenticated", () => {
       mockUseAuth.mockReturnValue({ isLoading: false, isAuthenticated: false, user: null });
 
       render(
@@ -89,7 +89,7 @@ describe("routeUtils", () => {
                 </RouteGuard>
               }
             />
-            <Route path="/login" element={<div>Login Page</div>} />
+            <Route path="/base/login" element={<div>Login Page</div>} />
           </Routes>
         </MemoryRouter>
       );

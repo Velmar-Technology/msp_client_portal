@@ -76,10 +76,10 @@ export function PublicLayout() {
             ) : (
               <div className="flex items-center gap-2">
                 <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex rounded-full text-xs font-semibold">
-                  <Link to="/login">{t("login.signIn")}</Link>
+                  <Link to="/base/login">{t("login.signIn")}</Link>
                 </Button>
                 <Button asChild size="sm" className="rounded-full text-xs font-bold gap-1">
-                  <Link to="/register">
+                  <Link to="/base/register">
                     <span>{t("home.register")}</span>
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Link>

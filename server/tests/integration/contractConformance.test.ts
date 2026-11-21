@@ -23,9 +23,9 @@ describe('Contract-First API Conformance Suite (@shared/contracts & ADR-001)', (
       });
     });
 
-    it('POST /api/v1/auth/login validates input against LoginDTO and returns 400 on invalid payload', async () => {
+    it('POST /api/v1/base/auth/login validates input against LoginDTO and returns 400 on invalid payload', async () => {
       const res = await request(app)
-        .post('/api/v1/auth/login')
+        .post('/api/v1/base/auth/login')
         .send({ email: 'not-an-email', password: '' });
 
       expect(res.status).toBe(400);

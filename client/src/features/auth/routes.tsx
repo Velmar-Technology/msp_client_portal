@@ -22,7 +22,7 @@ export const authRoutes: RouteObject[] = [
     ),
     children: [
       {
-        path: "/login",
+        path: "/base/login",
         element: (
           <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
             <LoginPage />
@@ -30,7 +30,7 @@ export const authRoutes: RouteObject[] = [
         ),
       },
       {
-        path: "/register",
+        path: "/base/register",
         element: (
           <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
             <RegisterPage />
@@ -38,12 +38,12 @@ export const authRoutes: RouteObject[] = [
         ),
       },
       {
-        path: "/forgot-password",
-        element: <Navigate to="/login?openModal=forgot-password" replace />,
+        path: "/base/forgot-password",
+        element: <Navigate to="/base/login?openModal=forgot-password" replace />,
       },
       {
-        path: "/reset-password",
-        element: <Navigate to="/login?openModal=reset-password" replace />,
+        path: "/base/reset-password",
+        element: <Navigate to="/base/login?openModal=reset-password" replace />,
       },
     ],
   },

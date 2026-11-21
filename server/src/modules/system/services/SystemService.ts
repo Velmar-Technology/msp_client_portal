@@ -284,9 +284,9 @@ export class SystemService {
       placeholderIndicator?: string;
     }> = [
       { id: 'api_system', name: 'System Diagnostics & Health API', category: 'CORE', endpoint: '/api/v1/system', baseLatency: 8 },
-      { id: 'api_auth', name: 'Auth & Session API', category: 'SERVICES', endpoint: '/api/v1/auth', baseLatency: 12 },
+      { id: 'api_auth', name: 'Auth & Session API', category: 'SERVICES', endpoint: '/api/v1/base/auth', baseLatency: 12 },
       { id: 'api_tickets', name: 'Tickets & SLA Engine', category: 'SERVICES', endpoint: '/api/v1/tickets', baseLatency: 28 },
-      { id: 'api_users', name: 'User Management API', category: 'SERVICES', endpoint: '/api/v1/users', baseLatency: 18 },
+      { id: 'api_users', name: 'User Management API', category: 'SERVICES', endpoint: '/api/v1/base/users', baseLatency: 18 },
       { id: 'api_subscriptions', name: 'Subscriptions Engine', category: 'BUSINESS', endpoint: '/api/v1/subscriptions', baseLatency: 34 },
       { id: 'api_invoices', name: 'Invoices & Billing API', category: 'BUSINESS', endpoint: '/api/v1/invoices', baseLatency: 25 },
       { id: 'api_plans', name: 'Service Plans API', category: 'BUSINESS', endpoint: '/api/v1/plans', baseLatency: 14 },

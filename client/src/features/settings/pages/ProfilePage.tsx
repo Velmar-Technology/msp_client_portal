@@ -511,7 +511,7 @@ export function ProfilePage() {
                       size="sm"
                       onClick={() => {
                         logout();
-                        navigate("/login");
+                        navigate("/base/login");
                       }}
                       className="h-7 px-2.5 text-xs font-medium cursor-pointer"
                     >

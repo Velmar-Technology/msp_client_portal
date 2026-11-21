@@ -8,6 +8,8 @@ import { runInTenantContext } from '@shared/db/tenantContext';
 export function isPublicOrSystemRoute(path: string, originalUrl?: string): boolean {
   const publicPrefixes = [
     '/health',
+    '/base/auth',
+    '/base/tenants',
     '/auth',
     '/tenants',
     '/metrics',

@@ -11,7 +11,7 @@ describe('authService', () => {
 
       await authService.verifyEmail('test@example.com', '123456');
 
-      expect(api.post).toHaveBeenCalledWith('/auth/verify-email', {
+      expect(api.post).toHaveBeenCalledWith('/base/auth/verify-email', {
         email: 'test@example.com',
         otp: '123456',
       });

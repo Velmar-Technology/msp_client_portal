@@ -21,7 +21,7 @@ export const TENANT_QUERY_KEYS = {
  * @returns Array of tenant summaries
  */
 export async function fetchTenants(): Promise<TenantSummary[]> {
-  const { data } = await api.get<{ success: boolean; data: TenantSummary[] }>("/tenants");
+  const { data } = await api.get<{ success: boolean; data: TenantSummary[] }>("/base/tenants");
   return data.data;
 }
 

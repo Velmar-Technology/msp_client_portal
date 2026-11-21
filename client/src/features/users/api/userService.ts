@@ -88,7 +88,7 @@ export const userService = {
    * @returns Promise resolving to user profile object.
    */
   async getProfile(): Promise<Record<string, unknown>> {
-    const response = await api.get('/users/me');
+    const response = await api.get('/base/users/me');
     return response.data.data;
   },
 
@@ -107,7 +107,7 @@ export const userService = {
       phone_number: data.phoneNumber,
       rnc: data.rnc,
     };
-    const response = await api.patch('/users/me', payload);
+    const response = await api.patch('/base/users/me', payload);
     return response.data.data;
   },
 
@@ -120,7 +120,7 @@ export const userService = {
   async uploadAvatar(file: File): Promise<{ avatarUrl: string }> {
     const formData = new FormData();
     formData.append('avatar', file);
-    const response = await api.post('/users/me/avatar', formData, {
+    const response = await api.post('/base/users/me/avatar', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -136,7 +136,7 @@ export const userService = {
    * @throws {ValidationError} If current password is incorrect or new password validation fails.
    */
   async changePassword(data: ChangePasswordPayload): Promise<void> {
-    await api.put('/users/me/password', data);
+    await api.put('/base/users/me/password', data);
   },
 
   /**
@@ -145,7 +145,7 @@ export const userService = {
    * @returns Promise resolving to array of TechnicianUser objects.
    */
   async getTechnicians(): Promise<TechnicianUser[]> {
-    const response = await api.get('/users/technicians');
+    const response = await api.get('/base/users/technicians');
     return response.data.data;
   },
 
@@ -155,7 +155,7 @@ export const userService = {
    * @returns Promise resolving to array of AuthUser client records.
    */
   async getClients(): Promise<AuthUser[]> {
-    const response = await api.get('/users/clients');
+    const response = await api.get('/base/users/clients');
     return response.data.data;
   },
 
@@ -177,7 +177,7 @@ export const userService = {
     if (params.sortBy) queryParams.sortBy = params.sortBy;
     if (params.sortOrder) queryParams.sortOrder = params.sortOrder;
 
-    const response = await api.get('/users', { params: queryParams });
+    const response = await api.get('/base/users', { params: queryParams });
     return response.data.data;
   },
 
@@ -187,7 +187,7 @@ export const userService = {
    * @returns Promise resolving to UserStats aggregate metrics.
    */
   async getUserStats(): Promise<UserStats> {
-    const response = await api.get('/users/stats');
+    const response = await api.get('/base/users/stats');
     return response.data.data;
   },
 
@@ -199,7 +199,7 @@ export const userService = {
    * @returns Promise resolving to updated ManagedUser entity.
    */
   async updateUserRole(userId: string, role: UserRole): Promise<ManagedUser> {
-    const response = await api.patch(`/users/${userId}/role`, { role });
+    const response = await api.patch(`/base/users/${userId}/role`, { role });
     return response.data.data;
   },
 
@@ -211,7 +211,7 @@ export const userService = {
    * @returns Promise resolving to updated ManagedUser entity.
    */
   async toggleUserStatus(userId: string, isActive: boolean): Promise<ManagedUser> {
-    const response = await api.patch(`/users/${userId}/status`, { is_active: isActive });
+    const response = await api.patch(`/base/users/${userId}/status`, { is_active: isActive });
     return response.data.data;
   },
 
@@ -223,7 +223,7 @@ export const userService = {
    * @returns Promise resolving to updated count.
    */
   async bulkUpdateStatus(userIds: string[], isActive: boolean): Promise<{ updatedCount: number }> {
-    const response = await api.patch('/users/bulk/status', { userIds, is_active: isActive });
+    const response = await api.patch('/base/users/bulk/status', { userIds, is_active: isActive });
     return response.data.data;
   },
 
@@ -235,7 +235,7 @@ export const userService = {
    * @returns Promise resolving to updated count.
    */
   async bulkUpdateRole(userIds: string[], role: UserRole): Promise<{ updatedCount: number }> {
-    const response = await api.patch('/users/bulk/role', { userIds, role });
+    const response = await api.patch('/base/users/bulk/role', { userIds, role });
     return response.data.data;
   },
 
@@ -247,7 +247,7 @@ export const userService = {
    * @returns Promise resolving to updated ManagedUser entity.
    */
   async updateUserClientType(userId: string, clientType: ClientType): Promise<ManagedUser> {
-    const response = await api.patch(`/users/${userId}/client-type`, { clientType });
+    const response = await api.patch(`/base/users/${userId}/client-type`, { clientType });
     return response.data.data;
   },
 
@@ -259,7 +259,7 @@ export const userService = {
    * @returns Promise resolving to updated count.
    */
   async bulkUpdateClientType(userIds: string[], clientType: ClientType): Promise<{ updatedCount: number }> {
-    const response = await api.patch('/users/bulk/client-type', { userIds, clientType });
+    const response = await api.patch('/base/users/bulk/client-type', { userIds, clientType });
     return response.data.data;
   },
 
@@ -270,7 +270,7 @@ export const userService = {
    * @returns Promise resolving upon deletion.
    */
   async deleteUser(userId: string): Promise<void> {
-    await api.delete(`/users/${userId}`);
+    await api.delete(`/base/users/${userId}`);
   },
 
   /**
@@ -280,7 +280,7 @@ export const userService = {
    * @returns Promise resolving to deleted count.
    */
   async bulkDeleteUsers(userIds: string[]): Promise<{ deletedCount: number }> {
-    const response = await api.delete('/users/bulk', { data: { userIds } });
+    const response = await api.delete('/base/users/bulk', { data: { userIds } });
     return response.data.data;
   },
 
@@ -292,7 +292,7 @@ export const userService = {
     * @returns Promise resolving to the generated API key metadata including the one-time fullKey.
     */
    async generateApiKey(options?: { name?: string; description?: string; expiresIn?: ApiKeyExpiry }): Promise<GeneratedApiKey> {
-     const response = await api.post('/users/me/api-key', {
+     const response = await api.post('/base/users/me/api-key', {
        name: options?.name,
        description: options?.description,
        expiresIn: options?.expiresIn,
@@ -306,7 +306,7 @@ export const userService = {
     * @returns Promise resolving to array of API key summaries.
     */
    async getApiKeys(): Promise<ApiKeySummary[]> {
-     const response = await api.get('/users/me/api-keys');
+     const response = await api.get('/base/users/me/api-keys');
      return response.data.data;
    },
 
@@ -317,7 +317,7 @@ export const userService = {
     * @returns Promise resolving upon deletion.
     */
    async deleteApiKey(keyId: string): Promise<void> {
-     await api.delete(`/users/me/api-key/${keyId}`);
+     await api.delete(`/base/users/me/api-key/${keyId}`);
    },
  };
 

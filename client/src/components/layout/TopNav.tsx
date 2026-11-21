@@ -254,7 +254,7 @@ export function UserMenu({
   if (!user) {
     return (
       <Link
-        to="/login"
+        to="/base/login"
         className="text-xs font-semibold px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
       >
         {t("login.signIn")}

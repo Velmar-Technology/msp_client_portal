@@ -73,7 +73,7 @@ export const authService = {
     // Set the storage preference BEFORE persisting tokens
     setRememberMe(rememberMe);
 
-    const response = await api.post('/auth/login', data);
+    const response = await api.post('/base/auth/login', data);
     const result = response.data.data as AuthResponse;
     persistAuthData(result);
     return result;
@@ -88,7 +88,7 @@ export const authService = {
    * @throws {ValidationError} If passwords fail complexity or match validation.
    */
   async register(data: RegisterPayload): Promise<void> {
-    await api.post('/auth/register', data);
+    await api.post('/base/auth/register', data);
   },
 
   /**
@@ -100,7 +100,7 @@ export const authService = {
    * @throws {ValidationError} If the OTP is invalid or expired.
    */
   async verifyEmail(email: string, otp: string): Promise<void> {
-    await api.post('/auth/verify-email', { email, otp });
+    await api.post('/base/auth/verify-email', { email, otp });
   },
 
   /**
@@ -114,7 +114,7 @@ export const authService = {
   async loginWithGoogle(data: GoogleAuthPayload, rememberMe = true): Promise<AuthResponse> {
     setRememberMe(rememberMe);
 
-    const response = await api.post('/auth/google', data);
+    const response = await api.post('/base/auth/google', data);
     const result = response.data.data as AuthResponse;
     persistAuthData(result);
     return result;
@@ -127,7 +127,7 @@ export const authService = {
    */
   logout(): void {
     clearAuthData();
-    window.location.href = '/login';
+    window.location.href = '/base/login';
   },
 
   /**
@@ -156,7 +156,7 @@ export const authService = {
    * @returns Promise resolving when reset email has been dispatched.
    */
   async forgotPassword(email: string): Promise<void> {
-    await api.post('/auth/forgot-password', { email });
+    await api.post('/base/auth/forgot-password', { email });
   },
 
   /**
@@ -169,7 +169,7 @@ export const authService = {
    * @throws {ValidationError} If passwords mismatch or token is expired/invalid.
    */
   async resetPassword(token: string, password: string, confirmPassword: string): Promise<void> {
-    await api.post('/auth/reset-password', { token, password, confirmPassword });
+    await api.post('/base/auth/reset-password', { token, password, confirmPassword });
   },
 };
 

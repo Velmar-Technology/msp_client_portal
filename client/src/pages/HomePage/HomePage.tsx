@@ -54,7 +54,7 @@ export function HomePage() {
 
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 max-w-md mx-auto">
             <Button asChild size="lg" className="rounded-full px-6 font-bold shadow-lg gap-2 text-sm">
-              <Link to="/login">
+              <Link to="/base/login">
                 <span>{t("home.signIn")}</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
@@ -203,7 +203,7 @@ export function HomePage() {
               size="lg"
               className="rounded-full font-bold px-6 text-sm"
             >
-              <Link to="/login">{t("home.signIn")}</Link>
+              <Link to="/base/login">{t("home.signIn")}</Link>
             </Button>
             <Button
               asChild

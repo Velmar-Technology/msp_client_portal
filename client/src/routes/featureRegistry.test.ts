@@ -62,7 +62,7 @@ describe('featureRegistry (Zero-Touch Frontend Auto-Discovery & Hierarchy)', () 
       '/helpdesk',
       '/plans',
       '/billing',
-      '/settings',
+      '/base/settings',
     ]);
 
     const helpdeskGroup = clientMerged.find((item) => item.to === '/helpdesk');

@@ -19,7 +19,7 @@ const mockServices = [
   {
     name: "Auth Service",
     category: "CORE",
-    endpoint: "/api/v1/auth",
+    endpoint: "/api/v1/base/auth",
     status: "OPERATIONAL" as const,
     latencyMs: 25,
     uptimePercentage: 99.9,
@@ -138,7 +138,7 @@ describe("ApiStatusPage", () => {
 
     expect(screen.getByText("Total Services")).toBeInTheDocument();
     expect(screen.getByText("Auth Service")).toBeInTheDocument();
-    expect(screen.getByText("/api/v1/auth")).toBeInTheDocument();
+    expect(screen.getByText("/api/v1/base/auth")).toBeInTheDocument();
     expect(screen.getByText("Billing Service")).toBeInTheDocument();
   });
 

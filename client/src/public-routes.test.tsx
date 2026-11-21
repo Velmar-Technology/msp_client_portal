@@ -114,7 +114,7 @@ describe("Public Unauthenticated Routes (/terms & /privacy)", () => {
     });
   });
 
-  test("redirects unauthenticated user to /login on protected route /dashboard", async () => {
+  test("redirects unauthenticated user to /base/login on protected route /dashboard", async () => {
     mockUseAuth.mockReturnValue({
       user: null,
       isAuthenticated: false,
@@ -132,7 +132,7 @@ describe("Public Unauthenticated Routes (/terms & /privacy)", () => {
               </ProtectedRoute>
             }
           />
-          <Route path="/login" element={<div>Login Page Redirect Target</div>} />
+          <Route path="/base/login" element={<div>Login Page Redirect Target</div>} />
         </Routes>
       </MemoryRouter>
     );

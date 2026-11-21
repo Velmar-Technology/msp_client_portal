@@ -187,7 +187,7 @@ export function RegisterPage() {
                 : ". Please log in with your existing credentials instead."),
             action: {
               label: i18n.language === "es_DO" ? "Iniciar sesión" : "Go to Login",
-              onClick: () => navigate("/login"),
+              onClick: () => navigate("/base/login"),
             },
             duration: 6000,
           });
@@ -669,7 +669,7 @@ return (
           <p className="mt-4 text-center text-xs text-muted-foreground">
             {t("register.alreadyHaveAccount")}{" "}
             <Link
-              to="/login"
+              to="/base/login"
               className="text-primary font-bold hover:underline focus-visible:ring-2 focus-visible:ring-ring rounded-xs"
             >
               {t("register.signInLink")}
@@ -683,7 +683,7 @@ return (
         onOpenChange={(open) => {
           setShowWelcomeDialog(open);
           if (!open) {
-            navigate("/login");
+            navigate("/base/login");
           }
         }}
       >
@@ -701,7 +701,7 @@ return (
               type="button"
               onClick={() => {
                 setShowWelcomeDialog(false);
-                navigate("/login");
+                navigate("/base/login");
               }}
               className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg text-sm font-bold transition-opacity cursor-pointer shadow-md border-0"
             >

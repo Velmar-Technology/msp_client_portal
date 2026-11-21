@@ -501,7 +501,7 @@ export function LoginPage() {
 
               <p className="mt-4 sm:mt-6 text-center text-xs text-muted-foreground">
                 {t("login.dontHaveAccount")}{" "}
-                <Link to="/register" className="text-primary font-bold hover:underline">
+                <Link to="/base/register" className="text-primary font-bold hover:underline">
                   {t("login.createAccount")}
                 </Link>
               </p>

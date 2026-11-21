@@ -141,7 +141,7 @@ export function RouteGuard({
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/base/login" state={{ from: location }} replace />;
   }
 
   // Dual-check (ADR-017 / BL-302): When user.permissions is present and requiredPermission is specified,

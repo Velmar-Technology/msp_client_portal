@@ -16,7 +16,7 @@ export const featureManifest: FeatureManifest = {
   routes: settingsRoutes,
   navItems: [
     {
-      to: "/settings",
+      to: "/base/settings",
       icon: Settings,
       labelKey: "settings",
       group: "account",

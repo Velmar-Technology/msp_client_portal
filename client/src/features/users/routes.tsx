@@ -25,12 +25,12 @@ export const usersRoutes: AppRouteObject[] = [
       </RouteSuspenseWrapper>
     ),
     handle: {
-      crumb: (t) => ({ label: t("nav.userManagement", { defaultValue: "User Management" }), to: "/users" }),
+      crumb: (t) => ({ label: t("nav.userManagement", { defaultValue: "User Management" }), to: "/base/users" }),
       requiredPermission: "users:read",
     },
   },
   {
     path: "/admin/users",
-    element: <Navigate to="/users" replace />,
+    element: <Navigate to="/base/users" replace />,
   },
 ];
