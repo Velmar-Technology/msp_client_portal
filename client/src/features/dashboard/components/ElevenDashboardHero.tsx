@@ -311,16 +311,16 @@ export function ElevenDashboardHero({
         </div>
       )}
 
-      {/* 3. ElevenLabs Segmented Telemetry Hero Card */}
+      {/* 3. Segmented Telemetry Hero Card */}
       <div
-        className="rounded-2xl border border-border/80 bg-card p-5 shadow-[var(--shadow-eleven)] overflow-hidden"
+        className="rounded-lg border border-border/70 bg-card p-4 shadow-subtle overflow-hidden"
         data-slot="eleven-telemetry-card"
       >
         {/* Flush Segmented Tabs Header */}
         <div
           role="tablist"
           aria-label="Telemetry Metrics"
-          className="-m-5 mb-5 rounded-t-2xl border-b border-border/60 bg-muted/15 flex overflow-x-auto divide-x divide-border/40 scrollbar-none"
+          className="-m-4 mb-4 rounded-t-lg border-b border-border/50 bg-muted/15 flex overflow-x-auto divide-x divide-border/40 scrollbar-none"
         >
           {metricTabs.map((tab) => {
             const isActive = tab.id === currentTab?.id;

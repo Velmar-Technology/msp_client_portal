@@ -196,7 +196,7 @@ export function MetricCardRoot({
           : undefined
       }
       className={cn(
-        "group rounded-2xl border border-border/80 bg-card/60 backdrop-blur-sm p-5 shadow-[var(--shadow-eleven)] transition-all duration-200 min-h-30 flex flex-col justify-between",
+        "group rounded-lg border border-border/70 bg-card p-4 shadow-subtle transition-all duration-200 min-h-28 flex flex-col justify-between",
         isInteractive &&
           "cursor-pointer hover:border-foreground/20 hover:shadow-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring select-none",
         className,
@@ -268,7 +268,7 @@ export function MetricCardRoot({
 
       {/* Footer Section */}
       {footer && (
-        <div className="mt-3 pt-2 border-t border-border/60">
+        <div className="mt-3 pt-2 border-t border-border/50">
           <div className="text-[10px] text-muted-foreground font-mono flex items-center justify-between">{footer}</div>
         </div>
       )}
@@ -359,7 +359,7 @@ export function MetricCardFooter({ className, children, ...props }: React.HTMLAt
     <div
       data-slot="metric-card-footer"
       className={cn(
-        "mt-3 pt-2 border-t border-border/60 text-[10px] text-muted-foreground font-mono flex items-center justify-between",
+        "mt-3 pt-2 border-t border-border/50 text-[10px] text-muted-foreground font-mono flex items-center justify-between",
         className,
       )}
       {...props}

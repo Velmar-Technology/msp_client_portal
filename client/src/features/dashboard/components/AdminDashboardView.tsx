@@ -37,7 +37,7 @@ export function StorageOverview({ storage, loading, t }: StorageOverviewProps) {
 
   if (!storage) {
     return (
-      <div className="flex min-h-30 flex-col rounded-2xl border border-border/80 bg-card p-5 shadow-[var(--shadow-eleven)] transition-all duration-200 hover:border-primary/40 hover:shadow-sm">
+      <div className="flex min-h-28 flex-col rounded-lg border border-border/70 bg-card p-4 shadow-subtle transition-all duration-200 hover:border-primary/40 hover:shadow-sm">
         <div className="flex items-center justify-between gap-2">
           <span className="truncate text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
             {t("dashboard.cloudStorage")}
@@ -200,8 +200,8 @@ function RecentInvoices({ invoices, t, language, getStatusLabel, getStatusColorC
   ];
 
   return (
-    <div className="bg-card rounded-2xl border border-border/80 overflow-hidden shadow-[var(--shadow-eleven)]">
-      <div className="p-3.5 border-b border-border/60 flex justify-between items-center bg-muted/20 mb-3">
+    <div className="bg-card rounded-lg border border-border/70 overflow-hidden shadow-subtle">
+      <div className="p-3.5 border-b border-border/50 flex justify-between items-center bg-muted/20 mb-3">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {t("dashboard.recentInvoices")}
         </h4>

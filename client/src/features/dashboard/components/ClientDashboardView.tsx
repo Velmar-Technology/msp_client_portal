@@ -181,7 +181,7 @@ export function ClientDashboardView() {
               type="button"
               size="sm"
               onClick={handleNewTicket}
-              className="h-8 rounded-xl px-3 text-xs font-semibold gap-1.5 cursor-pointer bg-foreground text-background hover:bg-foreground/90 shadow-xs"
+              className="h-7 rounded-lg px-3 text-xs font-medium gap-1.5 cursor-pointer bg-foreground text-background hover:bg-foreground/90 shadow-subtle"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>{t("dashboard.newTicket")}</span>
