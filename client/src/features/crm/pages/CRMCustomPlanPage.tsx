@@ -36,7 +36,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { FEATURE_CATALOG } from "@/constants/featureCatalog";
@@ -879,18 +878,16 @@ export function CRMCustomPlanPage() {
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Tabs value={featureLangTab} onValueChange={(val) => setFeatureLangTab(val as "en_US" | "es_DO")}>
-                      <TabsList className="h-6 p-0.5 bg-muted border border-border">
-                        <TabsTrigger value="en_US" className="text-[11px] h-5 px-2 gap-1 cursor-pointer">
-                          <Globe className="h-3 w-3" />
-                          <span>EN</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="es_DO" className="text-[11px] h-5 px-2 gap-1 cursor-pointer">
-                          <Globe className="h-3 w-3" />
-                          <span>ES</span>
-                        </TabsTrigger>
-                      </TabsList>
-                    </Tabs>
+                    <Page.Tabs
+                      variant="bubble"
+                      activeTab={featureLangTab}
+                      onTabChange={(val) => setFeatureLangTab(val as "en_US" | "es_DO")}
+                      tabs={[
+                        { id: "en_US", label: "EN", icon: Globe },
+                        { id: "es_DO", label: "ES", icon: Globe },
+                      ]}
+                      tabsListClassName="h-6 py-0 gap-1"
+                    />
                     <Button
                       type="button"
                       variant="outline"

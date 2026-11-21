@@ -3,6 +3,7 @@ import { Page } from "@/components/Page";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useDeferredLoading } from "@/hooks/useDeferredLoading";
+import { useUrlState } from "@/hooks/useUrlState";
 import { SKELETON_DISPLAY_DELAY_MS } from "@/constants/ui";
 import {
   Bell,
@@ -127,8 +128,8 @@ const PreferenceMatrix = ({
 }) => {
   const { t } = useTranslation();
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card shadow-xs">
-      <div className="grid grid-cols-[1fr_repeat(3,60px)] sm:grid-cols-[1fr_repeat(3,80px)] items-center gap-4 border-b border-border bg-muted/40 px-4 py-2">
+    <div className="overflow-hidden rounded-lg border border-border/70 bg-transparent">
+      <div className="grid grid-cols-[1fr_repeat(3,60px)] sm:grid-cols-[1fr_repeat(3,80px)] items-center gap-4 border-b border-border/70 bg-muted/40 px-4 py-2">
         <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {t("notificationPreferences.eventType", "Event Type")}
         </div>
@@ -141,7 +142,7 @@ const PreferenceMatrix = ({
           </div>
         ))}
       </div>
-      <div className="flex flex-col">
+      <div className="flex flex-col divide-y divide-border/50">
         {EVENT_DEFINITIONS.map((event) => (
           <PreferenceRow
             key={event.key}
@@ -152,7 +153,7 @@ const PreferenceMatrix = ({
           />
         ))}
       </div>
-      <div className="flex items-center gap-2 border-t border-border bg-muted/30 px-4 py-2">
+      <div className="flex items-center gap-2 border-t border-border/70 bg-muted/20 px-4 py-2">
         <Lock className="h-3 w-3 text-muted-foreground" />
         <span className="text-xs text-muted-foreground">
           {t("notificationPreferences.lockedTogglesInfo", "Locked toggles cannot be disabled.")}
@@ -165,8 +166,8 @@ const PreferenceMatrix = ({
 const HeaderInfo = () => {
   const { t } = useTranslation();
   return (
-    <div className="mb-6 flex items-start gap-3 rounded-lg border border-border bg-card p-3 shadow-xs">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-border bg-muted">
+    <div className="mb-6 flex items-start gap-3 rounded-lg border border-border/60 bg-muted/30 p-3">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-border/60 bg-muted">
         <Bell className="h-4 w-4 text-muted-foreground" />
       </div>
       <div className="flex flex-col gap-0.5">
@@ -245,7 +246,8 @@ const ActionFooter = ({
 
 export function NotificationPreferencesPage() {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<string>("channels");
+  const { getParam, setParam } = useUrlState();
+  const [activeTab, setActiveTab] = useState<string>(() => getParam("tab") || "channels");
   const { preferences, isLoading, isSaving, message, messageType, hasChanges, handleToggle, handleSave, isLocked } =
     useNotificationPreferences();
   const unreadCount = useNotificationStore((state) => state.unreadCount);
@@ -253,10 +255,15 @@ export function NotificationPreferencesPage() {
   const isAdmin = user?.role === "ADMIN";
   const showSkeleton = useDeferredLoading(isLoading, SKELETON_DISPLAY_DELAY_MS);
 
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setParam("tab", tab);
+  };
+
   if (isLoading) {
     if (!showSkeleton) return null;
     return (
-      <Page>
+      <Page className="max-w-4xl mx-auto py-6">
         <Page.Header>
           <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
           <Page.HeaderRow>
@@ -276,7 +283,7 @@ export function NotificationPreferencesPage() {
   const effectiveActiveTab = !isAdmin && activeTab === "templates" ? "channels" : activeTab;
 
   return (
-    <Page>
+    <Page className="max-w-4xl mx-auto py-6">
       <Page.Header>
         <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
         <Page.HeaderRow>
@@ -290,7 +297,7 @@ export function NotificationPreferencesPage() {
       <div className="mb-6">
         <Page.Tabs
           activeTab={effectiveActiveTab}
-          onTabChange={setActiveTab}
+          onTabChange={handleTabChange}
           tabs={[
             {
               id: "channels",

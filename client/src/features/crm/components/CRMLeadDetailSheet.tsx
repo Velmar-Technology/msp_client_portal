@@ -610,20 +610,32 @@ export function CRMLeadDetailSheet({
           )}
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-4 w-full bg-muted/60 p-1 rounded-lg border border-border">
-              <TabsTrigger value="quotation" className="text-xs font-semibold gap-1.5 cursor-pointer">
+            <TabsList className="inline-flex h-auto bg-transparent p-0 gap-1.5 border-0 w-auto justify-start self-start overflow-x-auto no-scrollbar scroll-smooth max-w-full py-0.5">
+              <TabsTrigger
+                value="quotation"
+                className="flex-none shrink-0 h-7 px-3.5 text-xs font-medium rounded-full border transition-all cursor-pointer select-none gap-1.5 border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:border-border/80 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-2xs data-[state=active]:font-semibold"
+              >
                 <FileText className="h-3.5 w-3.5" />
                 {t("crm.tabs.quote")}
               </TabsTrigger>
-              <TabsTrigger value="subscription" className="text-xs font-semibold gap-1.5 cursor-pointer">
+              <TabsTrigger
+                value="subscription"
+                className="flex-none shrink-0 h-7 px-3.5 text-xs font-medium rounded-full border transition-all cursor-pointer select-none gap-1.5 border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:border-border/80 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-2xs data-[state=active]:font-semibold"
+              >
                 <Sparkles className="h-3.5 w-3.5" />
                 {t("crm.tabs.subscription")}
               </TabsTrigger>
-              <TabsTrigger value="followup" className="text-xs font-semibold gap-1.5 cursor-pointer">
+              <TabsTrigger
+                value="followup"
+                className="flex-none shrink-0 h-7 px-3.5 text-xs font-medium rounded-full border transition-all cursor-pointer select-none gap-1.5 border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:border-border/80 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-2xs data-[state=active]:font-semibold"
+              >
                 <Calendar className="h-3.5 w-3.5" />
                 {t("crm.tabs.followup")}
               </TabsTrigger>
-              <TabsTrigger value="chatter" className="text-xs font-semibold gap-1.5 cursor-pointer">
+              <TabsTrigger
+                value="chatter"
+                className="flex-none shrink-0 h-7 px-3.5 text-xs font-medium rounded-full border transition-all cursor-pointer select-none gap-1.5 border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:border-border/80 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-2xs data-[state=active]:font-semibold"
+              >
                 <MessageSquare className="h-3.5 w-3.5" />
                 {t("crm.tabs.timeline")}
               </TabsTrigger>

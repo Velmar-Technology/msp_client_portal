@@ -179,14 +179,23 @@ export function DeployAgentModal({ isOpen, onClose, equip }: DeployAgentModalPro
         {/* Content Body */}
         <div className="p-4 sm:p-5 space-y-4">
           <Tabs defaultValue="irm" className="w-full">
-            <TabsList className="grid grid-cols-3 w-full h-8 bg-muted p-0.5 rounded-lg border border-border">
-              <TabsTrigger value="irm" className="text-xs font-semibold h-7 cursor-pointer">
+            <TabsList className="inline-flex h-auto bg-transparent p-0 gap-1.5 border-0 w-auto justify-start self-start overflow-x-auto no-scrollbar scroll-smooth max-w-full py-0.5">
+              <TabsTrigger
+                value="irm"
+                className="flex-none shrink-0 h-7 px-3.5 text-xs font-medium rounded-full border transition-all cursor-pointer select-none gap-1.5 border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:border-border/80 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-2xs data-[state=active]:font-semibold"
+              >
                 {t('devices.tabIrmOneLiner', 'PowerShell 1-Liner')}
               </TabsTrigger>
-              <TabsTrigger value="rmm" className="text-xs font-semibold h-7 cursor-pointer">
+              <TabsTrigger
+                value="rmm"
+                className="flex-none shrink-0 h-7 px-3.5 text-xs font-medium rounded-full border transition-all cursor-pointer select-none gap-1.5 border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:border-border/80 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-2xs data-[state=active]:font-semibold"
+              >
                 {t('devices.tabRmmSilent', 'Intune / GPO / RMM')}
               </TabsTrigger>
-              <TabsTrigger value="cli" className="text-xs font-semibold h-7 cursor-pointer">
+              <TabsTrigger
+                value="cli"
+                className="flex-none shrink-0 h-7 px-3.5 text-xs font-medium rounded-full border transition-all cursor-pointer select-none gap-1.5 border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:border-border/80 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-2xs data-[state=active]:font-semibold"
+              >
                 {t('devices.tabManualCli', 'Manual Binary CLI')}
               </TabsTrigger>
             </TabsList>

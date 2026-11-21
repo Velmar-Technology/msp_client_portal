@@ -176,11 +176,17 @@ export const PayModal = ({ isOpen, onClose, invoice, onSuccess, t }: PayModalPro
                 onValueChange={(val) => setPaymentMethod(val as "card" | "transfer")}
                 className="w-full"
               >
-                <TabsList className="grid grid-cols-2 mb-3">
-                  <TabsTrigger value="card" className="text-xs">
+                <TabsList className="inline-flex h-auto bg-transparent p-0 gap-1.5 border-0 w-auto justify-start self-start overflow-x-auto no-scrollbar scroll-smooth max-w-full py-0.5 mb-3">
+                  <TabsTrigger
+                    value="card"
+                    className="flex-none shrink-0 h-7 px-3.5 text-xs font-medium rounded-full border transition-all cursor-pointer select-none gap-1.5 border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:border-border/80 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-2xs data-[state=active]:font-semibold"
+                  >
                     {t("plans.creditCard") || "PayPal / Card"}
                   </TabsTrigger>
-                  <TabsTrigger value="transfer" className="text-xs">
+                  <TabsTrigger
+                    value="transfer"
+                    className="flex-none shrink-0 h-7 px-3.5 text-xs font-medium rounded-full border transition-all cursor-pointer select-none gap-1.5 border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:border-border/80 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-2xs data-[state=active]:font-semibold"
+                  >
                     {t("plans.bankTransfer") || "Bank Transfer"}
                   </TabsTrigger>
                 </TabsList>

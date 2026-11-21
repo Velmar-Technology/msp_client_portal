@@ -29,7 +29,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { FEATURE_CATALOG } from "@/constants/featureCatalog";
@@ -588,16 +587,16 @@ export function PlanEditorPage() {
                       </div>
                     </div>
 
-                    <Tabs value={activeLang} onValueChange={(v) => setActiveLang(v as "en_US" | "es_DO")}>
-                      <TabsList className="h-7 p-0.5">
-                        <TabsTrigger value="en_US" className="text-[11px] px-2.5 h-6">
-                          🇺🇸 {t("plans.langCodeEn") || "EN"}
-                        </TabsTrigger>
-                        <TabsTrigger value="es_DO" className="text-[11px] px-2.5 h-6">
-                          🇩🇴 {t("plans.langCodeEs") || "ES"}
-                        </TabsTrigger>
-                      </TabsList>
-                    </Tabs>
+                    <Page.Tabs
+                      variant="bubble"
+                      activeTab={activeLang}
+                      onTabChange={(v) => setActiveLang(v as "en_US" | "es_DO")}
+                      tabs={[
+                        { id: "en_US", label: `🇺🇸 ${t("plans.langCodeEn") || "EN"}` },
+                        { id: "es_DO", label: `🇩🇴 ${t("plans.langCodeEs") || "ES"}` },
+                      ]}
+                      tabsListClassName="h-6 py-0 gap-1"
+                    />
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4 pt-0">
@@ -717,16 +716,16 @@ export function PlanEditorPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Tabs value={featureLangTab} onValueChange={(v) => setFeatureLangTab(v as "en_US" | "es_DO")}>
-                        <TabsList className="h-7 p-0.5">
-                          <TabsTrigger value="en_US" className="text-[11px] px-2 h-6">
-                            🇺🇸 EN
-                          </TabsTrigger>
-                          <TabsTrigger value="es_DO" className="text-[11px] px-2 h-6">
-                            🇩🇴 ES
-                          </TabsTrigger>
-                        </TabsList>
-                      </Tabs>
+                      <Page.Tabs
+                        variant="bubble"
+                        activeTab={featureLangTab}
+                        onTabChange={(v) => setFeatureLangTab(v as "en_US" | "es_DO")}
+                        tabs={[
+                          { id: "en_US", label: "🇺🇸 EN" },
+                          { id: "es_DO", label: "🇩🇴 ES" },
+                        ]}
+                        tabsListClassName="h-6 py-0 gap-1"
+                      />
 
                       <Button
                         type="button"
