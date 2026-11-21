@@ -1,7 +1,9 @@
 import { useMemo } from "react";
 import { Download, FileText, LayoutGrid, List } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
+import { PageProvider, PageView, PageViewSwitcher } from "@/components/views";
+import { PageContentCard, PageSearchInput, PageFilterPill, PageEmptyState } from "@/components/shared";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -148,95 +150,92 @@ export function ResourcesPage() {
   };
 
   return (
-    <Page<ResourceViewMode> defaultView="tiled" availableViews={availableViews} isLoading={loading}>
-      <div className="flex flex-col gap-5">
-        {/* Page Title & View Switcher */}
-        <div className="flex items-center justify-between gap-3 pt-1">
-          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground font-heading">
-            {t("resources.title")}
-          </h1>
-          <Page.ViewSwitcher size="sm" />
-        </div>
-
-        {/* ElevenLabs Wide Search Bar */}
-        <Page.SearchInput
-          value={searchTerm}
-          onChange={setSearchTerm}
-          placeholder={t("resources.searchPlaceholder") || "Search resources..."}
-        />
-
-        {/* ElevenLabs + Filter Pills Row */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar flex-wrap">
-          <Page.FilterPill
-            label={t("resources.filterByOs") || "OS"}
-            value={selectedOs === "ALL" ? "" : selectedOs}
-            options={osFilterOptions}
-            onChange={(val) => setSelectedOs(val as typeof selectedOs)}
-            onClear={() => setSelectedOs("ALL")}
+    <PageProvider<ResourceViewMode> defaultView="tiled" availableViews={availableViews} isLoading={loading}>
+      <PageShell
+        title={t("resources.title")}
+        actions={<PageViewSwitcher size="sm" />}
+      >
+        <div className="flex flex-col gap-5">
+          {/* ElevenLabs Wide Search Bar */}
+          <PageSearchInput
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder={t("resources.searchPlaceholder") || "Search resources..."}
           />
 
-          {hasActiveFilters && (
-            <Button
-              variant="ghost"
-              size="xs"
-              onClick={handleClearAll}
-              className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              {t("resources.clearFilters") || "Clear all"}
-            </Button>
+          {/* ElevenLabs + Filter Pills Row */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar flex-wrap">
+            <PageFilterPill
+              label={t("resources.filterByOs") || "OS"}
+              value={selectedOs === "ALL" ? "" : selectedOs}
+              options={osFilterOptions}
+              onChange={(val) => setSelectedOs(val as typeof selectedOs)}
+              onClear={() => setSelectedOs("ALL")}
+            />
+
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={handleClearAll}
+                className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                {t("resources.clearFilters") || "Clear all"}
+              </Button>
+            )}
+          </div>
+
+          {/* Populated Content or Empty State Card */}
+          {!loading && filteredResources.length === 0 ? (
+            <PageContentCard>
+              <PageEmptyState
+                icon={FileText}
+                title={t("resources.emptyTitle") || "No resources found"}
+                description={t("resources.emptyDesc") || "No resources match your search or filter criteria."}
+                actionLabel={hasActiveFilters ? (t("resources.clearFilters") || "Clear all filters") : undefined}
+                onAction={hasActiveFilters ? handleClearAll : undefined}
+              />
+            </PageContentCard>
+          ) : (
+            <>
+              {/* TILED (GRID) VIEW */}
+              <PageView type="tiled" className="space-y-4">
+                {loading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <Skeleton key={i} className="w-full h-40" />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {filteredResources.map((item) => (
+                      <ResourceCard key={item.id} item={item} onDownload={handleDownload} />
+                    ))}
+                  </div>
+                )}
+              </PageView>
+
+              {/* LIST VIEW */}
+              <PageView type="list" className="space-y-4">
+                {loading ? (
+                  <div className="space-y-2.5">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <Skeleton key={i} className="w-full h-16" />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2.5">
+                    {filteredResources.map((item) => (
+                      <ResourceListItem key={item.id} item={item} onDownload={handleDownload} />
+                    ))}
+                  </div>
+                )}
+              </PageView>
+            </>
           )}
         </div>
-
-        {/* Populated Content or Empty State Card */}
-        {!loading && filteredResources.length === 0 ? (
-          <Page.ContentCard>
-            <Page.EmptyState
-              icon={FileText}
-              title={t("resources.emptyTitle") || "No resources found"}
-              description={t("resources.emptyDesc") || "No resources match your search or filter criteria."}
-              actionLabel={hasActiveFilters ? (t("resources.clearFilters") || "Clear all filters") : undefined}
-              onAction={hasActiveFilters ? handleClearAll : undefined}
-            />
-          </Page.ContentCard>
-        ) : (
-          <>
-            {/* TILED (GRID) VIEW */}
-            <Page.View type="tiled" className="space-y-4">
-              {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <Skeleton key={i} className="w-full h-40" />
-                  ))}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {filteredResources.map((item) => (
-                    <ResourceCard key={item.id} item={item} onDownload={handleDownload} />
-                  ))}
-                </div>
-              )}
-            </Page.View>
-
-            {/* LIST VIEW */}
-            <Page.View type="list" className="space-y-4">
-              {loading ? (
-                <div className="space-y-2.5">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <Skeleton key={i} className="w-full h-16" />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2.5">
-                  {filteredResources.map((item) => (
-                    <ResourceListItem key={item.id} item={item} onDownload={handleDownload} />
-                  ))}
-                </div>
-              )}
-            </Page.View>
-          </>
-        )}
-      </div>
-    </Page>
+      </PageShell>
+    </PageProvider>
   );
 }
 

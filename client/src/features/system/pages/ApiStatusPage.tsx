@@ -18,7 +18,14 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useApiStatus } from "../hooks/useApiStatus";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
+import {
+  PageContentCard,
+  PageSearchInput,
+  PageFilterPill,
+  PageEmptyState,
+  HorizontalTabs,
+} from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { MetricCard } from "@/components/shared";
 import { Badge } from "@/components/ui/badge";
@@ -507,47 +514,42 @@ export function ApiStatusPage() {
   }, [services]);
 
   return (
-    <Page isLoading={isLoading}>
-      <Page.Header>
-        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-        <Page.HeaderRow>
-          <Page.TitleGroup>
-            <Page.Title docsUrl="https://help.velmar.com/api-status">{t("apiStatus.title", "System & API Health Status")}</Page.Title>
-            <Page.Description>{t("apiStatus.subtitle", "Real-time microservices latency, uptime, and environment audit")}</Page.Description>
-          </Page.TitleGroup>
-          <Page.Actions maxVisible={3}>
-            <div className="flex items-center space-x-2 mr-1">
-              <Checkbox
-                id="auto-refresh"
-                checked={isAutoRefresh}
-                onCheckedChange={(checked) => setIsAutoRefresh(!!checked)}
-              />
-              <Label
-                htmlFor="auto-refresh"
-                className="text-xs text-muted-foreground cursor-pointer font-medium select-none"
-              >
-                {t("apiStatus.autoRefresh", "Auto-refresh")}
-              </Label>
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={refresh}
-              disabled={isRefreshing}
-              className="h-8 px-3.5 rounded-full gap-1.5 text-xs font-semibold cursor-pointer shadow-2xs"
+    <PageShell
+      title={t("apiStatus.title", "System & API Health Status")}
+      subtitle={t("apiStatus.subtitle", "Real-time microservices latency, uptime, and environment audit")}
+      variant="full"
+      actions={
+        <>
+          <div className="flex items-center space-x-2 mr-1">
+            <Checkbox
+              id="auto-refresh"
+              checked={isAutoRefresh}
+              onCheckedChange={(checked) => setIsAutoRefresh(!!checked)}
+            />
+            <Label
+              htmlFor="auto-refresh"
+              className="text-xs text-muted-foreground cursor-pointer font-medium select-none"
             >
-              <RotateCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-              <span>{isRefreshing ? t("apiStatus.refreshing", "Refreshing...") : t("apiStatus.refresh", "Refresh")}</span>
-            </Button>
-          </Page.Actions>
-        </Page.HeaderRow>
-      </Page.Header>
+              {t("apiStatus.autoRefresh", "Auto-refresh")}
+            </Label>
+          </div>
 
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refresh}
+            disabled={isRefreshing}
+            className="h-8 px-3.5 rounded-full gap-1.5 text-xs font-semibold cursor-pointer shadow-2xs"
+          >
+            <RotateCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+            <span>{isRefreshing ? t("apiStatus.refreshing", "Refreshing...") : t("apiStatus.refresh", "Refresh")}</span>
+          </Button>
+        </>
+      }
+    >
       <div className="space-y-5">
-        {/* Standalone Bubble Tabs Navigation */}
-        <Page.Tabs
-          variant="bubble"
+        {/* Standalone Horizontal Tabs Navigation */}
+        <HorizontalTabs
           activeTab={activeSection}
           onTabChange={(val) => setActiveSection(val as any)}
           tabs={[
@@ -584,7 +586,7 @@ export function ApiStatusPage() {
             {/* Search Input + Export Button */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <div className="flex-1">
-                <Page.SearchInput
+                <PageSearchInput
                   value={searchQuery}
                   onChange={setSearchQuery}
                   placeholder={t("apiStatus.searchPlaceholder", "Search endpoint, service, or category...")}
@@ -604,21 +606,21 @@ export function ApiStatusPage() {
 
             {/* Filter Pills Row */}
             <div className="flex items-center gap-2 flex-wrap">
-              <Page.FilterPill
+              <PageFilterPill
                 label={t("apiStatus.tableStatus", "Status")}
                 value={statusTab && statusTab !== "ALL" ? statusTab : ""}
                 options={serviceStatusOptions}
                 onChange={(v) => setStatusTab(v as any)}
                 onClear={() => setStatusTab("ALL")}
               />
-              <Page.FilterPill
+              <PageFilterPill
                 label={t("apiStatus.tableCategory", "Category")}
                 value={categoryFilter && categoryFilter !== "ALL" ? categoryFilter : ""}
                 options={serviceCategoryOptions}
                 onChange={setCategoryFilter}
                 onClear={() => setCategoryFilter("ALL")}
               />
-              <Page.FilterPill
+              <PageFilterPill
                 label={t("apiStatus.tableLatency", "Latency")}
                 value={latencyFilter && latencyFilter !== "ALL" ? latencyFilter : ""}
                 options={latencyOptions}
@@ -695,7 +697,7 @@ export function ApiStatusPage() {
             </div>
 
             {/* Latency Health Distribution Histogram Card */}
-            <Page.ContentCard className="p-4 sm:p-5">
+            <PageContentCard className="p-4 sm:p-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                 <div>
                   <h4 className="text-xs font-semibold text-foreground tracking-tight">
@@ -731,12 +733,12 @@ export function ApiStatusPage() {
                   ))}
                 </div>
               </div>
-            </Page.ContentCard>
+            </PageContentCard>
 
             {/* Microservices Data Table */}
             {filteredServices.length === 0 ? (
-              <Page.ContentCard className="p-8">
-                <Page.EmptyState
+              <PageContentCard className="p-8">
+                <PageEmptyState
                   icon={Activity}
                   title={t("apiStatus.noServicesFound", "No microservices match filters")}
                   description={t("apiStatus.noServicesFoundDesc", "Try adjusting your search query, status, or latency filter.")}
@@ -749,9 +751,9 @@ export function ApiStatusPage() {
                       : undefined
                   }
                 />
-              </Page.ContentCard>
+              </PageContentCard>
             ) : (
-              <Page.ContentCard className="p-0 border-border/70 overflow-hidden">
+              <PageContentCard className="p-0 border-border/70 overflow-hidden">
                 <DataTable
                   columns={serviceColumns}
                   data={paginatedServices}
@@ -766,7 +768,7 @@ export function ApiStatusPage() {
                     onLimitChange: setServicesLimit,
                   }}
                 />
-              </Page.ContentCard>
+              </PageContentCard>
             )}
           </div>
         )}
@@ -777,7 +779,7 @@ export function ApiStatusPage() {
             {/* Search Input + Export Button */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <div className="flex-1">
-                <Page.SearchInput
+                <PageSearchInput
                   value={envSearchQuery}
                   onChange={setEnvSearchQuery}
                   placeholder={t("apiStatus.envSearchPlaceholder", "Search environment variable key, category, or description...")}
@@ -797,21 +799,21 @@ export function ApiStatusPage() {
 
             {/* Filter Pills Row */}
             <div className="flex items-center gap-2 flex-wrap">
-              <Page.FilterPill
+              <PageFilterPill
                 label={t("apiStatus.tableEnvStatus", "Status")}
                 value={envStatusTab && envStatusTab !== "ALL" ? envStatusTab : ""}
                 options={envStatusOptions}
                 onChange={(v) => setEnvStatusTab(v as any)}
                 onClear={() => setEnvStatusTab("ALL")}
               />
-              <Page.FilterPill
+              <PageFilterPill
                 label={t("apiStatus.tableEnvCategory", "Category")}
                 value={envCategoryFilter && envCategoryFilter !== "ALL" ? envCategoryFilter : ""}
                 options={envCategoryOptions}
                 onChange={setEnvCategoryFilter}
                 onClear={() => setEnvCategoryFilter("ALL")}
               />
-              <Page.FilterPill
+              <PageFilterPill
                 label={t("apiStatus.tableSensitivity", "Sensitivity")}
                 value={envSensitivityFilter && envSensitivityFilter !== "ALL" ? envSensitivityFilter : ""}
                 options={sensitivityOptions}
@@ -873,8 +875,8 @@ export function ApiStatusPage() {
 
             {/* Environment Variables Data Table */}
             {filteredEnvVariables.length === 0 ? (
-              <Page.ContentCard className="p-8">
-                <Page.EmptyState
+              <PageContentCard className="p-8">
+                <PageEmptyState
                   icon={KeyRound}
                   title={t("apiStatus.noEnvVarsFound", "No environment variables match filters")}
                   description={t("apiStatus.noEnvVarsFoundDesc", "Try adjusting your search query, configuration status, or category filter.")}
@@ -887,9 +889,9 @@ export function ApiStatusPage() {
                       : undefined
                   }
                 />
-              </Page.ContentCard>
+              </PageContentCard>
             ) : (
-              <Page.ContentCard className="p-0 border-border/70 overflow-hidden">
+              <PageContentCard className="p-0 border-border/70 overflow-hidden">
                 <DataTable
                   columns={envVarColumns}
                   data={paginatedEnvVariables}
@@ -904,12 +906,12 @@ export function ApiStatusPage() {
                     onLimitChange: setEnvVarsLimit,
                   }}
                 />
-              </Page.ContentCard>
+              </PageContentCard>
             )}
           </div>
         )}
       </div>
-    </Page>
+    </PageShell>
   );
 }
 

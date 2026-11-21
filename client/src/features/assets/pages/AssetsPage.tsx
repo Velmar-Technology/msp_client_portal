@@ -11,7 +11,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUrlState } from '@/hooks/useUrlState';
-import { Page } from '@/components/Page';
+import { PageShell } from '@/components/layout/PageShell';
+import { HorizontalTabs } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
@@ -120,46 +121,35 @@ export function AssetsPage() {
   );
 
   return (
-    <Page className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
-      <Page.Header>
-        <Page.HeaderRow>
-          <Page.TitleGroup>
-            <Page.Title>{t('assets.title', 'Asset & Inventory Management')}</Page.Title>
-            <Page.Description>
-              {t(
-                'assets.description',
-                'Track physical assets, network devices, software licenses, and consumables with low-stock alerts.'
-              )}
-            </Page.Description>
-          </Page.TitleGroup>
-          <Page.Actions>
-            {activeMainTab === 'it_assets' ? (
-              <Button onClick={openCreate} size="sm" className="h-7 gap-1.5 text-xs">
-                <Plus className="h-3.5 w-3.5" />
-                {t('assets.newAsset', 'New Asset')}
-              </Button>
-            ) : (
-              <Button
-                onClick={() => setIsCreateConsumableOpen(true)}
-                size="sm"
-                className="h-7 gap-1.5 text-xs"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                {t('assets.consumables.newConsumable', 'Add Consumable')}
-              </Button>
-            )}
-          </Page.Actions>
-        </Page.HeaderRow>
-
-        <div className="pt-2">
-          <Page.Tabs
-            tabs={mainTabs}
-            activeTab={activeMainTab}
-            onTabChange={handleMainTabChange}
-            variant="bubble"
-          />
-        </div>
-      </Page.Header>
+    <PageShell
+      title={t('assets.title', 'Asset & Inventory Management')}
+      subtitle={t(
+        'assets.description',
+        'Track physical assets, network devices, software licenses, and consumables with low-stock alerts.'
+      )}
+      variant="full"
+      className="p-4 md:p-6 space-y-6"
+      actions={
+        activeMainTab === 'it_assets' ? (
+          <Button onClick={openCreate} size="sm" className="h-7 gap-1.5 text-xs">
+            <Plus className="h-3.5 w-3.5" />
+            {t('assets.newAsset', 'New Asset')}
+          </Button>
+        ) : (
+          <Button
+            onClick={() => setIsCreateConsumableOpen(true)}
+            size="sm"
+            className="h-7 gap-1.5 text-xs"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {t('assets.consumables.newConsumable', 'Add Consumable')}
+          </Button>
+        )
+      }
+      tabs={mainTabs}
+      activeTab={activeMainTab}
+      onTabChange={handleMainTabChange}
+    >
 
       {/* IT ASSETS TAB CONTENT */}
       {activeMainTab === 'it_assets' && (
@@ -186,11 +176,10 @@ export function AssetsPage() {
           {/* Filter Toolbar and Tabs */}
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <Page.Tabs
+              <HorizontalTabs
                 tabs={assetTypeTabs}
                 activeTab={type || 'ALL'}
                 onTabChange={(id: string) => setType(id as AssetType | 'ALL')}
-                variant="bubble"
               />
 
               <div className="flex items-center gap-2">
@@ -367,7 +356,7 @@ export function AssetsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Page>
+    </PageShell>
   );
 }
 export default AssetsPage;

@@ -27,7 +27,8 @@ import {
   Calculator,
   ChevronRight,
 } from "lucide-react";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
+import { HorizontalTabs } from "@/components/shared";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -457,51 +458,44 @@ export function CRMCustomPlanPage() {
 
   return (
     <TooltipProvider>
-      <Page>
-        <Page.Header>
-          <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-          <Page.HeaderRow>
-            <Page.TitleGroup>
-              <div className="flex items-center gap-2">
-                <Page.Back to="/crm" />
-                <Page.Title>{t("crm.customPlan.modalTitle", "Bespoke Custom Plan Studio")}</Page.Title>
-              </div>
-              <Page.Description>
-                {t(
-                  "crm.customPlan.modalSubtitle",
-                  "Design private negotiated pricing, custom SLAs, and device quotas.",
-                )}
-              </Page.Description>
-            </Page.TitleGroup>
-            <Page.Actions maxVisible={3}>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => navigate("/crm")}
-                className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                <span>{t("common.back", "Back to CRM")}</span>
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                disabled={actionLoading}
-                onClick={handleSubmit}
-                className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>
-                  {isDirectLeadMode
-                    ? t("crm.customPlan.applyToLead", "Attach to Lead")
-                    : t("crm.customPlan.savePlan", "Create Custom Plan")}
-                </span>
-              </Button>
-            </Page.Actions>
-          </Page.HeaderRow>
-        </Page.Header>
-
+      <PageShell
+        title={t("crm.customPlan.modalTitle", "Bespoke Custom Plan Studio")}
+        subtitle={t(
+          "crm.customPlan.modalSubtitle",
+          "Design private negotiated pricing, custom SLAs, and device quotas.",
+        )}
+        variant="full"
+        backPath="/crm"
+        backLabel={t("common.back", "Back to CRM")}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/crm")}
+              className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>{t("common.back", "Back to CRM")}</span>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              disabled={actionLoading}
+              onClick={handleSubmit}
+              className="h-7 px-3 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>
+                {isDirectLeadMode
+                  ? t("crm.customPlan.applyToLead", "Attach to Lead")
+                  : t("crm.customPlan.savePlan", "Create Custom Plan")}
+              </span>
+            </Button>
+          </div>
+        }
+      >
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {/* Top Control Bar: Target Lead & Clone Template */}
           <section aria-label="Lead Selection and Template Quick-Fill">
@@ -878,15 +872,13 @@ export function CRMCustomPlanPage() {
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Page.Tabs
-                      variant="bubble"
+                    <HorizontalTabs
                       activeTab={featureLangTab}
                       onTabChange={(val) => setFeatureLangTab(val as "en_US" | "es_DO")}
                       tabs={[
                         { id: "en_US", label: "EN", icon: Globe },
                         { id: "es_DO", label: "ES", icon: Globe },
                       ]}
-                      tabsListClassName="h-6 py-0 gap-1"
                     />
                     <Button
                       type="button"
@@ -1424,7 +1416,7 @@ export function CRMCustomPlanPage() {
             </aside>
           </section>
         </form>
-      </Page>
+      </PageShell>
     </TooltipProvider>
   );
 }

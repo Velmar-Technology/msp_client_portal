@@ -2,7 +2,13 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Laptop, Clock } from 'lucide-react';
-import { Page, type PageStatusStage } from '@/components/Page';
+import {
+  PageStatusBar,
+  PageFormHeader,
+  PageStatBox,
+  PageStatButton,
+  type PageStatusStage,
+} from '@/components/views';
 import type { TicketItem as Ticket } from '../api/ticketService';
 import type { AuthUser } from '@/store/useAuthStore';
 
@@ -212,7 +218,7 @@ export const TicketStatusBar: React.FC<TicketStatusBarProps> = ({
   }
 
   return (
-    <Page.StatusBar
+    <PageStatusBar
       className={className}
       actions={renderActionButtons()}
       stages={stages}
@@ -293,7 +299,7 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
         />
       )}
 
-      <Page.FormHeader
+      <PageFormHeader
         title={ticket.title}
         badges={
           <>
@@ -332,9 +338,9 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
           </span>
         }
         buttonBox={
-          <Page.StatBox>
+          <PageStatBox>
             {onToggleChat && (
-              <Page.StatButton
+              <PageStatButton
                 icon={MessageSquare}
                 value={typeof responseCount === 'number' ? responseCount : undefined}
                 label={t('ticketDetail.toggleChatter')}
@@ -343,21 +349,21 @@ export const TicketDetailHeader: React.FC<TicketDetailHeaderProps> = ({
               />
             )}
             {ticket.device_name && (
-              <Page.StatButton
+              <PageStatButton
                 icon={Laptop}
                 value={ticket.device_name}
                 label="Device"
               />
             )}
             {sla?.isApplicable && (
-              <Page.StatButton
+              <PageStatButton
                 icon={Clock}
                 value={sla.formattedTime}
                 label="SLA"
                 active={sla.isExpired}
               />
             )}
-          </Page.StatBox>
+          </PageStatBox>
         }
       />
     </>

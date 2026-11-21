@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -107,18 +107,11 @@ export function PasswordManagerPage() {
   ];
 
   return (
-    <Page>
-      <Page.Header>
-        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-        <Page.HeaderRow>
-          <Page.TitleGroup>
-            <Page.Title>{t("passwordManager.pageTitle", "Password Manager")}</Page.Title>
-            <Page.Description>
-              {t("passwordManager.pageDescription", "Enterprise zero-knowledge password vault for your team.")}
-            </Page.Description>
-          </Page.TitleGroup>
-        </Page.HeaderRow>
-      </Page.Header>
+    <PageShell
+      title={t("passwordManager.pageTitle", "Password Manager")}
+      subtitle={t("passwordManager.pageDescription", "Enterprise zero-knowledge password vault for your team.")}
+      variant="constrained"
+    >
       <div className="space-y-6 w-full">
         {/* BL-702 Read-Only Non-Payment Banner */}
         {isReadOnly && (
@@ -396,7 +389,7 @@ export function PasswordManagerPage() {
           </CardContent>
         </Card>
       </div>
-    </Page>
+    </PageShell>
   );
 }
 

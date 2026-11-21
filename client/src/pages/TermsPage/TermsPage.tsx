@@ -1,6 +1,6 @@
 import React from "react";
 import { ShieldAlert, ChevronRight, Scale } from "lucide-react";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { useTermsPage } from "@/hooks/useTermsPage";
 import type { TermSection } from "@/hooks/useTermsPage";
@@ -96,24 +96,18 @@ export function TermsPage() {
   const isSpanish = i18n.language === "es_DO";
 
   return (
-    <Page showBreadcrumbs={false} className="w-full pb-12 px-4 sm:px-6 lg:px-8">
-      <Page.Header>
-        <Page.HeaderRow>
-          <Page.TitleGroup>
-            <Page.Title>{t("legal.termsTitle")}</Page.Title>
-            <Page.Description>
-              {t("legal.lastUpdated")}: {isSpanish ? "18 de Junio, 2026" : "June 18, 2026"}. {isSpanish ? "Al utilizar los servicios de Velmar Technology, usted acepta cumplir con estos términos." : "By using Velmar Technology services, you agree to be bound by these terms."}
-            </Page.Description>
-          </Page.TitleGroup>
-          <Page.Actions>
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted rounded-md border border-border shrink-0">
-              <Scale className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t("legal.bindingAgreement")}</span>
-            </div>
-          </Page.Actions>
-        </Page.HeaderRow>
-      </Page.Header>
-
+    <PageShell
+      title={t("legal.termsTitle")}
+      subtitle={`${t("legal.lastUpdated")}: ${isSpanish ? "18 de Junio, 2026" : "June 18, 2026"}. ${isSpanish ? "Al utilizar los servicios de Velmar Technology, usted acepta cumplir con estos términos." : "By using Velmar Technology services, you agree to be bound by these terms."}`}
+      actions={
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted rounded-md border border-border shrink-0">
+          <Scale className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t("legal.bindingAgreement")}</span>
+        </div>
+      }
+      variant="full"
+      className="pb-12 px-4 sm:px-6 lg:px-8"
+    >
       <div className="border border-border bg-card rounded-xl shadow-xs overflow-hidden mt-4">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-0">
           {/* Sticky Left Sidebar Navigation */}
@@ -127,7 +121,7 @@ export function TermsPage() {
           </div>
         </div>
       </div>
-    </Page>
+    </PageShell>
   );
 }
 

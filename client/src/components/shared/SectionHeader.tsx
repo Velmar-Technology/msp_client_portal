@@ -1,15 +1,19 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-export interface SectionHeaderProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
+export interface SectionHeaderProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title" | "action"> {
   /** Main title for the section */
   title: React.ReactNode;
   /** Explanatory description beneath the title */
   description?: React.ReactNode;
   /** Right-aligned actions, buttons, or controls */
   actions?: React.ReactNode;
+  /** Single action alias for right-aligned control */
+  action?: React.ReactNode;
   /** Optional icon displayed before the title */
   icon?: React.ReactNode;
+  /** Optional leading icon alias */
+  leading?: React.ReactNode;
   /** Optional badge next to the title */
   badge?: React.ReactNode;
   /** Whether to render a hairline bottom border divider */
@@ -27,12 +31,16 @@ export function SectionHeader({
   title,
   description,
   actions,
+  action,
   icon,
+  leading,
   badge,
   bordered = false,
   className,
   ...props
 }: SectionHeaderProps) {
+  const finalActions = actions ?? action;
+  const finalLeading = leading ?? icon;
   return (
     <div
       data-slot="section-header"
@@ -45,7 +53,7 @@ export function SectionHeader({
     >
       <div className="space-y-0.5 min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
-          {icon && <div className="text-muted-foreground shrink-0">{icon}</div>}
+          {finalLeading && <div className="text-muted-foreground shrink-0">{finalLeading}</div>}
           <h3 className="text-sm font-semibold tracking-tight text-foreground font-heading truncate">
             {title}
           </h3>
@@ -57,9 +65,9 @@ export function SectionHeader({
           </p>
         )}
       </div>
-      {actions && (
+      {finalActions && (
         <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
-          {actions}
+          {finalActions}
         </div>
       )}
     </div>

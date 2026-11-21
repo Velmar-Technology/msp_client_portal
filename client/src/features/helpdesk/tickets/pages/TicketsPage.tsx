@@ -1,7 +1,18 @@
 import { useState, useMemo, useCallback } from "react";
 import { Plus, Eye, MoreHorizontal, Ban, ChevronRight, List, LayoutGrid, CheckCheck, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
+import {
+  PageProvider,
+  PageView,
+  PageViewSwitcher,
+} from "@/components/views";
+import {
+  PageContentCard,
+  PageSearchInput,
+  PageFilterPill,
+  PageEmptyState,
+} from "@/components/shared";
 import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
 import type { ColumnDef, Column } from "@tanstack/react-table";
 import { useQueryClient } from "@tanstack/react-query";
@@ -424,7 +435,7 @@ export function TicketsPage() {
   };
 
   return (
-    <Page
+    <PageProvider
       activeView={viewMode}
       onViewChange={handleViewChange}
       defaultView={viewMode}
@@ -436,17 +447,11 @@ export function TicketsPage() {
       defaultPage={page}
       defaultPageSize={limit}
     >
-      <div className="flex flex-col gap-5">
-        {/* Header Row: Title & Subtitle + Primary Actions */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-1">
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground font-heading">
-              {t("tickets.title")}
-            </h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {t("tickets.subtitle")}
-            </p>
-          </div>
+      <PageShell
+        title={t("tickets.title")}
+        subtitle={t("tickets.subtitle")}
+        variant="full"
+        actions={
           <div className="flex items-center gap-2">
             {tickets.length > 0 && (
               <Button
@@ -473,150 +478,151 @@ export function TicketsPage() {
               </Button>
             )}
           </div>
-        </div>
+        }
+      >
+        <div className="flex flex-col gap-5">
+          {/* ElevenLabs Wide Search Bar */}
+          <PageSearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder={t("tickets.searchPlaceholder") || "Search tickets..."}
+          />
 
-        {/* ElevenLabs Wide Search Bar */}
-        <Page.SearchInput
-          value={searchQuery}
-          onChange={setSearchQuery}
-          placeholder={t("tickets.searchPlaceholder") || "Search tickets..."}
-        />
+          {/* ElevenLabs + Filter Pills Row with ViewSwitcher on the right */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <PageFilterPill
+                label={t("tickets.colStatus") || "Status"}
+                value={statusFilter}
+                options={statusFilterOptions}
+                onChange={setStatusFilter}
+                onClear={() => setStatusFilter("")}
+              />
+              <PageFilterPill
+                label={t("tickets.colPriority") || "Priority"}
+                value={priorityFilter}
+                options={priorityFilterOptions}
+                onChange={setPriorityFilter}
+                onClear={() => setPriorityFilter("")}
+              />
+              <PageFilterPill
+                label={t("tickets.colCategory") || "Category"}
+                value={categoryFilter}
+                options={categoryFilterOptions}
+                onChange={setCategoryFilter}
+                onClear={() => setCategoryFilter("")}
+              />
+              <PageFilterPill
+                label={t("tickets.colDateRange") || "Date"}
+                value={dateRangeFilter === "all" ? "" : dateRangeFilter}
+                options={dateRangeFilterOptions}
+                onChange={setDateRangeFilter}
+                onClear={() => setDateRangeFilter("all")}
+              />
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  onClick={handleClearAllFilters}
+                  className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  {t("tickets.clearFilters") || "Clear all"}
+                </Button>
+              )}
+            </div>
 
-        {/* ElevenLabs + Filter Pills Row with ViewSwitcher on the right */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Page.FilterPill
-              label={t("tickets.colStatus") || "Status"}
-              value={statusFilter}
-              options={statusFilterOptions}
-              onChange={setStatusFilter}
-              onClear={() => setStatusFilter("")}
-            />
-            <Page.FilterPill
-              label={t("tickets.colPriority") || "Priority"}
-              value={priorityFilter}
-              options={priorityFilterOptions}
-              onChange={setPriorityFilter}
-              onClear={() => setPriorityFilter("")}
-            />
-            <Page.FilterPill
-              label={t("tickets.colCategory") || "Category"}
-              value={categoryFilter}
-              options={categoryFilterOptions}
-              onChange={setCategoryFilter}
-              onClear={() => setCategoryFilter("")}
-            />
-            <Page.FilterPill
-              label={t("tickets.colDateRange") || "Date"}
-              value={dateRangeFilter === "all" ? "" : dateRangeFilter}
-              options={dateRangeFilterOptions}
-              onChange={setDateRangeFilter}
-              onClear={() => setDateRangeFilter("all")}
-            />
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="xs"
-                onClick={handleClearAllFilters}
-                className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                {t("tickets.clearFilters") || "Clear all"}
-              </Button>
-            )}
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              <PageViewSwitcher
+                value={viewMode}
+                onChange={handleViewChange}
+                size="sm"
+                options={[
+                  { value: "list", label: t("resources.viewList", "List"), icon: List, title: t("resources.viewList", "List") },
+                  { value: "kanban", label: t("tickets.kanban", "Kanban"), icon: LayoutGrid, title: t("tickets.kanban", "Kanban") },
+                ]}
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-auto">
-            <Page.ViewSwitcher
-              value={viewMode}
-              onChange={handleViewChange}
-              size="sm"
-              options={[
-                { value: "list", label: t("resources.viewList", "List"), icon: List, title: t("resources.viewList", "List") },
-                { value: "kanban", label: t("tickets.kanban", "Kanban"), icon: LayoutGrid, title: t("tickets.kanban", "Kanban") },
-              ]}
-            />
-          </div>
-        </div>
+          {/* Content Area: Card Wrapped or Empty State */}
+          {!loading && tickets.length === 0 ? (
+            <PageContentCard>
+              <PageEmptyState
+                icon={MessageSquare}
+                title={t("tickets.noTicketsFound") || "No tickets found"}
+                description={
+                  hasActiveFilters
+                    ? (t("tickets.noTicketsFilteredDesc") || "No tickets match your active search and filter criteria.")
+                    : (t("tickets.noTicketsDesc") || "No tickets have been created yet.")
+                }
+                primaryAction={
+                  canCreateTicket
+                    ? {
+                        label: t("tickets.newTicket") || "New Ticket",
+                        icon: Plus,
+                        onClick: () => setShowNewTicket(true),
+                      }
+                    : undefined
+                }
+                secondaryAction={
+                  hasActiveFilters
+                    ? {
+                        label: t("tickets.clearFilters") || "Clear all filters",
+                        onClick: handleClearAllFilters,
+                      }
+                    : undefined
+                }
+              />
+            </PageContentCard>
+          ) : (
+            <>
+              <PageView type="list">
+                <PageContentCard>
+                  <DataTable
+                    columns={columns}
+                    data={tickets}
+                    loading={loading}
+                    noDataMessage={t("tickets.noTicketsFound")}
+                    onRowClick={(ticket) => {
+                      markTicketAsRead(ticket.id, user?.id);
+                      navigate(`/helpdesk/tickets/${ticket.id}`);
+                    }}
+                    sorting={sorting}
+                    onSortingChange={handleSortingChange}
+                    enableSorting
+                    manualSorting
+                    enableRowSelection
+                    onSelectedRowsChange={setSelectedTickets}
+                    bulkActions={[
+                      {
+                        label: t("tickets.bulkCancel"),
+                        onClick: handleBulkCancelClick,
+                        variant: "destructive",
+                      },
+                    ]}
+                    pagination={{
+                      page,
+                      totalPages,
+                      totalItems: total,
+                      limit,
+                      onPageChange: setPage,
+                      onLimitChange: handleLimitChange,
+                    }}
+                  />
+                </PageContentCard>
+              </PageView>
 
-        {/* Content Area: Card Wrapped or Empty State */}
-        {!loading && tickets.length === 0 ? (
-          <Page.ContentCard>
-            <Page.EmptyState
-              icon={MessageSquare}
-              title={t("tickets.noTicketsFound") || "No tickets found"}
-              description={
-                hasActiveFilters
-                  ? (t("tickets.noTicketsFilteredDesc") || "No tickets match your active search and filter criteria.")
-                  : (t("tickets.noTicketsDesc") || "No tickets have been created yet.")
-              }
-              primaryAction={
-                canCreateTicket
-                  ? {
-                      label: t("tickets.newTicket") || "New Ticket",
-                      icon: Plus,
-                      onClick: () => setShowNewTicket(true),
-                    }
-                  : undefined
-              }
-              secondaryAction={
-                hasActiveFilters
-                  ? {
-                      label: t("tickets.clearFilters") || "Clear all filters",
-                      onClick: handleClearAllFilters,
-                    }
-                  : undefined
-              }
-            />
-          </Page.ContentCard>
-        ) : (
-          <>
-            <Page.View type="list">
-              <Page.ContentCard>
-                <DataTable
-                  columns={columns}
-                  data={tickets}
+              <PageView type="kanban">
+                <TicketKanbanBoard
+                  tickets={tickets}
                   loading={loading}
-                  noDataMessage={t("tickets.noTicketsFound")}
-                  onRowClick={(ticket) => {
+                  userId={user?.id}
+                  onTicketClick={(ticket) => {
                     markTicketAsRead(ticket.id, user?.id);
                     navigate(`/helpdesk/tickets/${ticket.id}`);
                   }}
-                  sorting={sorting}
-                  onSortingChange={handleSortingChange}
-                  enableSorting
-                  manualSorting
-                  enableRowSelection
-                  onSelectedRowsChange={setSelectedTickets}
-                  bulkActions={[
-                    {
-                      label: t("tickets.bulkCancel"),
-                      onClick: handleBulkCancelClick,
-                      variant: "destructive",
-                    },
-                  ]}
-                  pagination={{
-                    page,
-                    totalPages,
-                    totalItems: total,
-                    limit,
-                    onPageChange: setPage,
-                    onLimitChange: handleLimitChange,
-                  }}
                 />
-              </Page.ContentCard>
-            </Page.View>
-
-            <Page.View type="kanban">
-              <TicketKanbanBoard
-                tickets={tickets}
-                loading={loading}
-                userId={user?.id}
-                onTicketClick={(ticket) => {
-                  markTicketAsRead(ticket.id, user?.id);
-                  navigate(`/helpdesk/tickets/${ticket.id}`);
-                }}
-              />
-            </Page.View>
+              </PageView>
           </>
         )}
       </div>
@@ -691,7 +697,8 @@ export function TicketsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Page>
+      </PageShell>
+    </PageProvider>
   );
 }
 

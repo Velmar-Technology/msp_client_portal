@@ -1,9 +1,9 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
 
 export function ContentPageSkeleton() {
   return (
-    <Page>
+    <PageShell>
       <div className="space-y-6 max-w-4xl animate-fade-in" aria-label="Loading page">
         {/* Header */}
         <div className="space-y-2">
@@ -30,6 +30,6 @@ export function ContentPageSkeleton() {
           </div>
         </div>
       </div>
-    </Page>
+    </PageShell>
   );
 }

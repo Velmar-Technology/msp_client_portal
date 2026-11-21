@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from "react";
 import { Plus, Minus, RefreshCw, Mail, Ban, CreditCard, ShoppingBag, Info, MoreHorizontal } from "lucide-react";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Subscription } from "../api/subscriptionService";
@@ -36,7 +36,6 @@ export function PlansPage() {
     t,
     i18n,
     user,
-    loading,
     isAdmin,
     plans,
     filteredPlans,
@@ -360,36 +359,25 @@ export function PlansPage() {
   );
 
   return (
-    <Page isLoading={loading && filteredPlans.length === 0}>
-      <Page.Header>
-        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-        <Page.HeaderRow>
-          <Page.TitleGroup>
-            <Page.Title>{t("plans.title")}</Page.Title>
-            <Page.Description>{t("plans.subtitle")}</Page.Description>
-          </Page.TitleGroup>
-          {isAdmin && (
-            <Page.Actions maxVisible={3}>
-              <Button
-                type="button"
-                size="sm"
-                onClick={handleCreateClick}
-                className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
-              >
-                <span>+ {t("plans.addPlan") || "Add Plan"}</span>
-              </Button>
-            </Page.Actions>
-          )}
-        </Page.HeaderRow>
-      </Page.Header>
-
-      {/* Navigation Section Switcher: Browse Plans vs Active Subscriptions */}
-      {showTabs && (
-        <div className="mb-6">
-          <Page.Tabs
-            activeTab={activeTab}
-            onTabChange={(val) => setActiveTab(val as "browse" | "manage")}
-            tabs={[
+    <PageShell
+      title={t("plans.title")}
+      subtitle={t("plans.subtitle")}
+      variant="full"
+      actions={
+        isAdmin ? (
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleCreateClick}
+            className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
+          >
+            <span>+ {t("plans.addPlan") || "Add Plan"}</span>
+          </Button>
+        ) : undefined
+      }
+      tabs={
+        showTabs
+          ? [
               {
                 id: "browse",
                 label: t("plans.browseTab", "Available Plans"),
@@ -401,11 +389,12 @@ export function PlansPage() {
                 icon: CreditCard,
                 badge: activeSubscriptions.length > 0 ? activeSubscriptions.length : undefined,
               },
-            ]}
-          />
-        </div>
-      )}
-
+            ]
+          : undefined
+      }
+      activeTab={activeTab}
+      onTabChange={(val) => setActiveTab(val as "browse" | "manage")}
+    >
       {activeTab !== "manage" ? (
         <>
           {/* Billing Cycle Switcher & Admin Actions */}
@@ -635,7 +624,7 @@ export function PlansPage() {
           }
         />
       )}
-    </Page>
+    </PageShell>
   );
 }
 

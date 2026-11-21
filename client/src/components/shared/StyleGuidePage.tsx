@@ -1,5 +1,18 @@
 import React from 'react';
-import { Page } from '@/components/Page';
+import { PageShell } from '@/components/layout/PageShell';
+import {
+  PageActionGrid,
+  PageActionCard,
+  PageSearchInput,
+  PageTogglePill,
+  PageFilterPill,
+  PageContentCard,
+  PageEmptyState,
+  PageBanner,
+  HorizontalTabs,
+  ListGroup,
+  ListItem,
+} from '@/components/shared';
 import { MetricCard } from './MetricCard';
 import { EmptyState } from './EmptyState';
 import { TableToolbar } from './TableToolbar';
@@ -67,26 +80,20 @@ import {
  */
 export const StyleGuidePage: React.FC = () => {
   return (
-    <Page>
-      <Page.Header>
-        <Page.HeaderRow>
-          <Page.TitleGroup>
-            <Page.Title>Design System Style Guide</Page.Title>
-            <Page.Description>
-              Canonical showcase of unified L1 and L2 primitives, layout blocks, and theme tokens.
-            </Page.Description>
-          </Page.TitleGroup>
-          <Page.Actions>
-            <Button variant="outline" size="sm">
-              Secondary
-            </Button>
-            <Button size="sm">
-              Primary Action
-            </Button>
-          </Page.Actions>
-        </Page.HeaderRow>
-      </Page.Header>
-
+    <PageShell
+      title="Design System Style Guide"
+      subtitle="Canonical showcase of unified L1 and L2 primitives, layout blocks, and theme tokens."
+      actions={
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            Secondary
+          </Button>
+          <Button size="sm">
+            Primary Action
+          </Button>
+        </div>
+      }
+    >
       {/* ElevenLabs Compound Layout Pattern */}
       <section className="space-y-4">
         <div>
@@ -94,88 +101,90 @@ export const StyleGuidePage: React.FC = () => {
           <p className="text-xs text-muted-foreground">Action cards, wide search, filter pills, content card, and empty states.</p>
         </div>
 
-        <Page.ActionGrid>
-          <Page.ActionCard
+        <PageActionGrid>
+          <PageActionCard
             icon={Laptop}
             title="Add webhook tool"
             description="Trigger HTTP actions on lifecycle events"
             onClick={() => {}}
           />
-          <Page.ActionCard
+          <PageActionCard
             icon={Cloud}
             title="Add client tool"
             description="Run client-side functions in browser"
             onClick={() => {}}
           />
-          <Page.ActionCard
+          <PageActionCard
             icon={Info}
             title="Add integration tool"
             description="Sync with external API services"
             onClick={() => {}}
           />
-        </Page.ActionGrid>
+        </PageActionGrid>
 
-        <Page.SearchInput
+        <PageSearchInput
           value=""
           onChange={() => {}}
           placeholder="Search tools..."
         />
 
         {/* Pill Segmented Tabs */}
-        <Page.Tabs variant="pill" defaultTab="all">
-          <Page.Tab id="all" label="All Tests">
-            <div className="space-y-4 pt-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Page.TogglePill
-                  icon={Users}
-                  label="Shared with me"
-                  active={false}
-                  onToggle={() => {}}
-                />
-                <Page.FilterPill
-                  label="Type"
-                  value=""
-                  options={[
-                    { value: "webhook", label: "Webhook" },
-                    { value: "client", label: "Client" },
-                  ]}
-                  onChange={() => {}}
-                  onClear={() => {}}
-                />
-                <Page.FilterPill
-                  label="Creator"
-                  value="me"
-                  options={[
-                    { value: "me", label: "Created by me" },
-                    { value: "team", label: "Created by team" },
-                  ]}
-                  onChange={() => {}}
-                  onClear={() => {}}
-                />
-              </div>
-
-              <Page.ContentCard>
-                <Page.EmptyState
-                  icon={Laptop}
-                  title="No tests found"
-                  description="You have not created any tests yet. Get started by creating your first automated test."
-                  primaryAction={{
-                    label: "Create your first test",
-                    onClick: () => {},
-                  }}
-                  secondaryAction={{
-                    label: "Learn how",
-                    icon: PlayCircle,
-                    href: "https://docs.example.com",
-                  }}
-                />
-              </Page.ContentCard>
+        <div className="space-y-4">
+          <HorizontalTabs
+            defaultTab="all"
+            tabs={[
+              { id: "all", label: "All Tests" },
+              { id: "past", label: "Past Run Analysis" },
+            ]}
+          />
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <PageTogglePill
+                icon={Users}
+                label="Shared with me"
+                active={false}
+                onToggle={() => {}}
+              />
+              <PageFilterPill
+                label="Type"
+                value=""
+                options={[
+                  { value: "webhook", label: "Webhook" },
+                  { value: "client", label: "Client" },
+                ]}
+                onChange={() => {}}
+                onClear={() => {}}
+              />
+              <PageFilterPill
+                label="Creator"
+                value="me"
+                options={[
+                  { value: "me", label: "Created by me" },
+                  { value: "team", label: "Created by team" },
+                ]}
+                onChange={() => {}}
+                onClear={() => {}}
+              />
             </div>
-          </Page.Tab>
-          <Page.Tab id="past" label="Past Run Analysis">
-            <div className="p-4 text-xs text-muted-foreground">Historical run diagnostics and traces</div>
-          </Page.Tab>
-        </Page.Tabs>
+
+            <PageContentCard>
+              <PageEmptyState
+                icon={Laptop}
+                title="No tests found"
+                description="You have not created any tests yet. Get started by creating your first automated test."
+                primaryAction={{
+                  label: "Create your first test",
+                  onClick: () => {},
+                }}
+                secondaryAction={{
+                  label: "Learn how",
+                  icon: PlayCircle,
+                  href: "https://docs.example.com",
+                }}
+              />
+            </PageContentCard>
+          </div>
+        </div>
       </section>
 
       {/* API Keys & Integration Flow Pattern */}
@@ -185,8 +194,7 @@ export const StyleGuidePage: React.FC = () => {
           <p className="text-xs text-muted-foreground">Standalone bubble tabs, callout banner, and connected dual-icon integration flow empty state.</p>
         </div>
 
-        <Page.Tabs
-          variant="bubble"
+        <HorizontalTabs
           defaultTab="keys"
           tabs={[
             {
@@ -210,7 +218,7 @@ export const StyleGuidePage: React.FC = () => {
           ]}
         />
 
-        <Page.Banner
+        <PageBanner
           icon={Sparkles}
           title="Let your coding agent set this up."
           description="One prompt signs you in, creates a key, and adds the SDK to your project."
@@ -222,8 +230,8 @@ export const StyleGuidePage: React.FC = () => {
           onDismiss={() => {}}
         />
 
-        <Page.ContentCard>
-          <Page.EmptyState
+        <PageContentCard>
+          <PageEmptyState
             connectedIcons={{
               from: Cloud,
               to: Laptop,
@@ -235,34 +243,34 @@ export const StyleGuidePage: React.FC = () => {
               onClick: () => {},
             }}
           />
-        </Page.ContentCard>
+        </PageContentCard>
       </section>
 
       <section className="space-y-4">
         <div>
-          <h2 className="text-xl font-semibold text-foreground">ElevenLabs Setting Rows & Layout Primitives (ADR-016)</h2>
+          <h2 className="text-xl font-semibold text-foreground">Cal.com Setting Rows & Layout Primitives (ADR-016)</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             Card-less row layouts with hairline dividers (<code className="text-xs bg-muted px-1 py-0.5 rounded">divide-y divide-border/50</code>), text-first minimalist labels, and flat danger zones.
           </p>
         </div>
-        <div className="max-w-3xl divide-y divide-border/50 rounded-xl border border-border/40 p-6 bg-card/40">
-          <Page.SettingRow
-            label="Full Legal Name"
+        <ListGroup className="max-w-3xl">
+          <ListItem
+            title="Full Legal Name"
             description="Estiven Polanco"
-            action={<Button variant="outline" size="sm" className="h-8 text-xs font-medium">Update Name</Button>}
+            trailing={<Button variant="outline" size="sm" className="h-8 text-xs font-medium">Update Name</Button>}
           />
-          <Page.SettingRow
-            label="Two-Factor Authentication"
+          <ListItem
+            title="Two-Factor Authentication"
             description="Enforce high-assurance TOTP authenticator verification on login."
-            action={<Button variant="outline" size="sm" className="h-8 text-xs font-medium">Configure 2FA</Button>}
+            trailing={<Button variant="outline" size="sm" className="h-8 text-xs font-medium">Configure 2FA</Button>}
           />
-          <Page.SettingRow
+          <ListItem
             danger
-            label="Delete Entire Account"
+            title="Delete Entire Account"
             description="Permanently delete your entire account across all workspaces. This action cannot be reversed."
-            action={<Button variant="outline" size="sm" className="h-8 text-xs font-medium border-destructive/40 text-destructive hover:bg-destructive/10">Delete Account</Button>}
+            trailing={<Button variant="outline" size="sm" className="h-8 text-xs font-medium border-destructive/40 text-destructive hover:bg-destructive/10">Delete Account</Button>}
           />
-        </div>
+        </ListGroup>
       </section>
 
       <section className="space-y-4">
@@ -728,6 +736,6 @@ export const StyleGuidePage: React.FC = () => {
            </Card>
          </div>
        </section>
-     </Page>
-   );
- };
+    </PageShell>
+  );
+};

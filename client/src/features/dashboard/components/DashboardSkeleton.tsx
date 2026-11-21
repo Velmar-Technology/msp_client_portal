@@ -1,4 +1,4 @@
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
 import { StatsGrid } from "@/components/shared/StatsGrid";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
@@ -7,7 +7,7 @@ export function DashboardSkeleton() {
   const { t } = useTranslation();
 
   return (
-    <Page title={t("dashboard.systemOverview")} subtitle={t("dashboard.systemStatus")}>
+    <PageShell title={t("dashboard.systemOverview")} subtitle={t("dashboard.systemStatus")}>
       <div className="space-y-6 mb-6">
         <StatsGrid className="w-full">
           <Skeleton className="w-full h-64" />
@@ -23,7 +23,7 @@ export function DashboardSkeleton() {
           <Skeleton className="w-full h-64" />
         </div>
       </div>
-    </Page>
+    </PageShell>
   );
 }
 

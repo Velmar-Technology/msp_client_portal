@@ -26,7 +26,20 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
+import {
+  PageProvider,
+  PageView,
+  PageViewSwitcher,
+  PageCalendar,
+  type PageCalendarEvent,
+} from "@/components/views";
+import {
+  PageContentCard,
+  PageSearchInput,
+  PageFilterPill,
+  PageEmptyState,
+} from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -42,7 +55,7 @@ import { useMaintenance } from "../hooks/useMaintenance";
 import { ScheduleMaintenanceModal } from "../components/ScheduleMaintenanceModal";
 import type { DeviceMaintenance, MaintenanceStatus } from "../api/maintenanceService";
 import { cn } from "@/lib/utils";
-import type { PageCalendarEvent } from "@/components/page/types";
+
 
 export function MaintenancePage() {
   const { t } = useTranslation();
@@ -342,7 +355,7 @@ export function MaintenancePage() {
   ];
 
   return (
-    <Page<"calendar" | "list">
+    <PageProvider<"calendar" | "list">
       defaultView="calendar"
       activeView={viewMode.toLowerCase() as "calendar" | "list"}
       onViewChange={(v) => setViewMode(v.toUpperCase() as "CALENDAR" | "LIST")}
@@ -362,29 +375,25 @@ export function MaintenancePage() {
       ]}
       isLoading={loading}
     >
-      <Page.Header>
-        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-        <Page.HeaderRow>
-          <Page.TitleGroup>
-            <Page.Title docsUrl="https://help.velmar.com/maintenance">{t("nav.maintenance")}</Page.Title>
-            <Page.Description>{t("maintenance.subtitle")}</Page.Description>
-          </Page.TitleGroup>
-          <Page.Actions maxVisible={3}>
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => openScheduleModal()}
-              className="h-8 px-3.5 rounded-xl text-xs font-semibold gap-1.5 cursor-pointer shadow-2xs"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>{t("maintenance.scheduleBtn")}</span>
-            </Button>
-          </Page.Actions>
-        </Page.HeaderRow>
-      </Page.Header>
+      <PageShell
+        title={t("nav.maintenance")}
+        subtitle={t("maintenance.subtitle")}
+        variant="full"
+        actions={
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => openScheduleModal()}
+            className="h-8 px-3.5 rounded-xl text-xs font-semibold gap-1.5 cursor-pointer shadow-2xs"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>{t("maintenance.scheduleBtn")}</span>
+          </Button>
+        }
+      >
 
       <div className="space-y-3 mb-4">
-        <Page.SearchInput
+        <PageSearchInput
           value={searchQuery}
           onChange={(val) => handleSearchChange(val)}
           placeholder={t("maintenance.searchPlaceholder")}
@@ -393,7 +402,7 @@ export function MaintenancePage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
             {/* Status Filter */}
-            <Page.FilterPill
+            <PageFilterPill
               label={t("maintenance.tableStatus")}
               value={statusFilter && statusFilter !== "ALL" ? statusFilter : ""}
               options={statusOptions}
@@ -405,7 +414,7 @@ export function MaintenancePage() {
             {/* Tech Filter (Admin/Tech) */}
             {isAdminOrTech && techOptions.length > 0 && (
               <>
-                <Page.FilterPill
+                <PageFilterPill
                   label={t("maintenance.tableTech")}
                   value={selectedTechFilter && selectedTechFilter !== "ALL" ? selectedTechFilter : ""}
                   options={techOptions}
@@ -430,17 +439,17 @@ export function MaintenancePage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Page.ViewSwitcher size="sm" />
+            <PageViewSwitcher size="sm" />
           </div>
         </div>
       </div>
 
       {/* CALENDAR / DATE VIEW */}
-      <Page.View type="calendar" className="space-y-4">
-        <Page.ContentCard className="p-4 sm:p-6">
+      <PageView type="calendar" className="space-y-4">
+        <PageContentCard className="p-4 sm:p-6">
 
-        {/* Page.Date / Page.Calendar Component */}
-        <Page.Date
+        {/* PageCalendar Component */}
+        <PageCalendar
           currentDate={currentDate}
           onDateChange={setCurrentDate}
           events={calendarEvents}
@@ -467,14 +476,14 @@ export function MaintenancePage() {
           }}
         />
       
-        </Page.ContentCard>
-      </Page.View>
+        </PageContentCard>
+      </PageView>
 
       {/* LIST VIEW TABLE */}
-      <Page.View type="list" className="space-y-4">
+      <PageView type="list" className="space-y-4">
         {filteredMaintenances.length === 0 ? (
-          <Page.ContentCard className="p-8">
-            <Page.EmptyState
+          <PageContentCard className="p-8">
+            <PageEmptyState
               icon={CalendarIcon}
               title={t("maintenance.noMaintenancesFound")}
               description={t(
@@ -493,9 +502,9 @@ export function MaintenancePage() {
                     }
               }
             />
-          </Page.ContentCard>
+          </PageContentCard>
         ) : (
-          <Page.ContentCard className="p-0 border-border/70 overflow-hidden">
+          <PageContentCard className="p-0 border-border/70 overflow-hidden">
             <DataTable
               columns={listColumns}
               data={paginatedMaintenances}
@@ -510,9 +519,9 @@ export function MaintenancePage() {
                 onLimitChange: handleListLimitChange,
               }}
             />
-          </Page.ContentCard>
+          </PageContentCard>
         )}
-      </Page.View>
+      </PageView>
 
       {/* Schedule Maintenance Modal */}
       <ScheduleMaintenanceModal
@@ -586,7 +595,8 @@ export function MaintenancePage() {
           </AlertDialogContent>
         )}
       </AlertDialog>
-    </Page>
+      </PageShell>
+    </PageProvider>
   );
 }
 

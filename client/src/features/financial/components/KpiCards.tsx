@@ -1,7 +1,7 @@
 import type { KpiCardData } from "../hooks/useFinancialDashboard";
 import { useTranslation } from "react-i18next";
 import { DollarSign, TrendingUp, CreditCard, Percent } from "lucide-react";
-import { Page } from "@/components/Page";
+import { DashboardGrid, DashboardKpi } from "@/components/views";
 
 interface KpiCardsProps {
   kpis: KpiCardData[];
@@ -18,12 +18,12 @@ export function KpiCards({ kpis }: KpiCardsProps) {
   const { t } = useTranslation();
 
   return (
-    <Page.Dashboard cols={4} gap="sm">
+    <DashboardGrid cols={4} gap="sm">
       {kpis.map((kpi) => {
         const IconComponent = KPI_ICON_MAP[kpi.key] || DollarSign;
 
         return (
-          <Page.DashboardKpi
+          <DashboardKpi
             key={kpi.key}
             icon={IconComponent}
             title={t(`financial.${kpi.titleKey}`)}
@@ -37,7 +37,7 @@ export function KpiCards({ kpis }: KpiCardsProps) {
           />
         );
       })}
-    </Page.Dashboard>
+    </DashboardGrid>
   );
 }
 

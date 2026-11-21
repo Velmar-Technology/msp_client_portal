@@ -20,7 +20,8 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { planService, type Plan, type PlanFeature, type PlanClientType } from "../api/planService";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
+import { HorizontalTabs } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -474,36 +475,26 @@ export function PlanEditorPage() {
 
   if (pageLoading) {
     return (
-      <Page>
-        <Page.Header>
-          <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-          <Page.HeaderRow>
-            <Page.TitleGroup>
-              <Page.Title>{isCreateMode ? t("plans.addNewPlan") : t("plans.editPlanTitle", { id })}</Page.Title>
-            </Page.TitleGroup>
-          </Page.HeaderRow>
-        </Page.Header>
+      <PageShell
+        title={isCreateMode ? t("plans.addNewPlan") : t("plans.editPlanTitle", { id })}
+        variant="full"
+      >
         <div className="flex items-center justify-center min-h-100">
           <div className="flex flex-col items-center gap-3">
             <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
             <p className="text-sm text-muted-foreground">{t("plans.loading") || "Loading..."}</p>
           </div>
         </div>
-      </Page>
+      </PageShell>
     );
   }
 
   if (planNotFound) {
     return (
-      <Page>
-        <Page.Header>
-          <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-          <Page.HeaderRow>
-            <Page.TitleGroup>
-              <Page.Title>{t("plans.planNotFound") || "Plan Not Found"}</Page.Title>
-            </Page.TitleGroup>
-          </Page.HeaderRow>
-        </Page.Header>
+      <PageShell
+        title={t("plans.planNotFound") || "Plan Not Found"}
+        variant="full"
+      >
         <Card className="max-w-md mx-auto my-12 text-center p-6 space-y-4">
           <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
             <AlertTriangle className="w-6 h-6" />
@@ -518,51 +509,46 @@ export function PlanEditorPage() {
             {t("plans.backToPlans") || "Back to Plans"}
           </Button>
         </Card>
-      </Page>
+      </PageShell>
     );
   }
 
   return (
     <TooltipProvider>
-      <Page>
-        <Page.Header>
-          <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-          <Page.HeaderRow>
-            <Page.TitleGroup>
-              <div className="flex items-center gap-2">
-                <Page.Back to="/plans" />
-                <Page.Title>{isCreateMode ? t("plans.addNewPlan") : t("plans.editPlanTitle", { id })}</Page.Title>
-              </div>
-            </Page.TitleGroup>
-            <Page.Actions maxVisible={3}>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => navigate("/plans")}
-                className="cursor-pointer h-7"
-              >
-                <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
-                {t("plans.cancel") || "Cancel"}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={handleSave}
-                disabled={saveLoading}
-                className="cursor-pointer shadow-xs h-7"
-              >
-                {saveLoading ? (
-                  <div className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-1.5" />
-                ) : (
-                  <Save className="w-3.5 h-3.5 mr-1.5" />
-                )}
-                {isCreateMode ? t("plans.createPlan") || "Create Plan" : t("plans.saveChanges") || "Save Changes"}
-              </Button>
-            </Page.Actions>
-          </Page.HeaderRow>
-        </Page.Header>
-
+      <PageShell
+        title={isCreateMode ? t("plans.addNewPlan") : t("plans.editPlanTitle", { id })}
+        variant="full"
+        backPath="/plans"
+        backLabel={t("plans.backToPlans") || "Back"}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/plans")}
+              className="cursor-pointer h-7"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
+              {t("plans.cancel") || "Cancel"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleSave}
+              disabled={saveLoading}
+              className="cursor-pointer shadow-xs h-7"
+            >
+              {saveLoading ? (
+                <div className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-1.5" />
+              ) : (
+                <Save className="w-3.5 h-3.5 mr-1.5" />
+              )}
+              {isCreateMode ? t("plans.createPlan") || "Create Plan" : t("plans.saveChanges") || "Save Changes"}
+            </Button>
+          </div>
+        }
+      >
         <div className="space-y-6">
           {/* Main Grid: Left Column Form Builder, Right Column Settings & Preview */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -587,15 +573,13 @@ export function PlanEditorPage() {
                       </div>
                     </div>
 
-                    <Page.Tabs
-                      variant="bubble"
+                    <HorizontalTabs
                       activeTab={activeLang}
                       onTabChange={(v) => setActiveLang(v as "en_US" | "es_DO")}
                       tabs={[
                         { id: "en_US", label: `🇺🇸 ${t("plans.langCodeEn") || "EN"}` },
                         { id: "es_DO", label: `🇩🇴 ${t("plans.langCodeEs") || "ES"}` },
                       ]}
-                      tabsListClassName="h-6 py-0 gap-1"
                     />
                   </div>
                 </CardHeader>
@@ -716,15 +700,13 @@ export function PlanEditorPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Page.Tabs
-                        variant="bubble"
+                      <HorizontalTabs
                         activeTab={featureLangTab}
                         onTabChange={(v) => setFeatureLangTab(v as "en_US" | "es_DO")}
                         tabs={[
                           { id: "en_US", label: "🇺🇸 EN" },
                           { id: "es_DO", label: "🇩🇴 ES" },
                         ]}
-                        tabsListClassName="h-6 py-0 gap-1"
                       />
 
                       <Button
@@ -1269,7 +1251,7 @@ export function PlanEditorPage() {
           onConfirm={handleDeletePlan}
           onCancel={() => setIsDeleteDialogOpen(false)}
         />
-      </Page>
+      </PageShell>
     </TooltipProvider>
   );
 }

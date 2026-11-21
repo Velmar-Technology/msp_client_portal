@@ -11,7 +11,8 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Page } from '@/components/Page';
+import { PageShell } from '@/components/layout/PageShell';
+import { DialogShell } from '@/components/layout/DialogShell';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -20,16 +21,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from '@/components/ui/alert-dialog';
 import { DataTable, DataTableColumnHeader } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -359,16 +350,11 @@ export function BillingPage() {
   );
 
   return (
-    <Page>
-      <Page.Header>
-        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-        <Page.HeaderRow>
-          <Page.TitleGroup>
-            <Page.Title>{t('billing.title')}</Page.Title>
-            <Page.Description>{t('billing.subtitle')}</Page.Description>
-          </Page.TitleGroup>
-        </Page.HeaderRow>
-      </Page.Header>
+    <PageShell
+      variant="full"
+      title={t('billing.title')}
+      subtitle={t('billing.subtitle')}
+    >
 
       {/* BL-702 Non-Payment Scale & Emergency Grace Alert Card */}
       {isDelinquent && (
@@ -527,34 +513,42 @@ export function BillingPage() {
         loading={cancelling}
         t={t}
       />
-      <AlertDialog open={isGraceConfirmOpen} onOpenChange={setIsGraceConfirmOpen}>
-        <AlertDialogContent className="max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-sm font-bold">
-              <Clock className="h-4 w-4 text-amber-500" />
-              {t('billing.emergencyGraceConfirmTitle', 'Request 24-Hour Emergency Vault Access')}
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed">
-              {t(
-                'billing.emergencyGraceConfirmDesc',
-                'You are granted a 1-time emergency 24-hour bypass per overdue billing cycle. This immediately reactivates temporary password vault access while your accounting payment or bank wire clears.'
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="h-7 text-xs cursor-pointer">
+      <DialogShell
+        open={isGraceConfirmOpen}
+        onOpenChange={setIsGraceConfirmOpen}
+        title={
+          <span className="flex items-center gap-2 text-sm font-bold">
+            <Clock className="h-4 w-4 text-amber-500" />
+            {t('billing.emergencyGraceConfirmTitle', 'Request 24-Hour Emergency Vault Access')}
+          </span>
+        }
+        description={t(
+          'billing.emergencyGraceConfirmDesc',
+          'You are granted a 1-time emergency 24-hour bypass per overdue billing cycle. This immediately reactivates temporary password vault access while your accounting payment or bank wire clears.'
+        )}
+        footer={
+          <div className="p-4 bg-muted/20 border-t border-border/50 flex flex-row items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsGraceConfirmOpen(false)}
+              className="h-7 text-xs cursor-pointer"
+            >
               {t('common.cancel', 'Cancel')}
-            </AlertDialogCancel>
-            <AlertDialogAction
+            </Button>
+            <Button
+              type="button"
               data-testid="confirm-grace-activation-btn"
-              className="h-7 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white cursor-pointer"
+              size="sm"
               onClick={handleConfirmGrace}
+              className="h-7 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white cursor-pointer shadow-button-solid"
             >
               {t('billing.activate24hAccess', 'Activate 24h Access')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </Page>
+            </Button>
+          </div>
+        }
+      />
+    </PageShell>
   );
 }

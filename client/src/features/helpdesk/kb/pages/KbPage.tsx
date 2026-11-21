@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Search, ChevronDown, ChevronUp, Mail, Phone, Clock, PlusCircle, HelpCircle } from 'lucide-react';
-import { Page } from '@/components/Page';
+import { PageShell } from '@/components/layout/PageShell';
 import {
   InputGroup,
   InputGroupAddon,
@@ -169,29 +169,24 @@ export function KbPage() {
   } = useHelpPage();
 
   return (
-    <Page className="w-full pb-12">
-      <Page.Header>
-        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-        <Page.HeaderRow>
-          <Page.TitleGroup>
-            <Page.Title>{t('help.title')}</Page.Title>
-            <Page.Description>{t('help.subtitle')}</Page.Description>
-          </Page.TitleGroup>
-          <Page.Actions>
-            <InputGroup size="sm" className="w-full sm:w-64 bg-muted/40">
-              <InputGroupInput
-                placeholder={t('help.searchPlaceholder')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <InputGroupAddon>
-                <Search />
-              </InputGroupAddon>
-            </InputGroup>
-          </Page.Actions>
-        </Page.HeaderRow>
-      </Page.Header>
-
+    <PageShell
+      title={t('help.title')}
+      subtitle={t('help.subtitle')}
+      actions={
+        <InputGroup size="sm" className="w-full sm:w-64 bg-muted/40">
+          <InputGroupInput
+            placeholder={t('help.searchPlaceholder')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <InputGroupAddon>
+            <Search />
+          </InputGroupAddon>
+        </InputGroup>
+      }
+      variant="full"
+      className="pb-12"
+    >
       <div className="border border-border bg-card rounded-xl overflow-hidden shadow-xs mt-4">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-0">
           {/* Main FAQ Content */}
@@ -215,7 +210,7 @@ export function KbPage() {
           </div>
         </div>
       </div>
-    </Page>
+    </PageShell>
   );
 }
 

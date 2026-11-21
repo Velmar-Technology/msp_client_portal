@@ -5,10 +5,8 @@ import {
   Plus,
   AlertTriangle,
   XCircle,
-  ArrowLeft,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { Page } from '@/components/Page';
+import { PageShell } from '@/components/layout/PageShell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -109,38 +107,27 @@ export function ConsumablesPage() {
   };
 
   return (
-    <Page className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
-      <Page.Header>
-        <Page.HeaderRow>
-          <Page.TitleGroup>
-            <div className="flex items-center gap-2">
-              <Page.Title>{t('assets.tabs.consumables', 'Consumables & Supplies')}</Page.Title>
-            </div>
-            <Page.Description>
-              {t(
-                'assets.consumables.description',
-                'Track toner, cables, accessories, and supplies with automated low-stock and out-of-stock alerts.'
-              )}
-            </Page.Description>
-          </Page.TitleGroup>
-          <Page.Actions>
-            <Button asChild variant="outline" size="sm" className="h-7 gap-1.5 text-xs">
-              <Link to="/assets">
-                <ArrowLeft className="h-3.5 w-3.5" />
-                {t('assets.tabs.itAssets', 'IT Assets')}
-              </Link>
-            </Button>
-            <Button
-              onClick={() => setIsCreateOpen(true)}
-              size="sm"
-              className="h-7 gap-1.5 text-xs"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              {t('assets.consumables.newConsumable', 'Add Consumable')}
-            </Button>
-          </Page.Actions>
-        </Page.HeaderRow>
-      </Page.Header>
+    <PageShell
+      title={t('assets.tabs.consumables', 'Consumables & Supplies')}
+      subtitle={t(
+        'assets.consumables.description',
+        'Track toner, cables, accessories, and supplies with automated low-stock and out-of-stock alerts.'
+      )}
+      variant="full"
+      className="p-4 md:p-6 space-y-6"
+      backPath="/assets"
+      backLabel={t('assets.tabs.itAssets', 'IT Assets')}
+      actions={
+        <Button
+          onClick={() => setIsCreateOpen(true)}
+          size="sm"
+          className="h-7 gap-1.5 text-xs"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          {t('assets.consumables.newConsumable', 'Add Consumable')}
+        </Button>
+      }
+    >
 
       <div className="space-y-6">
         {/* Metric Cards */}
@@ -276,7 +263,7 @@ export function ConsumablesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Page>
+    </PageShell>
   );
 }
 export default ConsumablesPage;

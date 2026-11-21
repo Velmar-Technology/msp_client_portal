@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect } from 'vitest';
 import { PageHeader } from './PageHeader';
 import { MetricCard } from './MetricCard';
@@ -71,7 +72,11 @@ describe('Composed Shared Components', () => {
   });
 
   it('renders dev-only StyleGuidePage without errors', () => {
-    render(<StyleGuidePage />);
+    render(
+      <MemoryRouter>
+        <StyleGuidePage />
+      </MemoryRouter>
+    );
     expect(screen.getByText('Design System Style Guide')).toBeInTheDocument();
   });
 });

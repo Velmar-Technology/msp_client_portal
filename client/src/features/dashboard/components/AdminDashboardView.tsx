@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
 import { Headphones, Wrench, CloudUpload, Cloud, CloudOff, ArrowRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminDashboard } from "../hooks/useAdminDashboard";
@@ -432,12 +432,9 @@ export function AdminDashboardView() {
   }
 
   return (
-    <Page>
-      <Page.Header bordered={false} className="mb-2">
-        <Page.Breadcrumbs className="text-muted-foreground text-xs" />
-        <span className="sr-only">{t("dashboard.systemOverview")}</span>
-        <span className="sr-only">{t("dashboard.systemStatus")}</span>
-      </Page.Header>
+    <PageShell variant="full">
+      <span className="sr-only">{t("dashboard.systemOverview")}</span>
+      <span className="sr-only">{t("dashboard.systemStatus")}</span>
 
       <div className="flex flex-col gap-6" id="section-overview">
         {/* ElevenLabs Hero Header & Segmented Telemetry Card */}
@@ -555,6 +552,6 @@ export function AdminDashboardView() {
           />
         </section>
       </div>
-    </Page>
+    </PageShell>
   );
 }

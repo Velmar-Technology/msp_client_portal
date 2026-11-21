@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useDeferredLoading } from "@/hooks/useDeferredLoading";
@@ -263,73 +263,60 @@ export function NotificationPreferencesPage() {
   if (isLoading) {
     if (!showSkeleton) return null;
     return (
-      <Page className="max-w-4xl mx-auto py-6">
-        <Page.Header>
-          <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-          <Page.HeaderRow>
-            <Page.TitleGroup>
-              <Page.Title>{t("notificationPreferences.title", "Notifications & Preferences")}</Page.Title>
-              <Page.Description>{t("notificationPreferences.subtitle", "Manage delivery channels and view alert history")}</Page.Description>
-            </Page.TitleGroup>
-          </Page.HeaderRow>
-        </Page.Header>
+      <PageShell
+        title={t("notificationPreferences.title", "Notifications & Preferences")}
+        subtitle={t("notificationPreferences.subtitle", "Manage delivery channels and view alert history")}
+        variant="constrained"
+      >
         <div className="flex min-h-100 items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
-      </Page>
+      </PageShell>
     );
   }
 
   const effectiveActiveTab = !isAdmin && activeTab === "templates" ? "channels" : activeTab;
 
+  const tabs = [
+    {
+      id: "channels",
+      label: t("notificationPreferences.tabChannels", "Delivery Channels"),
+      icon: Sliders,
+    },
+    {
+      id: "history",
+      label: t("notificationPreferences.tabHistory", "Notification History"),
+      icon: History,
+      badge: unreadCount > 0 ? (
+        <span
+          title={t("notifications.unreadCount", { count: unreadCount, defaultValue: "{{count}} unread" })}
+          aria-label={t("notifications.unreadCount", { count: unreadCount, defaultValue: "{{count}} unread" })}
+        >
+          {unreadCount}
+        </span>
+      ) : undefined,
+    },
+    ...(isAdmin
+      ? [
+          {
+            id: "templates",
+            label: t("notificationPreferences.tabTemplates", "Email Templates"),
+            icon: Mail,
+          },
+        ]
+      : []),
+  ];
+
   return (
-    <Page className="max-w-4xl mx-auto py-6">
-      <Page.Header>
-        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-        <Page.HeaderRow>
-          <Page.TitleGroup>
-            <Page.Title>{t("notificationPreferences.title", "Notifications & Preferences")}</Page.Title>
-            <Page.Description>{t("notificationPreferences.subtitle", "Manage delivery channels and view alert history")}</Page.Description>
-          </Page.TitleGroup>
-        </Page.HeaderRow>
-      </Page.Header>
-
-      <div className="mb-6">
-        <Page.Tabs
-          activeTab={effectiveActiveTab}
-          onTabChange={handleTabChange}
-          tabs={[
-            {
-              id: "channels",
-              label: t("notificationPreferences.tabChannels", "Delivery Channels"),
-              icon: Sliders,
-            },
-            {
-              id: "history",
-              label: t("notificationPreferences.tabHistory", "Notification History"),
-              icon: History,
-              badge: unreadCount > 0 ? (
-                <span
-                  title={t("notifications.unreadCount", { count: unreadCount, defaultValue: "{{count}} unread" })}
-                  aria-label={t("notifications.unreadCount", { count: unreadCount, defaultValue: "{{count}} unread" })}
-                >
-                  {unreadCount}
-                </span>
-              ) : undefined,
-            },
-            ...(isAdmin
-              ? [
-                  {
-                    id: "templates",
-                    label: t("notificationPreferences.tabTemplates", "Email Templates"),
-                    icon: Mail,
-                  },
-                ]
-              : []),
-          ]}
-        />
-      </div>
-
+    <PageShell
+      title={t("notificationPreferences.title", "Notifications & Preferences")}
+      subtitle={t("notificationPreferences.subtitle", "Manage delivery channels and view alert history")}
+      variant="constrained"
+      tabs={tabs}
+      activeTab={effectiveActiveTab}
+      onTabChange={handleTabChange}
+      tabParamKey="tab"
+    >
       {effectiveActiveTab === "channels" && (
         <div className="flex flex-col">
           <HeaderInfo />
@@ -344,7 +331,7 @@ export function NotificationPreferencesPage() {
       {effectiveActiveTab === "history" && <NotificationHistorySection />}
 
       {isAdmin && effectiveActiveTab === "templates" && <EmailTemplatesGallerySection />}
-    </Page>
+    </PageShell>
   );
 }
 

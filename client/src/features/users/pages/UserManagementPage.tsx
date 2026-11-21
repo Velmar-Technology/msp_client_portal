@@ -1,6 +1,12 @@
 import { Users } from "lucide-react";
 import { useState, useMemo } from "react";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
+import {
+  PageContentCard,
+  PageSearchInput,
+  PageFilterPill,
+  PageEmptyState,
+} from "@/components/shared";
 import { DataTable, DataTableColumnHeader } from "@/components/ui/data-table";
 import type { DataTableBulkAction } from "@/components/ui/data-table";
 
@@ -358,17 +364,13 @@ export function UserManagementPage() {
   };
 
   return (
-    <Page>
+    <PageShell
+      title={t("userManagement.pageTitle")}
+      variant="full"
+    >
       <div className="flex flex-col gap-5">
-        {/* Page Title */}
-        <div className="pt-1">
-          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground font-heading">
-            {t("userManagement.pageTitle")}
-          </h1>
-        </div>
-
         {/* ElevenLabs Wide Search Input */}
-        <Page.SearchInput
+        <PageSearchInput
           value={searchQuery}
           onChange={handleSearchChange}
           placeholder={t("userManagement.searchPlaceholder") || "Search users by ID, name or email..."}
@@ -376,7 +378,7 @@ export function UserManagementPage() {
 
         {/* ElevenLabs + Filter Pills Row */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar flex-wrap">
-          <Page.FilterPill
+          <PageFilterPill
             label={t("userManagement.colRole") || "Role"}
             value={roleFilter}
             options={[
@@ -388,7 +390,7 @@ export function UserManagementPage() {
             onClear={() => handleRoleFilterChange("" as RoleFilter)}
           />
 
-          <Page.FilterPill
+          <PageFilterPill
             label={t("userManagement.colStatus") || "Status"}
             value={statusFilter === "all" ? "" : statusFilter}
             options={[
@@ -412,9 +414,9 @@ export function UserManagementPage() {
         </div>
 
         {/* ElevenLabs Unified Card Container: Empty State or DataTable */}
-        <Page.ContentCard>
+        <PageContentCard>
           {!loading && users.length === 0 ? (
-            <Page.EmptyState
+            <PageEmptyState
               icon={Users}
               title={t("userManagement.noUsersFound") || "No users found"}
               description={
@@ -446,7 +448,7 @@ export function UserManagementPage() {
               }}
             />
           )}
-        </Page.ContentCard>
+        </PageContentCard>
       </div>
 
       <AlertDialog open={bulkRoleModalOpen} onOpenChange={setBulkRoleModalOpen}>
@@ -589,7 +591,7 @@ export function UserManagementPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Page>
+    </PageShell>
   );
 }
 

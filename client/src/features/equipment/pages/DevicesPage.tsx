@@ -6,9 +6,22 @@ import type { SubscriptionEquipment } from "@shared/contracts";
 import { useDevicesPage } from "../hooks/useDevicesPage";
 import { useEntitlements } from "@/hooks/useEntitlements";
 import { equipmentService } from "../api/equipmentService";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
+import {
+  PageProvider,
+  PageView,
+  PageViewSwitcher,
+  PageGraph,
+  type PageViewOption,
+  type PageGraphDataPoint,
+} from "@/components/views";
+import {
+  PageContentCard,
+  PageSearchInput,
+  PageFilterPill,
+  PageEmptyState,
+} from "@/components/shared";
 import { useUrlState } from "@/hooks/useUrlState";
-import type { PageViewOption, PageGraphDataPoint } from "@/components/page/types";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DataTable } from "@/components/ui/data-table";
@@ -395,7 +408,7 @@ export function DevicesPage() {
   );
 
   return (
-    <Page<DeviceViewMode>
+    <PageProvider<DeviceViewMode>
       defaultView="list"
       activeView={currentView}
       onViewChange={handleViewChange}
@@ -403,46 +416,41 @@ export function DevicesPage() {
       isLoading={loading}
       syncUrl={false}
     >
-      <Page.Header>
-        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-        <Page.HeaderRow>
-          <Page.TitleGroup>
-            <Page.Title docsUrl="https://help.velmar.com/devices">{t("nav.devices")}</Page.Title>
-            <Page.Description>{t("devices.subtitle")}</Page.Description>
-          </Page.TitleGroup>
-          <Page.Actions maxVisible={3}>
-            {isAdmin ? (
+      <PageShell
+        title={t("nav.devices")}
+        subtitle={t("devices.subtitle")}
+        variant="full"
+        actions={
+          isAdmin ? (
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleOpenAddDevice}
+              className="h-8 px-3.5 rounded-xl text-xs font-semibold gap-1.5 cursor-pointer shadow-2xs"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>{t("devices.addDevice", "Add Device")}</span>
+            </Button>
+          ) : (
+            firstAvailableSlot && (
               <Button
                 type="button"
                 size="sm"
-                onClick={handleOpenAddDevice}
+                onClick={() =>
+                  handleOpenActivateWithOtp(firstAvailableSlot.subscription_id, firstAvailableSlot.slot_index)
+                }
                 className="h-8 px-3.5 rounded-xl text-xs font-semibold gap-1.5 cursor-pointer shadow-2xs"
               >
-                <Plus className="h-3.5 w-3.5" />
-                <span>{t("devices.addDevice", "Add Device")}</span>
+                <Laptop className="h-3.5 w-3.5" />
+                <span>{t("devices.activateDevice", "Activate Device")}</span>
               </Button>
-            ) : (
-              firstAvailableSlot && (
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() =>
-                    handleOpenActivateWithOtp(firstAvailableSlot.subscription_id, firstAvailableSlot.slot_index)
-                  }
-                  className="h-8 px-3.5 rounded-xl text-xs font-semibold gap-1.5 cursor-pointer shadow-2xs"
-                >
-                  <Laptop className="h-3.5 w-3.5" />
-                  <span>{t("devices.activateDevice", "Activate Device")}</span>
-                </Button>
-              )
-            )}
-          </Page.Actions>
-        </Page.HeaderRow>
-      </Page.Header>
-
+            )
+          )
+        }
+      >
       {(currentView === "list" || currentView === "tiled") && (
         <div className="space-y-3 mb-4">
-          <Page.SearchInput
+          <PageSearchInput
             value={searchTerm}
             onChange={setSearchTerm}
             placeholder={isAdmin ? t("devices.adminSearchPlaceholder") : t("devices.searchPlaceholder")}
@@ -451,7 +459,7 @@ export function DevicesPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
               {/* Status Filter */}
-              <Page.FilterPill
+              <PageFilterPill
                 label={t("devices.tableStatus")}
                 value={selectedStatus && selectedStatus !== "all" ? selectedStatus : ""}
                 options={statusFilterOptions}
@@ -463,7 +471,7 @@ export function DevicesPage() {
               {/* Client Filter for Admins */}
               {isAdmin && uniqueClients.length > 0 && (
                 <>
-                  <Page.FilterPill
+                  <PageFilterPill
                     label={t("devices.tableClientTenant")}
                     value={selectedClient && selectedClient !== "all" ? selectedClient : ""}
                     options={clientFilterOptions}
@@ -497,7 +505,7 @@ export function DevicesPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Page.ViewSwitcher size="sm" />
+              <PageViewSwitcher size="sm" />
             </div>
           </div>
         </div>
@@ -527,14 +535,14 @@ export function DevicesPage() {
       ) : (
         <>
           {/* View 1: List (DataTable) */}
-          <Page.View type="list" className="space-y-4">
+          <PageView type="list" className="space-y-4">
             {activeSubscriptions.length === 0 && !isAdmin ? (
-              <Page.ContentCard className="p-8">
+              <PageContentCard className="p-8">
                 <EmptySubscriptionsCard onBrowsePlans={handleBrowsePlans} />
-              </Page.ContentCard>
+              </PageContentCard>
             ) : filteredEquipment.length === 0 ? (
-              <Page.ContentCard className="p-8">
-                <Page.EmptyState
+              <PageContentCard className="p-8">
+                <PageEmptyState
                   icon={Laptop}
                   title={t("devices.noSlotsFound")}
                   description={t("devices.noSlotsFoundDesc", "No devices or slots match your search criteria.")}
@@ -553,9 +561,9 @@ export function DevicesPage() {
                         : undefined
                   }
                 />
-              </Page.ContentCard>
+              </PageContentCard>
             ) : (
-              <Page.ContentCard className="p-0 border-border/70 overflow-hidden">
+              <PageContentCard className="p-0 border-border/70 overflow-hidden">
                 <DataTable
                   columns={equipmentColumns}
                   data={paginatedEquipment}
@@ -569,19 +577,19 @@ export function DevicesPage() {
                   sorting={sorting}
                   onSortingChange={setSorting}
                 />
-              </Page.ContentCard>
+              </PageContentCard>
             )}
-          </Page.View>
+          </PageView>
 
           {/* View 2: Tiled (Cards Grid) */}
-          <Page.View type="tiled" className="space-y-4">
+          <PageView type="tiled" className="space-y-4">
             {activeSubscriptions.length === 0 && !isAdmin ? (
-              <Page.ContentCard className="p-8">
+              <PageContentCard className="p-8">
                 <EmptySubscriptionsCard onBrowsePlans={handleBrowsePlans} />
-              </Page.ContentCard>
+              </PageContentCard>
             ) : filteredEquipment.length === 0 ? (
-              <Page.ContentCard className="p-8">
-                <Page.EmptyState
+              <PageContentCard className="p-8">
+                <PageEmptyState
                   icon={Laptop}
                   title={t("devices.noSlotsFound")}
                   description={t("devices.noSlotsFoundDesc", "No devices or slots match your search criteria.")}
@@ -600,7 +608,7 @@ export function DevicesPage() {
                         : undefined
                   }
                 />
-              </Page.ContentCard>
+              </PageContentCard>
             ) : (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -659,12 +667,12 @@ export function DevicesPage() {
                 )}
               </div>
             )}
-          </Page.View>
+          </PageView>
 
           {/* View 3: Fleet Analytics */}
-          <Page.View type="graph" className="space-y-5">
+          <PageView type="graph" className="space-y-5">
             <section aria-label="Fleet Analytics" className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <Page.Graph
+              <PageGraph
                 title={t("devices.analytics.statusAllocation", "Device Status Distribution")}
                 subtitle={t(
                   "devices.analytics.statusSubtitle",
@@ -673,7 +681,7 @@ export function DevicesPage() {
                 data={statusGraphData}
                 defaultType="donut"
               />
-              <Page.Graph
+              <PageGraph
                 title={t("devices.analytics.osDistribution", "Operating System Distribution")}
                 subtitle={t(
                   "devices.analytics.osSubtitle",
@@ -683,7 +691,7 @@ export function DevicesPage() {
                 defaultType="bar"
               />
             </section>
-          </Page.View>
+          </PageView>
         </>
       )}
 
@@ -742,7 +750,8 @@ export function DevicesPage() {
         deleteDeviceLoading={deleteDeviceLoading}
         handleDeleteAdminDevice={handleDeleteAdminDevice}
       />
-    </Page>
+      </PageShell>
+    </PageProvider>
   );
 }
 

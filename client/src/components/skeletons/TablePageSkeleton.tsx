@@ -1,5 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
 
 interface TablePageSkeletonProps {
   rows?: number;
@@ -8,7 +8,7 @@ interface TablePageSkeletonProps {
 
 export function TablePageSkeleton({ rows = 6, showFilters = true }: TablePageSkeletonProps) {
   return (
-    <Page>
+    <PageShell>
       <div className="space-y-6 animate-fade-in" aria-label="Loading table content">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -53,6 +53,6 @@ export function TablePageSkeleton({ rows = 6, showFilters = true }: TablePageSke
           </div>
         </div>
       </div>
-    </Page>
+    </PageShell>
   );
 }

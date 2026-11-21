@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Plus } from "lucide-react";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
@@ -144,11 +144,8 @@ export function ClientDashboardView() {
   if (loading) {
     if (!showSkeleton) return null;
     return (
-      <Page>
-        <Page.Header bordered={false} className="mb-2">
-          <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-          <span className="sr-only">{t("dashboard.systemOverview")}</span>
-        </Page.Header>
+      <PageShell variant="full">
+        <span className="sr-only">{t("dashboard.systemOverview")}</span>
         <div className="space-y-6">
           <div className="space-y-2">
             <Skeleton className="h-6 w-44 rounded-full" />
@@ -163,17 +160,14 @@ export function ClientDashboardView() {
             <Skeleton className="h-36 rounded-2xl" />
           </div>
         </div>
-      </Page>
+      </PageShell>
     );
   }
 
   return (
-    <Page>
-      <Page.Header bordered={false} className="mb-2">
-        <Page.Breadcrumbs className="text-muted-foreground text-xs" />
-        <span className="sr-only">{t("dashboard.systemOverview")}</span>
-        <span className="sr-only">{t("dashboard.systemStatus")}</span>
-      </Page.Header>
+    <PageShell variant="full">
+      <span className="sr-only">{t("dashboard.systemOverview")}</span>
+      <span className="sr-only">{t("dashboard.systemStatus")}</span>
 
       <div className="flex flex-col gap-6">
         {/* ElevenLabs Hero Header & Segmented Telemetry Card */}
@@ -213,6 +207,6 @@ export function ClientDashboardView() {
           <RecentInvoices invoices={invoices} getStatusColor={getStatusColor} />
         </section>
       </div>
-    </Page>
+    </PageShell>
   );
 }

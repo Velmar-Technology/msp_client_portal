@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Key, Eye, EyeOff, CheckCircle2, XCircle, ShieldCheck, Cpu, Copy, Check, Terminal, Sparkles } from "lucide-react";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
+import { SectionHeader, ListGroup, ListItem } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -210,191 +211,184 @@ export function ByokSettingsPage() {
     setTimeout(() => setCopied(false), 2500);
   };
 
-  return (
-    <Page className="max-w-4xl mx-auto py-6">
-      <Page.Header>
-        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-        <Page.HeaderRow>
-          <Page.TitleGroup>
-            <Page.Title>{t("byok.pageTitle", "Inteligencia Artificial & Calidad CAF")}</Page.Title>
-            <Page.Description>
-              {t(
-                "byok.pageDesc",
-                "Configure su propia clave de API (OpenAI o Anthropic). Sus datos están protegidos bajo la Ley 172-13 con anonimización en memoria.",
-              )}
-            </Page.Description>
-          </Page.TitleGroup>
-          <Page.Actions>
-            {isStatusLoading ? (
-              <Badge variant="secondary" className="h-7">
-                {t("common.loading", "Cargando...")}
-              </Badge>
-            ) : byokStatus?.isConfigured ? (
-              <Badge variant="outline" className="h-7 gap-1">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                {t("byok.statusConfigured", "Configurado")}
-              </Badge>
-            ) : (
-              <Badge
-                variant="outline"
-                className="h-7 gap-1 text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/20"
-              >
-                <XCircle className="h-3.5 w-3.5" />
-                {t("byok.statusPending", "Sin Configurar")}
-              </Badge>
-            )}
-          </Page.Actions>
-        </Page.HeaderRow>
-      </Page.Header>
+  const tabs = [
+    {
+      id: "web-config",
+      label: t("byok.tabWeb", "Configuración Web"),
+      icon: Cpu,
+    },
+    {
+      id: "desktop-mcp",
+      label: t("byok.tabDesktop", "Claude Desktop / Cursor"),
+      icon: Terminal,
+    },
+  ];
 
-      <div className="mb-6">
-        <Page.Tabs
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-          tabs={[
-            {
-              id: "web-config",
-              label: t("byok.tabWeb", "Configuración Web"),
-              icon: Cpu,
-            },
-            {
-              id: "desktop-mcp",
-              label: t("byok.tabDesktop", "Claude Desktop / Cursor"),
-              icon: Terminal,
-            },
-          ]}
-        />
-      </div>
+  return (
+    <PageShell
+      variant="constrained"
+      title={t("byok.pageTitle", "Inteligencia Artificial & Calidad CAF")}
+      subtitle={t(
+        "byok.pageDesc",
+        "Configure su propia clave de API (OpenAI o Anthropic). Sus datos están protegidos bajo la Ley 172-13 con anonimización en memoria.",
+      )}
+      actions={
+        isStatusLoading ? (
+          <Badge variant="secondary" className="h-7">
+            {t("common.loading", "Cargando...")}
+          </Badge>
+        ) : byokStatus?.isConfigured ? (
+          <Badge variant="outline" className="h-7 gap-1">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            {t("byok.statusConfigured", "Configurado")}
+          </Badge>
+        ) : (
+          <Badge
+            variant="outline"
+            className="h-7 gap-1 text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/20"
+          >
+            <XCircle className="h-3.5 w-3.5" />
+            {t("byok.statusPending", "Sin Configurar")}
+          </Badge>
+        )
+      }
+      tabs={tabs}
+      activeTab={activeTab}
+      onTabChange={handleTabChange}
+    >
 
       {/* Tab 1: Web Portal Configuration */}
       {activeTab === "web-config" && (
         <form onSubmit={handleSaveConfig} className="space-y-6 pt-2">
-          <Page.SettingGroup
-            title={t("byok.formTitle", "Credenciales del Centro Educativo")}
-            description={t(
-              "byok.formDesc",
-              "Velmar Technology nunca le cobrará por el consumo de tokens. El consumo se factura directamente a la cuenta de su institución en OpenAI o Anthropic.",
-            )}
-          >
-            {/* Row 1: AI Provider */}
-            <Page.SettingRow
-              icon={Cpu}
-              label={
-                <Label htmlFor="byok-provider" className="cursor-pointer font-medium text-foreground">
-                  {t("byok.providerLabel", "Proveedor de Inteligencia Artificial")}
-                </Label>
-              }
-              description={t("byok.providerDesc", "Plataforma proveedora del modelo LLM")}
-              action={
-                <Select value={provider} onValueChange={(val) => handleProviderChange(val as ByokProvider)}>
-                  <SelectTrigger id="byok-provider" className="w-[180px] sm:w-[220px] h-7 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="openai">OpenAI</SelectItem>
-                    <SelectItem value="anthropic">Anthropic</SelectItem>
-                    <SelectItem value="gemini">Google Gemini</SelectItem>
-                    <SelectItem value="custom">Local</SelectItem>
-                  </SelectContent>
-                </Select>
-              }
+          <div className="space-y-3">
+            <SectionHeader
+              title={t("byok.formTitle", "Credenciales del Centro Educativo")}
+              description={t(
+                "byok.formDesc",
+                "Velmar Technology nunca le cobrará por el consumo de tokens. El consumo se factura directamente a la cuenta de su institución en OpenAI o Anthropic.",
+              )}
             />
-
-            {/* Row 2: Model */}
-            <Page.SettingRow
-              icon={Sparkles}
-              label={
-                <Label htmlFor="byok-model" className="cursor-pointer font-medium text-foreground">
-                  {t("byok.modelLabel", "Modelo")}
-                </Label>
-              }
-              description={t("byok.modelDesc", "Versión del modelo de lenguaje para auditorías")}
-              action={
-                <Select value={model} onValueChange={(val) => setModel(val)}>
-                  <SelectTrigger id="byok-model" className="w-[180px] sm:w-[220px] h-7 text-xs">
-                    <SelectValue placeholder={t("byok.selectModel", "Seleccionar modelo...")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {modelOptions.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              }
-            />
-
-            {/* Row 3 (Conditional): Base URL for Local */}
-            {provider === "custom" && (
-              <Page.SettingRow
-                icon={Terminal}
-                label={
-                  <Label htmlFor="byok-baseurl" className="cursor-pointer font-medium text-foreground">
-                    {t("byok.baseUrlLabel", "URL Base del Servidor Local / Proxy")}
+            <ListGroup>
+              {/* Row 1: AI Provider */}
+              <ListItem
+                leading={<Cpu className="h-4 w-4 text-muted-foreground" />}
+                title={
+                  <Label htmlFor="byok-provider" className="cursor-pointer font-medium text-foreground">
+                    {t("byok.providerLabel", "Proveedor de Inteligencia Artificial")}
                   </Label>
                 }
-                description="Endpoint compatible con OpenAI (e.g., Ollama / vLLM)"
-                action={
-                  <Input
-                    id="byok-baseurl"
-                    value={baseUrl}
-                    onChange={(e) => setBaseUrl(e.target.value)}
-                    placeholder="http://localhost:11434/v1"
-                    className="w-[200px] sm:w-[260px] h-7 text-xs font-mono"
-                  />
+                description={t("byok.providerDesc", "Plataforma proveedora del modelo LLM")}
+                trailing={
+                  <Select value={provider} onValueChange={(val) => handleProviderChange(val as ByokProvider)}>
+                    <SelectTrigger id="byok-provider" className="w-[180px] sm:w-[220px] h-7 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="openai">OpenAI</SelectItem>
+                      <SelectItem value="anthropic">Anthropic</SelectItem>
+                      <SelectItem value="gemini">Google Gemini</SelectItem>
+                      <SelectItem value="custom">Local</SelectItem>
+                    </SelectContent>
+                  </Select>
                 }
               />
-            )}
 
-            {/* Row 4: API Key */}
-            <Page.SettingRow
-              icon={Key}
-              label={
-                <Label htmlFor="byok-key" className="cursor-pointer font-medium text-foreground">
-                  {t("byok.apiKeyLabel", "Clave Secreta de API (API Key)")}
-                </Label>
-              }
-              description={
-                byokStatus?.isConfigured
-                  ? `${t("byok.currentKey", "Actual:")} ${byokStatus.keyMasked}`
-                  : t("byok.keyPlaceholderDesc", "Clave privada cifrada con AES-256-GCM")
-              }
-              action={
-                <div className="relative w-[220px] sm:w-[280px]">
-                  <Input
-                    id="byok-key"
-                    type={showKey ? "text" : "password"}
-                    value={apiKey}
-                    onChange={(e) => {
-                      setApiKey(e.target.value);
-                      setTestResult(null);
-                    }}
-                    placeholder={
-                      byokStatus?.isConfigured
-                        ? "••••••••••••••••••••••••••••••••"
-                        : provider === "openai"
-                          ? "sk-proj-..."
-                          : provider === "gemini"
-                            ? "AIza..."
-                            : "sk-ant-..."
-                    }
-                    className="h-7 text-xs font-mono pr-8"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowKey(!showKey)}
-                    className="absolute right-0 top-0 h-7 w-7 text-muted-foreground hover:text-foreground"
-                    aria-label={showKey ? "Hide API key" : "Show API key"}
-                  >
-                    {showKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                  </Button>
-                </div>
-              }
-            />
-          </Page.SettingGroup>
+              {/* Row 2: Model */}
+              <ListItem
+                leading={<Sparkles className="h-4 w-4 text-muted-foreground" />}
+                title={
+                  <Label htmlFor="byok-model" className="cursor-pointer font-medium text-foreground">
+                    {t("byok.modelLabel", "Modelo")}
+                  </Label>
+                }
+                description={t("byok.modelDesc", "Versión del modelo de lenguaje para auditorías")}
+                trailing={
+                  <Select value={model} onValueChange={(val) => setModel(val)}>
+                    <SelectTrigger id="byok-model" className="w-[180px] sm:w-[220px] h-7 text-xs">
+                      <SelectValue placeholder={t("byok.selectModel", "Seleccionar modelo...")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {modelOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                }
+              />
+
+              {/* Row 3 (Conditional): Base URL for Local */}
+              {provider === "custom" && (
+                <ListItem
+                  leading={<Terminal className="h-4 w-4 text-muted-foreground" />}
+                  title={
+                    <Label htmlFor="byok-baseurl" className="cursor-pointer font-medium text-foreground">
+                      {t("byok.baseUrlLabel", "URL Base del Servidor Local / Proxy")}
+                    </Label>
+                  }
+                  description="Endpoint compatible con OpenAI (e.g., Ollama / vLLM)"
+                  trailing={
+                    <Input
+                      id="byok-baseurl"
+                      value={baseUrl}
+                      onChange={(e) => setBaseUrl(e.target.value)}
+                      placeholder="http://localhost:11434/v1"
+                      className="w-[200px] sm:w-[260px] h-7 text-xs font-mono"
+                    />
+                  }
+                />
+              )}
+
+              {/* Row 4: API Key */}
+              <ListItem
+                leading={<Key className="h-4 w-4 text-muted-foreground" />}
+                title={
+                  <Label htmlFor="byok-key" className="cursor-pointer font-medium text-foreground">
+                    {t("byok.apiKeyLabel", "Clave Secreta de API (API Key)")}
+                  </Label>
+                }
+                description={
+                  byokStatus?.isConfigured
+                    ? `${t("byok.currentKey", "Actual:")} ${byokStatus.keyMasked}`
+                    : t("byok.keyPlaceholderDesc", "Clave privada cifrada con AES-256-GCM")
+                }
+                trailing={
+                  <div className="relative w-[220px] sm:w-[280px]">
+                    <Input
+                      id="byok-key"
+                      type={showKey ? "text" : "password"}
+                      value={apiKey}
+                      onChange={(e) => {
+                        setApiKey(e.target.value);
+                        setTestResult(null);
+                      }}
+                      placeholder={
+                        byokStatus?.isConfigured
+                          ? "••••••••••••••••••••••••••••••••"
+                          : provider === "openai"
+                            ? "sk-proj-..."
+                            : provider === "gemini"
+                              ? "AIza..."
+                              : "sk-ant-..."
+                      }
+                      className="h-7 text-xs font-mono pr-8"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowKey(!showKey)}
+                      className="absolute right-0 top-0 h-7 w-7 text-muted-foreground hover:text-foreground"
+                      aria-label={showKey ? "Hide API key" : "Show API key"}
+                    >
+                      {showKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    </Button>
+                  </div>
+                }
+              />
+            </ListGroup>
+          </div>
 
           {/* Test Feedback Alert */}
           {testResult && (
@@ -459,59 +453,58 @@ export function ByokSettingsPage() {
 
       {/* Tab 2: Desktop MCP Zero-Secret Setup */}
       {activeTab === "desktop-mcp" && (
-        <div className="space-y-6 pt-2">
-          <Page.SettingGroup
+        <div className="space-y-4 pt-2">
+          <SectionHeader
             title={t("byok.mcpSetupTitle", "Conexión de Escritorio (Cero-Secreto)")}
             description={t(
               "byok.mcpSetupDesc",
               "Configure Claude Desktop o Cursor para auditar documentos CAF directamente desde su entorno de trabajo. ¡Nunca coloque sus claves maestras de OpenAI en archivos JSON locales!",
             )}
-          >
-            <div className="p-4 space-y-4">
-              <div className="text-xs space-y-1 text-muted-foreground">
-                <p>
-                  {t("byok.mcpStep1Prefix", "1. Abra el archivo de configuración de Claude Desktop (")}
-                  <code className="text-[11px] bg-muted px-1 py-0.5 rounded">claude_desktop_config.json</code>
-                  {t("byok.mcpStep1Suffix", ").")}
-                </p>
-                <p>
-                  {t(
-                    "byok.mcpStep2",
-                    "2. Pegue el siguiente bloque pre-autenticado con el identificador de su centro:",
-                  )}
-                </p>
-              </div>
-
-              <div className="relative">
-                <pre className="p-3 bg-muted text-foreground rounded-md text-xs font-mono overflow-x-auto border border-border">
-                  {desktopConfigJson}
-                </pre>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={handleCopyJson}
-                  className="absolute top-2 right-2 h-6 px-2 text-[11px] gap-1"
-                >
-                  {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
-                  {copied ? t("common.copied", "Copied") : t("common.copy", "Copy")}
-                </Button>
-              </div>
-
-              <div className="p-3 rounded-md border border-blue-200/60 bg-blue-50/50 dark:bg-blue-950/20 text-blue-900 dark:text-blue-200 text-xs">
-                <p className="font-semibold mb-0.5">
-                  🛡️ {t("byok.zeroSecretGuarantee", "Garantía de Seguridad Cero-Secreto:")}
-                </p>
-                <p className="text-[11px] leading-relaxed">
-                  {t(
-                    "byok.zeroSecretDetail",
-                    "El servidor MCP de Velmar resuelve su clave de API cifrada bajo demanda utilizando la conexión web de arriba. Si cambia de clave o revoca accesos, se actualiza automáticamente sin tocar su computadora.",
-                  )}
-                </p>
-              </div>
+          />
+          <div className="rounded-lg border border-border/70 bg-card p-4 sm:p-6 space-y-4 shadow-subtle">
+            <div className="text-xs space-y-1 text-muted-foreground">
+              <p>
+                {t("byok.mcpStep1Prefix", "1. Abra el archivo de configuración de Claude Desktop (")}
+                <code className="text-[11px] bg-muted px-1 py-0.5 rounded">claude_desktop_config.json</code>
+                {t("byok.mcpStep1Suffix", ").")}
+              </p>
+              <p>
+                {t(
+                  "byok.mcpStep2",
+                  "2. Pegue el siguiente bloque pre-autenticado con el identificador de su centro:",
+                )}
+              </p>
             </div>
-          </Page.SettingGroup>
+
+            <div className="relative">
+              <pre className="p-3 bg-muted text-foreground rounded-md text-xs font-mono overflow-x-auto border border-border">
+                {desktopConfigJson}
+              </pre>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleCopyJson}
+                className="absolute top-2 right-2 h-6 px-2 text-[11px] gap-1"
+              >
+                {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                {copied ? t("common.copied", "Copied") : t("common.copy", "Copy")}
+              </Button>
+            </div>
+
+            <div className="p-3 rounded-md border border-blue-200/60 bg-blue-50/50 dark:bg-blue-950/20 text-blue-900 dark:text-blue-200 text-xs">
+              <p className="font-semibold mb-0.5">
+                🛡️ {t("byok.zeroSecretGuarantee", "Garantía de Seguridad Cero-Secreto:")}
+              </p>
+              <p className="text-[11px] leading-relaxed">
+                {t(
+                  "byok.zeroSecretDetail",
+                  "El servidor MCP de Velmar resuelve su clave de API cifrada bajo demanda utilizando la conexión web de arriba. Si cambia de clave o revoca accesos, se actualiza automáticamente sin tocar su computadora.",
+                )}
+              </p>
+            </div>
+          </div>
         </div>
       )}
-    </Page>
+    </PageShell>
   );
 }

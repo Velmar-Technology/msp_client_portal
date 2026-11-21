@@ -12,12 +12,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { LogExpenseDialog } from "../components/LogExpenseDialog";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
+import {
+  PageProvider,
+  PageView,
+  PageViewSwitcher,
+  PageGraph,
+  type PageViewOption,
+  type PageGraphDataPoint,
+} from "@/components/views";
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { ChunkErrorBoundary } from "@/components/shared/ChunkErrorBoundary";
 import { useDeferredLoading } from "@/hooks/useDeferredLoading";
 import { SKELETON_DISPLAY_DELAY_MS } from "@/constants/ui";
-import type { PageViewOption, PageGraphDataPoint } from "@/components/page/types";
 
 // ---- Lazily loaded heavy chart components ----
 const RevenueChart = lazyWithRetry(() =>
@@ -150,80 +157,70 @@ export function FinancialPage() {
   if (isLoading) {
     if (!showSkeleton) return null;
     return (
-      <Page>
-        <Page.Header>
-          <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-          <Page.HeaderRow>
-            <Page.TitleGroup>
-              <Page.Title>{t("financial.title")}</Page.Title>
-              <Page.Description>{t("financial.subtitle")}</Page.Description>
-            </Page.TitleGroup>
-          </Page.HeaderRow>
-        </Page.Header>
+      <PageShell
+        title={t("financial.title")}
+        subtitle={t("financial.subtitle")}
+        variant="full"
+      >
         <div className="flex items-center justify-center min-h-[50vh]">
           <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin" />
         </div>
-      </Page>
+      </PageShell>
     );
   }
 
   const isPayroll = currentView === "payroll";
 
   return (
-    <Page<FinancialViewMode>
+    <PageProvider<FinancialViewMode>
       defaultView="dashboard"
       activeView={currentView}
       onViewChange={handleViewChange}
       availableViews={financialViews}
     >
-      <Page.Header>
-        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-        <Page.HeaderRow>
-          <Page.TitleGroup>
-            <Page.Title>{t("financial.title")}</Page.Title>
-            <Page.Description>{t("financial.subtitle")}</Page.Description>
-          </Page.TitleGroup>
-          {!isPayroll && (
-            <Page.Actions maxVisible={3}>
-              {/* Date Selector */}
-              <Select value={dateRange} onValueChange={(val) => setDateRange(val as DateRange)}>
-                <SelectTrigger size="default" className="h-7 w-36 text-xs font-medium bg-background">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="30_days">{t("financial.last30Days")}</SelectItem>
-                  <SelectItem value="quarter">{t("financial.thisQuarter")}</SelectItem>
-                  <SelectItem value="year">{t("financial.yearToDate")}</SelectItem>
-                </SelectContent>
-              </Select>
+      <PageShell
+        title={t("financial.title")}
+        subtitle={t("financial.subtitle")}
+        variant="full"
+        actions={
+          <div className="flex items-center gap-2 flex-wrap">
+            {!isPayroll && (
+              <>
+                {/* Date Selector */}
+                <Select value={dateRange} onValueChange={(val) => setDateRange(val as DateRange)}>
+                  <SelectTrigger size="default" className="h-7 w-36 text-xs font-medium bg-background">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30_days">{t("financial.last30Days")}</SelectItem>
+                    <SelectItem value="quarter">{t("financial.thisQuarter")}</SelectItem>
+                    <SelectItem value="year">{t("financial.yearToDate")}</SelectItem>
+                  </SelectContent>
+                </Select>
 
-              {/* Export Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExport}
-                disabled={isExporting}
-                className="h-7 flex items-center gap-1 px-3 text-xs font-medium cursor-pointer shadow-xs"
-              >
-                <Download className={`h-3 w-3 text-muted-foreground ${isExporting ? "animate-spin" : ""}`} />
-                {isExporting ? t("financial.exporting") : t("financial.export")}
-              </Button>
+                {/* Export Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExport}
+                  disabled={isExporting}
+                  className="h-7 flex items-center gap-1 px-3 text-xs font-medium cursor-pointer shadow-xs"
+                >
+                  <Download className={`h-3 w-3 text-muted-foreground ${isExporting ? "animate-spin" : ""}`} />
+                  {isExporting ? t("financial.exporting") : t("financial.export")}
+                </Button>
 
-              {/* Log Expense Button (ADMIN only) */}
-              {isAdmin && <LogExpenseDialog onExpenseLogged={refresh} />}
-            </Page.Actions>
-          )}
-        </Page.HeaderRow>
-        <Page.Toolbar>
-          <Page.Filters />
-          <Page.Controls>
-            <Page.ViewSwitcher size="sm" />
-          </Page.Controls>
-        </Page.Toolbar>
-      </Page.Header>
+                {/* Log Expense Button (ADMIN only) */}
+                {isAdmin && <LogExpenseDialog onExpenseLogged={refresh} />}
+              </>
+            )}
 
+            <PageViewSwitcher size="sm" />
+          </div>
+        }
+      >
       {/* View 1: Dashboard Analytical View */}
-      <Page.View type="dashboard" className="space-y-5">
+      <PageView type="dashboard" className="space-y-5">
         {/* KPI Summary Cards (Top Row) */}
         <section aria-label="KPI Metrics">
           <KpiCards kpis={kpis} />
@@ -263,10 +260,10 @@ export function FinancialPage() {
         <section aria-label="Ledger Movements" className="mt-1">
           <TransactionsTable transactions={transactions} />
         </section>
-      </Page.View>
+      </PageView>
 
       {/* View 2: Dedicated Transactions Ledger View */}
-      <Page.View type="ledger" className="space-y-4">
+      <PageView type="ledger" className="space-y-4">
         <section aria-label="Dedicated Transactions Ledger">
           <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
             <div className="mb-4">
@@ -278,24 +275,24 @@ export function FinancialPage() {
             <TransactionsTable transactions={transactions} />
           </div>
         </section>
-      </Page.View>
+      </PageView>
 
       {/* View 3: Technician Payroll Table View */}
-      <Page.View type="payroll">
+      <PageView type="payroll">
         <TechnicianPayrollTable />
-      </Page.View>
+      </PageView>
 
       {/* View 4: Financial Visual Analytics View */}
-      <Page.View type="graph" className="space-y-5">
+      <PageView type="graph" className="space-y-5">
         <section aria-label="Financial Visual Analytics" className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Page.Graph
+          <PageGraph
             title={t("financial.analytics.expenseByCategory", "Expense Allocation by Category")}
             subtitle={t("financial.analytics.categorySubtitle", "Operational cost distribution across current period")}
             data={expenseGraphData}
             valuePrefix="$"
             defaultType="donut"
           />
-          <Page.Graph
+          <PageGraph
             title={t("financial.analytics.monthlyTrends", "Monthly Revenue Trends")}
             subtitle={t("financial.analytics.trendsSubtitle", "Comparative monthly cashflow ledger trends")}
             data={monthlyRevenueGraphData}
@@ -303,8 +300,9 @@ export function FinancialPage() {
             defaultType="bar"
           />
         </section>
-      </Page.View>
-    </Page>
+      </PageView>
+      </PageShell>
+    </PageProvider>
   );
 }
 

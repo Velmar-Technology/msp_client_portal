@@ -1,9 +1,9 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
 
 export function DashboardSkeleton() {
   return (
-    <Page>
+    <PageShell>
       <div className="space-y-6 animate-fade-in" aria-label="Loading dashboard">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -54,6 +54,6 @@ export function DashboardSkeleton() {
           </div>
         </div>
       </div>
-    </Page>
+    </PageShell>
   );
 }

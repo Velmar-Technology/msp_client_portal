@@ -1,9 +1,9 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
 
 export function DetailSkeleton() {
   return (
-    <Page>
+    <PageShell>
       <div className="space-y-6 animate-fade-in" aria-label="Loading detail view">
         {/* Header & Status */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -80,6 +80,6 @@ export function DetailSkeleton() {
           </div>
         </div>
       </div>
-    </Page>
+    </PageShell>
   );
 }

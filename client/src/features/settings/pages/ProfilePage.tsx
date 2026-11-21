@@ -15,7 +15,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
+import { ListGroup, ListItem, SectionHeader } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -294,34 +295,21 @@ export function ProfilePage() {
   ];
 
   return (
-    <Page>
-      <div className="max-w-3xl space-y-6">
-        <div>
-          <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-          <h1 className="text-xl font-bold tracking-tight text-foreground font-heading">
-            {t("profile.settingsTitle", "Settings")}
-          </h1>
-          <p className="text-xs text-muted-foreground mt-1">
-            {t("profile.settingsSubtitle", "Manage your profile, credentials, and account preferences.")}
-          </p>
-
-          {/* Bubble Tabs - ElevenLabs style */}
-          <div className="mt-6">
-            <Page.Tabs
-              variant="bubble"
-              tabs={tabs}
-              activeTab={activeTab === "account" ? "profile" : activeTab}
-              onTabChange={setActiveTab}
-            />
-          </div>
-        </div>
+    <PageShell
+      variant="narrow"
+      title={t("profile.settingsTitle", "Settings")}
+      subtitle={t("profile.settingsSubtitle", "Manage your profile, credentials, and account preferences.")}
+      tabs={tabs}
+      activeTab={activeTab === "account" ? "profile" : activeTab}
+      onTabChange={setActiveTab}
+    >
 
         {/* --- TAB 1: PROFILE --- */}
         {(activeTab === "profile" || activeTab === "account") && (
-          <div className="divide-y divide-border/50">
+          <ListGroup>
             {/* Row 1: Profile Picture & Identity */}
-            <Page.SettingRow
-              label={t("profile.avatarTitle", "Profile Picture & Identity")}
+            <ListItem
+              title={t("profile.avatarTitle", "Profile Picture & Identity")}
               description={
                 <div className="flex items-center gap-3 mt-1.5">
                   <div className="relative group shrink-0">
@@ -350,7 +338,7 @@ export function ProfilePage() {
                   </div>
                 </div>
               }
-              action={
+              trailing={
                 <>
                   <Button
                     type="button"
@@ -381,10 +369,10 @@ export function ProfilePage() {
             />
 
             {/* Row 2: E-Mail Address */}
-            <Page.SettingRow
-              label={t("profile.email", "E-Mail Address")}
+            <ListItem
+              title={t("profile.email", "E-Mail Address")}
               description={user?.email || "—"}
-              action={
+              trailing={
                 <Badge variant="secondary" className="text-[11px] gap-1 px-2 py-0.5 font-normal">
                   <CheckCircle2 className="h-3 w-3 text-emerald-500" />
                   {t("profile.emailVerified", "Verified")}
@@ -393,10 +381,10 @@ export function ProfilePage() {
             />
 
             {/* Row 3: Full Name */}
-            <Page.SettingRow
-              label={t("profile.fullName", "Full Name")}
+            <ListItem
+              title={t("profile.fullName", "Full Name")}
               description={user?.name || "—"}
-              action={
+              trailing={
                 <Button
                   type="button"
                   variant="outline"
@@ -410,8 +398,8 @@ export function ProfilePage() {
             />
 
             {/* Row 4: Current Plan */}
-            <Page.SettingRow
-              label={t("profile.currentPlan", "Current Plan")}
+            <ListItem
+              title={t("profile.currentPlan", "Current Plan")}
               description={
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="font-medium text-foreground">{user?.clientType || t("profile.standardPlan", "Standard")}</span>
@@ -420,7 +408,7 @@ export function ProfilePage() {
                   </Badge>
                 </div>
               }
-              action={
+              trailing={
                 <Button
                   type="button"
                   variant="outline"
@@ -434,10 +422,10 @@ export function ProfilePage() {
             />
 
             {/* Row 5: Phone Number */}
-            <Page.SettingRow
-              label={t("profile.phoneNumber", "Phone Number (WhatsApp)")}
+            <ListItem
+              title={t("profile.phoneNumber", "Phone Number (WhatsApp)")}
               description={user?.phoneNumber || t("profile.notConfigured", "Not configured")}
-              action={
+              trailing={
                 <Button
                   type="button"
                   variant="outline"
@@ -451,10 +439,10 @@ export function ProfilePage() {
             />
 
             {/* Row 6: RNC / Cédula */}
-            <Page.SettingRow
-              label={t("billing.rncLabel", "RNC / Cédula (NCF)")}
+            <ListItem
+              title={t("billing.rncLabel", "RNC / Cédula (NCF)")}
               description={user?.rnc || t("profile.notConfigured", "Not configured")}
-              action={
+              trailing={
                 <Button
                   type="button"
                   variant="outline"
@@ -468,14 +456,14 @@ export function ProfilePage() {
             />
 
             {/* Row 7: Application Language */}
-            <Page.SettingRow
-              label={t("profile.languageSetting", "Application language")}
+            <ListItem
+              title={t("profile.languageSetting", "Application language")}
               description={
                 user?.language === "es_DO"
                   ? t("profile.languages.es_DO", "Español (República Dominicana)")
                   : t("profile.languages.en_US", "English (United States)")
               }
-              action={
+              trailing={
                 <Select
                   value={user?.language || "en_US"}
                   onValueChange={handleLanguageChange}
@@ -492,13 +480,13 @@ export function ProfilePage() {
             />
 
             {/* Row 8: Sign out of all devices */}
-            <Page.SettingRow
-              label={t("profile.signOutAllDevices", "Sign out of all devices")}
+            <ListItem
+              title={t("profile.signOutAllDevices", "Sign out of all devices")}
               description={t(
                 "profile.signOutAllDevicesDesc",
                 "Sign out of all active sessions and refresh tokens across your devices."
               )}
-              action={
+              trailing={
                 <Button
                   type="button"
                   variant="outline"
@@ -515,14 +503,14 @@ export function ProfilePage() {
             />
 
             {/* Row 9: Delete Account (Danger Zone) */}
-            <Page.SettingRow
+            <ListItem
               danger
-              label={t("profile.deleteAccount", "Delete Entire Account")}
+              title={t("profile.deleteAccount", "Delete Entire Account")}
               description={t(
                 "profile.deleteAccountDesc",
                 "Permanently delete your entire account across all workspaces. This action cannot be reversed."
               )}
-              action={
+              trailing={
                 <Button
                   type="button"
                   variant="outline"
@@ -534,20 +522,20 @@ export function ProfilePage() {
                 </Button>
               }
             />
-          </div>
+          </ListGroup>
         )}
 
         {/* --- TAB 2: SECURITY & PASSWORD --- */}
         {activeTab === "security" && (
-          <div className="divide-y divide-border/50">
+          <ListGroup>
             {/* Row 1: Change Password */}
-            <Page.SettingRow
-              label={t("profile.passwordTitle", "Account Password")}
+            <ListItem
+              title={t("profile.passwordTitle", "Account Password")}
               description={t(
                 "profile.passwordDesc",
                 "Ensure your account is protected with a strong, rotating password."
               )}
-              action={
+              trailing={
                 <Button
                   type="button"
                   variant="outline"
@@ -561,13 +549,13 @@ export function ProfilePage() {
             />
 
             {/* Row 2: Two-Factor Authentication */}
-            <Page.SettingRow
-              label={t("profile.twoFactor", "Two-Factor Authentication (2FA)")}
+            <ListItem
+              title={t("profile.twoFactor", "Two-Factor Authentication (2FA)")}
               description={t(
                 "profile.twoFactorDesc",
                 "Enforce high-assurance TOTP authenticator verification on login."
               )}
-              action={
+              trailing={
                 <Badge variant="outline" className="text-xs px-2 py-0.5 text-muted-foreground">
                   {t("profile.twoFactorManaged", "Managed via IdP")}
                 </Badge>
@@ -575,36 +563,42 @@ export function ProfilePage() {
             />
 
             {/* Row 3: Active Session Telemetry */}
-            <Page.SettingRow
-              label={t("profile.activeSession", "Active Session & Security Log")}
+            <ListItem
+              title={t("profile.activeSession", "Active Session & Security Log")}
               description={
                 <span className="font-mono text-xs">
                   {t("profile.ipAddress", "IP")}: {user?.lastLoginIp || "127.0.0.1"} • {lastLoginText}
                 </span>
               }
-              action={
+              trailing={
                 <Badge variant="secondary" className="text-[11px] text-emerald-600 dark:text-emerald-400">
                   {t("profile.sessionActive", "Current Session")}
                 </Badge>
               }
             />
-          </div>
+          </ListGroup>
         )}
 
         {/* --- TAB 3: API KEYS (ADMIN ONLY) --- */}
         {activeTab === "api-keys" && isAdmin && (
           <div className="space-y-6">
-            <Page.Banner
-              icon={KeyRound}
+            <SectionHeader
+              leading={<KeyRound className="h-5 w-5 text-primary" />}
               title={t("profile.apiKeyTitle", "Developer API Keys")}
               description={t(
                 "profile.apiKeyBannerDesc",
                 "Generate cryptographic bearer keys to integrate with external CI/CD, backup daemons, and internal scripts."
               )}
-              action={{
-                label: t("profile.generateApiKey", "Generate API Key"),
-                onClick: handleOpenGenerateDialog,
-              }}
+              action={
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleOpenGenerateDialog}
+                  className="h-7 text-xs font-semibold shadow-button-solid"
+                >
+                  {t("profile.generateApiKey", "Generate API Key")}
+                </Button>
+              }
             />
 
             <div className="rounded-xl border border-border/50 overflow-hidden bg-card shadow-2xs">
@@ -667,7 +661,6 @@ export function ProfilePage() {
             </div>
           </div>
         )}
-      </div>
 
       {/* --- MODAL DIALOGS --- */}
 
@@ -896,7 +889,7 @@ export function ProfilePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Page>
+    </PageShell>
   );
 }
 

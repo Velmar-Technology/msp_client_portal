@@ -2,7 +2,16 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
+import {
+  PageProvider,
+  PageView,
+  PageViewSwitcher,
+  PageCalendar,
+  PageGraph,
+  type PageCalendarEvent,
+  type PageGraphDataPoint,
+} from "@/components/views";
 import { useCRMStore } from "@/store/useCRMStore";
 import { usePlanStore } from "@/store/usePlanStore";
 import { useSubscriptionStore } from "@/store/useSubscriptionStore";
@@ -24,7 +33,7 @@ import { CRMKanbanBoard } from "../components/CRMKanbanBoard";
 import { CRMLeadDetailSheet } from "../components/CRMLeadDetailSheet";
 import { CRMNewLeadModal } from "../components/CRMNewLeadModal";
 import type { Lead, LeadStage, QuotationStatus } from "../api/crmService";
-import type { PageCalendarEvent, PageGraphDataPoint } from "@/components/page/types";
+
 import {
   LayoutList,
   Kanban,
@@ -348,7 +357,7 @@ export function CRMPage() {
   const isDetailSheetOpen = Boolean(paramLeadId && selectedLead);
 
   return (
-    <Page
+    <PageProvider
       activeView={currentView}
       onViewChange={handleViewChange}
       defaultView="list"
@@ -357,39 +366,35 @@ export function CRMPage() {
       defaultPage={paramPage}
       defaultPageSize={filters.limit || 10}
     >
-      <Page.Header>
-        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-        <Page.HeaderRow className="flex-col sm:flex-col xl:flex-row items-start sm:items-start xl:items-center gap-3">
-          <Page.TitleGroup>
-            <Page.Title>{t("crm.title")}</Page.Title>
-            <Page.Description>{t("crm.subtitle")}</Page.Description>
-          </Page.TitleGroup>
+      <PageShell
+        title={t("crm.title")}
+        subtitle={t("crm.subtitle")}
+        variant="full"
+        actions={
           <div className="flex flex-wrap items-center gap-2.5 w-full xl:w-auto justify-between xl:justify-end">
-            <Page.ViewSwitcher />
-            <Page.Actions maxVisible={3}>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(selectedLead ? `/crm/custom-plans?lead=${selectedLead.id}` : "/crm/custom-plans")}
-                className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer border-primary/30 text-primary hover:bg-primary/5 shadow-xs"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>{t("crm.customPlan.btnTitle", "Custom Plan Studio")}</span>
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => setParams({ openModal: "new-lead" })}
-                className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                <span>{t("crm.newLead")}</span>
-              </Button>
-            </Page.Actions>
+            <PageViewSwitcher />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(selectedLead ? `/crm/custom-plans?lead=${selectedLead.id}` : "/crm/custom-plans")}
+              className="h-7 px-2.5 text-xs font-semibold gap-1.5 cursor-pointer border-primary/30 text-primary hover:bg-primary/5 shadow-xs"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>{t("crm.customPlan.btnTitle", "Custom Plan Studio")}</span>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => setParams({ openModal: "new-lead" })}
+              className="h-7 px-3 text-xs font-semibold gap-1 cursor-pointer"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>{t("crm.newLead")}</span>
+            </Button>
           </div>
-        </Page.HeaderRow>
-      </Page.Header>
+        }
+      >
 
       <div className="flex flex-col gap-4">
         {/* 1. Persistent CRM Metrics Strip */}
@@ -432,7 +437,7 @@ export function CRMPage() {
         </section>
 
         {/* 2. List / Table View */}
-        <Page.View type="list">
+        <PageView type="list">
           <section aria-label="CRM Lead List">
             <CRMDataTable
               leads={leads}
@@ -455,10 +460,10 @@ export function CRMPage() {
               onPageChange={handlePageChange}
             />
           </section>
-        </Page.View>
+        </PageView>
 
         {/* 3. Kanban Pipeline View */}
-        <Page.View type="kanban">
+        <PageView type="kanban">
           <section aria-label="CRM Kanban Pipeline">
             <CRMKanbanBoard
               leads={leads}
@@ -468,36 +473,36 @@ export function CRMPage() {
               onUpdateStage={handleQuickUpdateStage}
             />
           </section>
-        </Page.View>
+        </PageView>
 
         {/* 4. Activity Calendar View */}
-        <Page.View type="calendar">
+        <PageView type="calendar">
           <section aria-label="CRM Activity Calendar">
-            <Page.Calendar
+            <PageCalendar
               events={calendarEvents}
               onEventClick={handleCalendarEventClick}
             />
           </section>
-        </Page.View>
+        </PageView>
 
         {/* 5. Pipeline Analytics Graph View */}
-        <Page.View type="graph">
+        <PageView type="graph">
           <section aria-label="CRM Pipeline Analytics" className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Page.Graph
+            <PageGraph
               title={t("crm.analytics.pipelineByStage", "Pipeline Value by Stage")}
               subtitle={t("crm.analytics.stageDistribution", "Value distribution across active sales stages")}
               data={stagePipelineData}
               valuePrefix="$"
               defaultType="bar"
             />
-            <Page.Graph
+            <PageGraph
               title={t("crm.analytics.leadCountByStage", "Lead Volume by Stage")}
               subtitle={t("crm.totalLeads", "Total lead counts per stage")}
               data={stageLeadCountData}
               defaultType="donut"
             />
           </section>
-        </Page.View>
+        </PageView>
       </div>
 
       {/* 4. Lead Detail Sheet / Drawer */}
@@ -597,7 +602,8 @@ export function CRMPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Page>
+      </PageShell>
+    </PageProvider>
   );
 }
 

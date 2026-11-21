@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Laptop } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Page } from "@/components/Page";
+import { PageEmptyState } from "@/components/shared";
 
 export interface EmptySubscriptionsCardProps {
   onBrowsePlans: () => void;
@@ -16,7 +16,7 @@ export const EmptySubscriptionsCard = memo(function EmptySubscriptionsCard({
 }: EmptySubscriptionsCardProps) {
   const { t } = useTranslation();
   return (
-    <Page.EmptyState
+    <PageEmptyState
       icon={Laptop}
       title={t("devices.noActiveSubscriptions")}
       description={t("devices.noActiveSubscriptionsDesc")}

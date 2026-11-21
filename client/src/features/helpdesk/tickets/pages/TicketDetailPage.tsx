@@ -12,7 +12,8 @@ import { useSLATimer } from '../hooks/useSLATimer';
 import { useTicketSlaAwareness } from '@/hooks/useBusinessHours';
 import { useDeferredLoading } from '@/hooks/useDeferredLoading';
 import { useUrlState } from '@/hooks/useUrlState';
-import { Page } from '@/components/Page';
+import { PageShell } from '@/components/layout/PageShell';
+import { HorizontalTabs, ListGroup, ListItem, SectionHeader } from '@/components/shared';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import {
@@ -100,8 +101,8 @@ export function TicketDetailPage() {
   if (loading) {
     if (!showSkeleton) return null;
     return (
-      <Page>
-        <div className="max-w-7xl mx-auto space-y-6">
+      <PageShell variant="full" className="max-w-7xl mx-auto">
+        <div className="space-y-6">
           <div className="flex flex-col gap-2">
             <Skeleton className="h-4 w-32 rounded" />
             <div className="flex items-center justify-between gap-4">
@@ -124,14 +125,14 @@ export function TicketDetailPage() {
             </div>
           </div>
         </div>
-      </Page>
+      </PageShell>
     );
   }
 
   if (!ticket || error) {
     return (
-      <Page>
-        <div className="max-w-2xl mx-auto py-16 px-4 text-center space-y-6">
+      <PageShell variant="constrained" className="max-w-2xl mx-auto py-16 px-4 text-center">
+        <div className="space-y-6">
           <div className="w-16 h-16 bg-destructive/10 text-destructive rounded-2xl flex items-center justify-center mx-auto border border-destructive/20 shadow-xs">
             <AlertCircle className="w-8 h-8" />
           </div>
@@ -153,7 +154,7 @@ export function TicketDetailPage() {
             </Link>
           </div>
         </div>
-      </Page>
+      </PageShell>
     );
   }
 
@@ -193,62 +194,54 @@ export function TicketDetailPage() {
   ];
 
   return (
-    <Page>
-      <div className="max-w-7xl mx-auto space-y-6 animate-fade-in">
-        {/* Navigation & Title Header */}
-        <div className="flex flex-col gap-2">
-          <Link
-            to="/helpdesk/tickets"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors self-start"
+    <PageShell
+      variant="full"
+      className="max-w-7xl mx-auto animate-fade-in"
+      backPath="/helpdesk/tickets"
+      backLabel={t('ticketDetail.backToTickets')}
+      title={ticket.title}
+      badge={
+        <div className="flex items-center gap-2">
+          <span
+            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold border ${statusBadgeVariant}`}
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>{t('ticketDetail.backToTickets')}</span>
-          </Link>
-
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-            <div className="space-y-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground font-heading">
-                  {ticket.title}
-                </h1>
-                <span
-                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold border ${statusBadgeVariant}`}
-                >
-                  {getStatusLabel(ticket.status)}
-                </span>
-                <span className="font-mono text-xs text-muted-foreground">
-                  #{ticket.id.slice(0, 8)}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t('ticketDetail.openedBy')}{' '}
-                <strong className="font-semibold text-foreground">
-                  {ticket.reporter_name
-                    ? `${ticket.reporter_name}${ticket.client_name ? ` (${ticket.client_name})` : ''}`
-                    : ticket.client_name || 'Client'}
-                </strong>{' '}
-                •{' '}
-                {new Date(ticket.created_at).toLocaleString(
-                  i18n.language === 'es_DO' ? 'es-DO' : 'en-US',
-                  {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                  }
-                )}
-              </p>
-            </div>
-
-            {sla?.isApplicable && !sla.isExpired && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-destructive/10 border border-destructive/20 text-destructive text-xs font-mono font-bold animate-pulse self-start sm:self-auto">
-                <Clock className="w-3.5 h-3.5" />
-                <span>{sla.formattedTime}</span>
-              </div>
-            )}
-          </div>
+            {getStatusLabel(ticket.status)}
+          </span>
+          <span className="font-mono text-xs text-muted-foreground">
+            #{ticket.id.slice(0, 8)}
+          </span>
         </div>
+      }
+      subtitle={
+        <span>
+          {t('ticketDetail.openedBy')}{' '}
+          <strong className="font-semibold text-foreground">
+            {ticket.reporter_name
+              ? `${ticket.reporter_name}${ticket.client_name ? ` (${ticket.client_name})` : ''}`
+              : ticket.client_name || 'Client'}
+          </strong>{' '}
+          •{' '}
+          {new Date(ticket.created_at).toLocaleString(
+            i18n.language === 'es_DO' ? 'es-DO' : 'en-US',
+            {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit',
+            }
+          )}
+        </span>
+      }
+      actions={
+        sla?.isApplicable && !sla.isExpired ? (
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-destructive/10 border border-destructive/20 text-destructive text-xs font-mono font-bold animate-pulse self-start sm:self-auto">
+            <Clock className="w-3.5 h-3.5" />
+            <span>{sla.formattedTime}</span>
+          </div>
+        ) : undefined
+      }
+    >
 
         {/* Workflow Stage Progression Tracker */}
         <TicketStatusBar
@@ -343,187 +336,192 @@ export function TicketDetailPage() {
 
           {/* Side Panel: Bubble Tabs for Properties, Diagnostics, and Timeline */}
           <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-4">
-            <Page.Tabs
+            <HorizontalTabs
               tabs={sideTabs}
               activeTab={activeSideTab}
               onTabChange={(tabId) => setParam('sideTab', tabId)}
-              variant="bubble"
             />
 
             {/* Side Tab 1: Properties */}
             {activeSideTab === 'properties' && (
               <div className="space-y-6 animate-fade-in">
-                <Page.SettingGroup title={t('ticketDetail.ticketProperties', 'Ticket Properties')}>
-                  <Page.SettingRow
-                    label={t('ticketDetail.priority')}
-                    description={t('ticketDetail.priorityDesc', 'SLA urgency priority level')}
-                    action={
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border ${
-                          ticket.priority === 'CRITICAL'
-                            ? 'bg-destructive/10 text-destructive border-destructive/20 animate-pulse'
-                            : ticket.priority === 'HIGH'
-                              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
-                              : ticket.priority === 'MEDIUM'
-                                ? 'bg-primary/10 text-primary border-primary/20'
-                                : 'bg-muted text-muted-foreground border-border'
-                        }`}
-                      >
-                        {getPriorityLabel(ticket.priority)}
-                      </span>
-                    }
-                  />
-
-                  <Page.SettingRow
-                    label={t('tickets.tableCategory')}
-                    description={t('ticketDetail.categoryDesc', 'Problem domain classification')}
-                    action={
-                      <span className="text-sm font-semibold text-foreground">
-                        {getCategoryLabel(ticket.category)}
-                      </span>
-                    }
-                  />
-
-                  <Page.SettingRow
-                    label={t('ticketDetail.assignedSpecialist', 'Assigned Specialist')}
-                    description={
-                      ticket.assigned_tech_email ||
-                      t('ticketDetail.assignedSpecialistDesc', 'Technician currently handling this request')
-                    }
-                    action={
-                      canAssign && technicians.length > 0 ? (
-                        <div className="flex items-center gap-2">
-                          <Select
-                            value={selectedTechId || ticket.assigned_tech_id || ''}
-                            onValueChange={(val) => {
-                              setSelectedTechId(val);
-                              handleAssign(val);
-                            }}
-                            disabled={assigning}
-                          >
-                            <SelectTrigger className="h-7 text-xs w-36 sm:w-40">
-                              <SelectValue placeholder={t('ticketDetail.assignTechnician')} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {technicians.map((tech) => (
-                                <SelectItem key={tech.id} value={tech.id} className="text-xs">
-                                  {tech.name} {tech.specialty ? `(${tech.specialty})` : ''}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {assigning && (
-                            <div className="w-3.5 h-3.5 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
-                            {(ticket.assigned_tech_name || 'U').substring(0, 2).toUpperCase()}
-                          </div>
-                          <span className="text-sm font-medium text-foreground">
-                            {ticket.assigned_tech_name || t('ticketDetail.unassigned')}
-                          </span>
-                        </div>
-                      )
-                    }
-                  />
-
-                  <Page.SettingRow
-                    label={t('ticketDetail.openedBy', 'Reported By')}
-                    description={ticket.reporter_email || ticket.client_email || ''}
-                    action={
-                      <span className="text-sm font-medium text-foreground">
-                        {ticket.reporter_name
-                          ? `${ticket.reporter_name}${ticket.client_name ? ` (${ticket.client_name})` : ''}`
-                          : ticket.client_name || 'Client'}
-                      </span>
-                    }
-                  />
-
-                  <Page.SettingRow
-                    label={t('ticketDetail.created', 'Submission Time')}
-                    description={new Date(ticket.created_at).toLocaleString(
-                      i18n.language === 'es_DO' ? 'es-DO' : 'en-US',
-                      {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
+                <div className="space-y-3">
+                  <SectionHeader title={t('ticketDetail.ticketProperties', 'Ticket Properties')} />
+                  <ListGroup>
+                    <ListItem
+                      title={t('ticketDetail.priority')}
+                      description={t('ticketDetail.priorityDesc', 'SLA urgency priority level')}
+                      trailing={
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border ${
+                            ticket.priority === 'CRITICAL'
+                              ? 'bg-destructive/10 text-destructive border-destructive/20 animate-pulse'
+                              : ticket.priority === 'HIGH'
+                                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                                : ticket.priority === 'MEDIUM'
+                                  ? 'bg-primary/10 text-primary border-primary/20'
+                                  : 'bg-muted text-muted-foreground border-border'
+                          }`}
+                        >
+                          {getPriorityLabel(ticket.priority)}
+                        </span>
                       }
-                    )}
-                    action={
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-medium border bg-muted text-muted-foreground border-border/80">
-                        {ticket.source === 'AGENT' ? t('ticketDetail.sourceAgent') : ticket.source || 'PORTAL'}
-                      </span>
-                    }
-                  />
+                    />
 
-                  {(sla.isApplicable || slaAwareness?.isAfterHours) && (
-                    <Page.SettingRow
-                      label={t('ticketDetail.slaWindow', 'SLA Response Window')}
+                    <ListItem
+                      title={t('tickets.tableCategory')}
+                      description={t('ticketDetail.categoryDesc', 'Problem domain classification')}
+                      trailing={
+                        <span className="text-sm font-semibold text-foreground">
+                          {getCategoryLabel(ticket.category)}
+                        </span>
+                      }
+                    />
+
+                    <ListItem
+                      title={t('ticketDetail.assignedSpecialist', 'Assigned Specialist')}
                       description={
-                        slaAwareness?.isAfterHours
-                          ? t('ticketDetail.afterHoursExplanation', { time: slaAwareness.formattedSlaStart })
-                          : t('ticketDetail.slaDescription')
+                        ticket.assigned_tech_email ||
+                        t('ticketDetail.assignedSpecialistDesc', 'Technician currently handling this request')
                       }
-                      action={
-                        sla.isApplicable && !sla.isExpired ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-destructive/10 text-destructive border border-destructive/20 animate-pulse">
-                            <Clock className="w-3.5 h-3.5" />
-                            {sla.formattedTime}
-                          </span>
-                        ) : slaAwareness?.isAfterHours ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                            <Moon className="w-3.5 h-3.5" />
-                            {slaAwareness.formattedSlaStart}
+                      trailing={
+                        canAssign && technicians.length > 0 ? (
+                          <div className="flex items-center gap-2">
+                            <Select
+                              value={selectedTechId || ticket.assigned_tech_id || ''}
+                              onValueChange={(val) => {
+                                setSelectedTechId(val);
+                                handleAssign(val);
+                              }}
+                              disabled={assigning}
+                            >
+                              <SelectTrigger className="h-7 text-xs w-36 sm:w-40">
+                                <SelectValue placeholder={t('ticketDetail.assignTechnician')} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {technicians.map((tech) => (
+                                  <SelectItem key={tech.id} value={tech.id} className="text-xs">
+                                    {tech.name} {tech.specialty ? `(${tech.specialty})` : ''}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {assigning && (
+                              <div className="w-3.5 h-3.5 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                              {(ticket.assigned_tech_name || 'U').substring(0, 2).toUpperCase()}
+                            </div>
+                            <span className="text-sm font-medium text-foreground">
+                              {ticket.assigned_tech_name || t('ticketDetail.unassigned')}
+                            </span>
+                          </div>
+                        )
+                      }
+                    />
+
+                    <ListItem
+                      title={t('ticketDetail.openedBy', 'Reported By')}
+                      description={ticket.reporter_email || ticket.client_email || ''}
+                      trailing={
+                        <span className="text-sm font-medium text-foreground">
+                          {ticket.reporter_name
+                            ? `${ticket.reporter_name}${ticket.client_name ? ` (${ticket.client_name})` : ''}`
+                            : ticket.client_name || 'Client'}
+                        </span>
+                      }
+                    />
+
+                    <ListItem
+                      title={t('ticketDetail.created', 'Submission Time')}
+                      description={new Date(ticket.created_at).toLocaleString(
+                        i18n.language === 'es_DO' ? 'es-DO' : 'en-US',
+                        {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        }
+                      )}
+                      trailing={
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-medium border bg-muted text-muted-foreground border-border/80">
+                          {ticket.source === 'AGENT' ? t('ticketDetail.sourceAgent') : ticket.source || 'PORTAL'}
+                        </span>
+                      }
+                    />
+
+                    {(sla.isApplicable || slaAwareness?.isAfterHours) && (
+                      <ListItem
+                        title={t('ticketDetail.slaWindow', 'SLA Response Window')}
+                        description={
+                          slaAwareness?.isAfterHours
+                            ? t('ticketDetail.afterHoursExplanation', { time: slaAwareness.formattedSlaStart })
+                            : t('ticketDetail.slaDescription')
+                        }
+                        trailing={
+                          sla.isApplicable && !sla.isExpired ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-destructive/10 text-destructive border border-destructive/20 animate-pulse">
+                              <Clock className="w-3.5 h-3.5" />
+                              {sla.formattedTime}
+                            </span>
+                          ) : slaAwareness?.isAfterHours ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                              <Moon className="w-3.5 h-3.5" />
+                              {slaAwareness.formattedSlaStart}
+                            </span>
+                          ) : null
+                        }
+                      />
+                    )}
+
+                    <ListItem
+                      title={t('ticketDetail.attachmentsTitle', 'Attachments')}
+                      description={
+                        attachments.length > 0
+                          ? `${attachments.length} ${attachments.length === 1 ? 'file' : 'files'}`
+                          : t('ticketDetail.noAttachments')
+                      }
+                      trailing={
+                        attachments.length > 0 ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-medium border bg-muted text-muted-foreground border-border/80">
+                            {attachments.length}
                           </span>
                         ) : null
                       }
                     />
-                  )}
-
-                  <Page.SettingRow
-                    label={t('ticketDetail.attachmentsTitle', 'Attachments')}
-                    description={
-                      attachments.length > 0
-                        ? `${attachments.length} ${attachments.length === 1 ? 'file' : 'files'}`
-                        : t('ticketDetail.noAttachments')
-                    }
-                    action={
-                      attachments.length > 0 ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-medium border bg-muted text-muted-foreground border-border/80">
-                          {attachments.length}
-                        </span>
-                      ) : null
-                    }
-                  />
-                </Page.SettingGroup>
+                  </ListGroup>
+                </div>
 
                 {/* Flat Danger Zone: Ticket Cancellation for Client on Open Tickets */}
                 {user?.role === 'CLIENT' && ticket.status === 'OPEN' && (
-                  <Page.SettingGroup title={t('ticketDetail.ticketActions', 'Ticket Actions')}>
-                    <Page.SettingRow
-                      danger
-                      label={t('ticketDetail.cancelTitle', 'Cancel Ticket Request')}
-                      description={t('ticketDetail.cancelExplanation')}
-                      action={
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleStatusChange('CANCELLED')}
-                          disabled={statusUpdating}
-                          className="h-7 px-3 text-xs border-destructive/40 text-destructive hover:bg-destructive/10 font-semibold cursor-pointer"
-                        >
-                          {statusUpdating && (
-                            <div className="w-3 h-3 border-2 border-destructive/20 border-t-destructive rounded-full animate-spin mr-1" />
-                          )}
-                          {t('tickets.cancelTicket')}
-                        </Button>
-                      }
-                    />
-                  </Page.SettingGroup>
+                  <div className="space-y-3">
+                    <SectionHeader title={t('ticketDetail.ticketActions', 'Ticket Actions')} />
+                    <ListGroup>
+                      <ListItem
+                        danger
+                        title={t('ticketDetail.cancelTitle', 'Cancel Ticket Request')}
+                        description={t('ticketDetail.cancelExplanation')}
+                        trailing={
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleStatusChange('CANCELLED')}
+                            disabled={statusUpdating}
+                            className="h-7 px-3 text-xs border-destructive/40 text-destructive hover:bg-destructive/10 font-semibold cursor-pointer"
+                          >
+                            {statusUpdating && (
+                              <div className="w-3 h-3 border-2 border-destructive/20 border-t-destructive rounded-full animate-spin mr-1" />
+                            )}
+                            {t('tickets.cancelTicket')}
+                          </Button>
+                        }
+                      />
+                    </ListGroup>
+                  </div>
                 )}
               </div>
             )}
@@ -548,13 +546,12 @@ export function TicketDetailPage() {
             )}
           </div>
         </div>
-      </div>
 
-      <FilePreviewModal
-        previewFile={previewFile}
-        onClose={() => setPreviewFile(null)}
-      />
-    </Page>
+        <FilePreviewModal
+          previewFile={previewFile}
+          onClose={() => setPreviewFile(null)}
+        />
+    </PageShell>
   );
 }
 

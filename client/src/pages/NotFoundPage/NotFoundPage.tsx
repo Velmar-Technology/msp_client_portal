@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { FileQuestion, ArrowLeft, Home } from "lucide-react";
-import { Page } from "@/components/Page";
+import { PageShell } from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 
 export function NotFoundPage() {
@@ -9,34 +9,31 @@ export function NotFoundPage() {
   const navigate = useNavigate();
 
   return (
-    <Page showBreadcrumbs={false}>
-      <Page.Header>
-        <Page.HeaderRow>
-          <Page.TitleGroup>
-            <Page.Title>{t("notFound.title")}</Page.Title>
-            <Page.Description>{t("notFound.description")}</Page.Description>
-          </Page.TitleGroup>
-          <Page.Actions>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate(-1)}
-              className="h-7 text-xs font-bold gap-1.5 cursor-pointer shadow-xs"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              {t("notFound.goBack")}
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => navigate("/")}
-              className="h-7 text-xs font-bold gap-1.5 cursor-pointer shadow-xs"
-            >
-              <Home className="h-3.5 w-3.5" />
-              {t("notFound.backHome")}
-            </Button>
-          </Page.Actions>
-        </Page.HeaderRow>
-      </Page.Header>
+    <PageShell
+      title={t("notFound.title")}
+      subtitle={t("notFound.description")}
+      actions={
+        <>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="h-7 text-xs font-bold gap-1.5 cursor-pointer shadow-xs"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            {t("notFound.goBack")}
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => navigate("/")}
+            className="h-7 text-xs font-bold gap-1.5 cursor-pointer shadow-xs"
+          >
+            <Home className="h-3.5 w-3.5" />
+            {t("notFound.backHome")}
+          </Button>
+        </>
+      }
+    >
       <div className="relative min-h-[70vh] w-full flex flex-col items-center justify-center overflow-hidden transition-colors duration-300">
         {/* Visual background ambient blobs */}
         <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse pointer-events-none" />
@@ -87,7 +84,7 @@ export function NotFoundPage() {
           </div>
         </div>
       </div>
-    </Page>
+    </PageShell>
   );
 }
 

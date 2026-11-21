@@ -1,6 +1,6 @@
 import React from 'react';
 import { Shield, Lock, ChevronRight } from 'lucide-react';
-import { Page } from '@/components/Page';
+import { PageShell } from '@/components/layout/PageShell';
 import { Button } from '@/components/ui/button';
 import { usePrivacyPage } from '@/hooks/usePrivacyPage';
 import type { PrivacySection } from '@/hooks/usePrivacyPage';
@@ -79,24 +79,18 @@ export function PrivacyPage() {
   const isSpanish = i18n.language === 'es_DO';
 
   return (
-    <Page showBreadcrumbs={false} className="w-full pb-12 px-4 sm:px-6 lg:px-8">
-      <Page.Header>
-        <Page.HeaderRow>
-          <Page.TitleGroup>
-            <Page.Title>{t('legal.privacyTitle')}</Page.Title>
-            <Page.Description>
-              {t('legal.lastUpdated')}: {isSpanish ? '18 de Junio, 2026' : 'June 18, 2026'}. {isSpanish ? 'Esta política describe cómo protegemos sus datos operativos y de cuenta.' : 'This policy describes how we protect your operational and account data.'}
-            </Page.Description>
-          </Page.TitleGroup>
-          <Page.Actions>
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted rounded-md border border-border shrink-0">
-              <Shield className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t('legal.compliantText')}</span>
-            </div>
-          </Page.Actions>
-        </Page.HeaderRow>
-      </Page.Header>
-
+    <PageShell
+      title={t('legal.privacyTitle')}
+      subtitle={`${t('legal.lastUpdated')}: ${isSpanish ? '18 de Junio, 2026' : 'June 18, 2026'}. ${isSpanish ? 'Esta política describe cómo protegemos sus datos operativos y de cuenta.' : 'This policy describes how we protect your operational and account data.'}`}
+      actions={
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted rounded-md border border-border shrink-0">
+          <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t('legal.compliantText')}</span>
+        </div>
+      }
+      variant="full"
+      className="pb-12 px-4 sm:px-6 lg:px-8"
+    >
       <div className="border border-border bg-card rounded-xl shadow-xs overflow-hidden mt-4">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-0">
           {/* Sticky Left Sidebar Navigation */}
@@ -110,7 +104,7 @@ export function PrivacyPage() {
           </div>
         </div>
       </div>
-    </Page>
+    </PageShell>
   );
 }
 

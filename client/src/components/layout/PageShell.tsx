@@ -24,6 +24,8 @@ export interface PageShellProps extends Omit<React.HTMLAttributes<HTMLDivElement
   badge?: React.ReactNode;
   /** Back navigation: path string or true for browser back */
   backPath?: string | boolean;
+  /** Optional text label next to the back arrow */
+  backLabel?: React.ReactNode;
   /** Explicit back button click handler */
   onBack?: () => void;
   /** Primary call-to-action button */
@@ -69,6 +71,7 @@ export function PageShell({
   subtitle,
   badge,
   backPath,
+  backLabel,
   onBack,
   cta,
   actions,
@@ -180,12 +183,16 @@ export function PageShell({
                   <Button
                     type="button"
                     variant="minimal"
-                    size="icon-sm"
+                    size={backLabel ? "sm" : "icon-sm"}
                     onClick={handleBack}
-                    aria-label="Go back"
-                    className="shrink-0 rounded-md -ml-1 text-muted-foreground hover:text-foreground"
+                    aria-label={typeof backLabel === "string" ? backLabel : "Go back"}
+                    className={cn(
+                      "shrink-0 rounded-md -ml-1 text-muted-foreground hover:text-foreground",
+                      backLabel ? "h-7 px-2 gap-1.5 text-xs font-semibold" : ""
+                    )}
                   >
                     <ArrowLeft className="h-4 w-4" />
+                    {backLabel && <span>{backLabel}</span>}
                   </Button>
                 )}
                 <div className="space-y-0.5 min-w-0 flex-1">
@@ -235,6 +242,11 @@ export function PageShell({
                   aria-selected={isCurrent}
                   disabled={tab.disabled}
                   onClick={() => handleTabSelect(tab.id)}
+                  onMouseDown={(e) => {
+                    if (e.button === 0) {
+                      handleTabSelect(tab.id);
+                    }
+                  }}
                   className={cn(
                     "flex-none shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap cursor-pointer select-none",
                     isCurrent

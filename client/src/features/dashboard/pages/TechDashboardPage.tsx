@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Page } from '@/components/Page';
+import { PageShell } from '@/components/layout/PageShell';
 import { MetricCard } from '@/components/shared';
 import { StatsGrid } from '@/components/shared/StatsGrid';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -443,29 +443,24 @@ export function TechDashboardPage() {
   }
 
   return (
-    <Page>
-      <Page.Header>
-        <Page.Breadcrumbs className="mb-2 text-muted-foreground text-xs" />
-        <Page.HeaderRow>
-          <Page.TitleGroup>
-            <Page.Title>{`${t('login.welcome')}, ${user?.name}`}</Page.Title>
-            <Page.Description>{t('techDashboard.subtitle')}</Page.Description>
-          </Page.TitleGroup>
-          <Page.Actions maxVisible={3}>
-            <div className="flex items-center gap-2.5 bg-card p-2 px-3 rounded-lg border border-border shadow-xs">
-              <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                <User className="h-3.5 w-3.5" />
-              </div>
-              <div>
-                <h4 className="text-xs font-semibold text-foreground leading-tight">{user?.email}</h4>
-                <span className="text-[10px] text-muted-foreground font-medium">
-                  {t('techDashboard.mySpecialty')}: <strong className="text-foreground">{specialty || (i18n.language === 'es_DO' ? 'Generalista' : 'Generalist')}</strong>
-                </span>
-              </div>
-            </div>
-          </Page.Actions>
-        </Page.HeaderRow>
-      </Page.Header>
+    <PageShell
+      title={`${t('login.welcome')}, ${user?.name}`}
+      subtitle={t('techDashboard.subtitle')}
+      variant="full"
+      actions={
+        <div className="flex items-center gap-2.5 bg-card p-2 px-3 rounded-lg border border-border shadow-xs">
+          <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+            <User className="h-3.5 w-3.5" />
+          </div>
+          <div>
+            <h4 className="text-xs font-semibold text-foreground leading-tight">{user?.email}</h4>
+            <span className="text-[10px] text-muted-foreground font-medium">
+              {t('techDashboard.mySpecialty')}: <strong className="text-foreground">{specialty || (i18n.language === 'es_DO' ? 'Generalista' : 'Generalist')}</strong>
+            </span>
+          </div>
+        </div>
+      }
+    >
       <div className="flex flex-col gap-4">
 
         {/* Metrics Row */}
@@ -650,7 +645,7 @@ export function TechDashboardPage() {
       </div>
         </section>
       </div>
-    </Page>
+    </PageShell>
   );
 }
 
