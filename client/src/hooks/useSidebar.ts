@@ -10,7 +10,6 @@ import {
   Calendar,
   Download,
   Activity,
-  Target,
   KeyRound,
   Sparkles,
   Package,
@@ -59,7 +58,6 @@ const baseTechNavItems: NavItem[] = [
 
 const baseAdminNavItems: NavItem[] = [
   { to: "/dashboard", icon: Shield, labelKey: "adminDashboard", groupLabelKey: "sidebar.groups.management", order: 10 },
-  { to: "/crm", icon: Target, labelKey: "crm", counterKey: "crm", order: 20 },
   { to: "/financial", icon: Landmark, labelKey: "financial", order: 30 },
   { to: "/users", icon: Users, labelKey: "userManagement", order: 40 },
   { to: "/admin/api-status", icon: Activity, labelKey: "apiStatus", order: 50 },

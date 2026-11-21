@@ -6,7 +6,6 @@ import { authRoutes, userRoutes, authzRoutes, tenantRoutes } from '@modules/auth
 import { rmmRoutes, alertRoutes, maintenanceRoutes } from '@modules/rmm';
 import { systemRoutes } from '@modules/system';
 import { notificationRoutes, notificationPreferenceRoutes } from '@modules/notifications';
-import { crmRoutes } from '@modules/crm';
 import { navRoutes } from '@modules/nav';
 import { registeredModuleManifests } from '@shared/registry/modules.generated';
 import { resolveModuleRouteMounts } from '@shared/registry/moduleManifest.types';
@@ -43,7 +42,6 @@ gatewayClusterRouter.use('/expenses', expenseRoutes);
 gatewayClusterRouter.use('/maintenance', maintenanceRoutes);
 gatewayClusterRouter.use('/alerts', alertRoutes);
 gatewayClusterRouter.use('/rmm', rmmRoutes);
-gatewayClusterRouter.use('/crm', crmRoutes);
 gatewayClusterRouter.use('/nav', navRoutes);
 gatewayClusterRouter.use('/authz', authzRoutes);
 

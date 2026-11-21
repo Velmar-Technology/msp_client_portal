@@ -1,0 +1,6 @@
+code,module,description,roles
+crm:leads:read,crm,View CRM pipeline leads and statistics,ADMIN
+crm:leads:write,crm,Create and update CRM pipeline leads,ADMIN
+crm:quotes:write,crm,Issue and update CRM quotations,ADMIN
+crm:leads:delete,crm,Delete or archive CRM leads,ADMIN
+crm:manage,crm,Full management of CRM leads quotations and custom plans,ADMIN
