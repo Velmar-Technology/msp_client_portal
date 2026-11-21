@@ -3,6 +3,7 @@ import { IncomingMessage } from 'http';
 import crypto from 'crypto';
 import { logger } from '@shared/utils/logger';
 import { metricsService } from '@shared/metrics/metricsService';
+import { isUuid } from '@shared/utils/validation';
 import { TelemetryBufferService, telemetryBufferService } from './TelemetryBufferService';
 import { AgentClusterBroker, agentClusterBroker } from './AgentClusterBroker';
 import { EquipmentRepository, equipmentRepository } from '@modules/equipment';
@@ -278,8 +279,24 @@ export class AgentGateway {
         // Handle TELEMETRY_PING / HEARTBEAT with metrics
         if ((data.command === 'TELEMETRY_PING' || data.command === 'HEARTBEAT') && data.payload) {
           agent.lastHeartbeat = new Date();
-          const targetEquipmentId = agent.slotId || equipmentId;
-          const targetTenantId = data.payload.tenant_id || agent.tenantId || agent.token || 'unknown';
+          const targetEquipmentId = agent.slotId || (isUuid(equipmentId) ? equipmentId : undefined);
+          let targetTenantId = data.payload.tenant_id || agent.tenantId;
+
+          if (!targetTenantId && targetEquipmentId && isUuid(targetEquipmentId)) {
+            this.equipmentRepo.findById(targetEquipmentId).then((equip) => {
+              if (equip?.tenant_id) {
+                agent.tenantId = equip.tenant_id;
+              }
+            }).catch(() => {});
+          }
+
+          if (!targetEquipmentId || !targetTenantId || !isUuid(targetEquipmentId) || !isUuid(targetTenantId)) {
+            logger.debug(
+              `[AgentGateway] Skipping telemetry persistence for unlinked/invalid agent ${equipmentId}: slotId=${targetEquipmentId}, tenantId=${targetTenantId}`
+            );
+            return;
+          }
+
           this.telemetryBuffer
             .bufferPing({
               equipment_id: targetEquipmentId,
@@ -799,12 +816,15 @@ export class AgentGateway {
   }
 
   /**
-   * Links a connected agent to an equipment slot ID (e.g. after identity reconciliation).
+   * Links a connected agent to an equipment slot ID and tenant ID (e.g. after identity reconciliation).
    */
-  setAgentSlotId(agentId: string, slotId: string): void {
+  setAgentSlotId(agentId: string, slotId: string, tenantId?: string): void {
     const agent = this.activeSockets.get(agentId);
     if (agent) {
       agent.slotId = slotId;
+      if (tenantId) {
+        agent.tenantId = tenantId;
+      }
     }
   }
 
@@ -817,15 +837,19 @@ export class AgentGateway {
    * @param agentId - Agent instance UUID
    * @param slotId - Equipment slot UUID
    * @param agentToken - Device authentication secret
+   * @param tenantId - Optional tenant UUID
    * @returns True if BIND command successfully sent to agent
    */
-  bindAgent(agentId: string, slotId: string, agentToken: string): boolean {
+  bindAgent(agentId: string, slotId: string, agentToken: string, tenantId?: string): boolean {
     this.purgePairingForAgent(agentId);
     const agent = this.activeSockets.get(agentId);
     if (!agent || agent.ws.readyState !== WebSocket.OPEN) {
       return false;
     }
     agent.slotId = slotId;
+    if (tenantId) {
+      agent.tenantId = tenantId;
+    }
     const envelope = JSON.stringify({
       correlation_id: crypto.randomUUID(),
       command: 'BIND',

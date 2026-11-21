@@ -1,6 +1,7 @@
 import { RedisClientService, redisClientService } from '@shared/utils/cache/RedisClient';
 import { RmmTelemetryRepository, rmmTelemetryRepository, TelemetryUpsertPayload } from '../repositories/RmmTelemetryRepository';
 import { logger } from '@shared/utils/logger';
+import { isUuid } from '@shared/utils/validation';
 
 export interface TelemetryBufferOptions {
   /** Flush interval in milliseconds (default: 3000ms). */
@@ -45,7 +46,8 @@ export class TelemetryBufferService {
     this.flushIntervalMs = options.flushIntervalMs ?? 3000;
     this.maxBatchSize = options.maxBatchSize ?? 500;
 
-    if (options.autoStart !== false) {
+    const isTestEnv = process.env.NODE_ENV === 'test' || Boolean(process.env.VITEST);
+    if (options.autoStart ?? !isTestEnv) {
       this.start();
     }
   }
@@ -86,6 +88,13 @@ export class TelemetryBufferService {
    * @param data - Incoming telemetry payload
    */
   async bufferPing(data: TelemetryUpsertPayload): Promise<void> {
+    if (!isUuid(data.equipment_id) || !isUuid(data.tenant_id)) {
+      logger.warn(
+        `[TelemetryBufferService] Rejecting bufferPing with non-UUID identifiers: equipment_id=${data.equipment_id}, tenant_id=${data.tenant_id}`
+      );
+      return;
+    }
+
     const redis = this.redisService.getClient();
 
     if (redis) {
@@ -162,11 +171,29 @@ export class TelemetryBufferService {
     const results = await readPipeline.exec();
 
     const batch: TelemetryUpsertPayload[] = [];
+    const cleanupPipeline = redis.pipeline();
+    let hasCleanups = false;
+
     for (let i = 0; i < dirtyIds.length; i++) {
       const [err, raw] = results[i] || [];
       if (!err && raw && raw.equipment_id && raw.tenant_id) {
-        batch.push(this.deserializeHash(raw));
+        if (isUuid(raw.equipment_id) && isUuid(raw.tenant_id)) {
+          batch.push(this.deserializeHash(raw));
+        } else {
+          logger.warn(
+            `[TelemetryBufferService] Dropping invalid telemetry from Redis: equipment_id=${raw.equipment_id}, tenant_id=${raw.tenant_id}`
+          );
+          cleanupPipeline.del(`${TelemetryBufferService.DEVICE_HASH_PREFIX}${dirtyIds[i]}`);
+          hasCleanups = true;
+        }
+      } else if (dirtyIds[i]) {
+        cleanupPipeline.del(`${TelemetryBufferService.DEVICE_HASH_PREFIX}${dirtyIds[i]}`);
+        hasCleanups = true;
       }
+    }
+
+    if (hasCleanups) {
+      await cleanupPipeline.exec();
     }
 
     if (batch.length > 0) {
@@ -181,8 +208,18 @@ export class TelemetryBufferService {
    * Flushes records from in-memory fallback buffer.
    */
   private async flushFromMemory(): Promise<number> {
-    const batch = Array.from(this.inMemoryFallbackBuffer.values());
+    const rawBatch = Array.from(this.inMemoryFallbackBuffer.values());
     this.inMemoryFallbackBuffer.clear();
+
+    const batch = rawBatch.filter((item) => {
+      if (isUuid(item.equipment_id) && isUuid(item.tenant_id)) {
+        return true;
+      }
+      logger.warn(
+        `[TelemetryBufferService] Dropping invalid in-memory telemetry: equipment_id=${item.equipment_id}, tenant_id=${item.tenant_id}`
+      );
+      return false;
+    });
 
     if (batch.length > 0) {
       await this.telemetryRepo.upsertTelemetryBatch(batch);

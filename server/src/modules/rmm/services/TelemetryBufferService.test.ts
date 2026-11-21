@@ -8,6 +8,10 @@ describe('TelemetryBufferService', () => {
   let mockRedisService: any;
   let service: TelemetryBufferService;
 
+  const validEquipId1 = '11111111-1111-1111-1111-111111111111';
+  const validEquipId2 = '22222222-2222-2222-2222-222222222222';
+  const validTenantId = '33333333-3333-3333-3333-333333333333';
+
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -48,8 +52,8 @@ describe('TelemetryBufferService', () => {
       mockRedis.pipeline.mockReturnValue(mockPipeline);
 
       const payload: TelemetryUpsertPayload = {
-        equipment_id: 'eq-999',
-        tenant_id: 'tenant-1',
+        equipment_id: validEquipId1,
+        tenant_id: validTenantId,
         agent_status: 'ONLINE',
         cpu_usage: 15.5,
         memory_usage: 45.2,
@@ -59,26 +63,48 @@ describe('TelemetryBufferService', () => {
 
       expect(mockRedis.pipeline).toHaveBeenCalled();
       expect(mockPipeline.hset).toHaveBeenCalledWith(
-        'telemetry:device:eq-999',
+        `telemetry:device:${validEquipId1}`,
         expect.objectContaining({
-          equipment_id: 'eq-999',
-          tenant_id: 'tenant-1',
+          equipment_id: validEquipId1,
+          tenant_id: validTenantId,
           agent_status: 'ONLINE',
           cpu_usage: '15.5',
           memory_usage: '45.2',
         })
       );
-      expect(mockPipeline.expire).toHaveBeenCalledWith('telemetry:device:eq-999', 86400);
-      expect(mockPipeline.sadd).toHaveBeenCalledWith('telemetry:dirty_devices', 'eq-999');
+      expect(mockPipeline.expire).toHaveBeenCalledWith(`telemetry:device:${validEquipId1}`, 86400);
+      expect(mockPipeline.sadd).toHaveBeenCalledWith('telemetry:dirty_devices', validEquipId1);
       expect(mockPipeline.exec).toHaveBeenCalled();
+    });
+
+    it('rejects and drops bufferPing when equipment_id or tenant_id is not a valid UUID', async () => {
+      const mockPipeline = {
+        hset: vi.fn().mockReturnThis(),
+        exec: vi.fn().mockResolvedValue([[null, 'OK']]),
+      };
+      mockRedis.pipeline.mockReturnValue(mockPipeline);
+
+      await service.bufferPing({
+        equipment_id: 'eq-not-uuid',
+        tenant_id: validTenantId,
+        cpu_usage: 10,
+      });
+
+      await service.bufferPing({
+        equipment_id: validEquipId1,
+        tenant_id: 'tenant-not-uuid',
+        cpu_usage: 10,
+      });
+
+      expect(mockRedis.pipeline).not.toHaveBeenCalled();
     });
 
     it('falls back to in-memory buffer when Redis is offline', async () => {
       mockRedisService.getClient.mockReturnValue(null);
 
       const payload: TelemetryUpsertPayload = {
-        equipment_id: 'eq-local-1',
-        tenant_id: 'tenant-1',
+        equipment_id: validEquipId1,
+        tenant_id: validTenantId,
         cpu_usage: 25.0,
       };
 
@@ -88,7 +114,7 @@ describe('TelemetryBufferService', () => {
       const flushed = await service.flushBatch();
       expect(flushed).toBe(1);
       expect(mockRepo.upsertTelemetryBatch).toHaveBeenCalledWith(
-        expect.arrayContaining([expect.objectContaining({ equipment_id: 'eq-local-1', cpu_usage: 25.0 })])
+        expect.arrayContaining([expect.objectContaining({ equipment_id: validEquipId1, cpu_usage: 25.0 })])
       );
     });
 
@@ -102,8 +128,8 @@ describe('TelemetryBufferService', () => {
       mockRedis.pipeline.mockReturnValue(mockPipeline);
 
       const payload: TelemetryUpsertPayload = {
-        equipment_id: 'eq-throw-1',
-        tenant_id: 'tenant-1',
+        equipment_id: validEquipId2,
+        tenant_id: validTenantId,
         cpu_usage: 30.0,
       };
 
@@ -114,23 +140,24 @@ describe('TelemetryBufferService', () => {
       const flushed = await service.flushBatch();
       expect(flushed).toBe(1);
       expect(mockRepo.upsertTelemetryBatch).toHaveBeenCalledWith(
-        expect.arrayContaining([expect.objectContaining({ equipment_id: 'eq-throw-1', cpu_usage: 30.0 })])
+        expect.arrayContaining([expect.objectContaining({ equipment_id: validEquipId2, cpu_usage: 30.0 })])
       );
     });
   });
 
   describe('flushBatch', () => {
-    it('pops dirty device IDs, fetches hashes via pipeline, and executes upsertTelemetryBatch', async () => {
-      mockRedis.spop.mockResolvedValue(['eq-1', 'eq-2']);
+    it('pops dirty device IDs, fetches hashes via pipeline, and executes upsertTelemetryBatch for valid UUIDs', async () => {
+      mockRedis.spop.mockResolvedValue([validEquipId1, validEquipId2]);
 
       const readPipeline = {
         hgetall: vi.fn().mockReturnThis(),
+        del: vi.fn().mockReturnThis(),
         exec: vi.fn().mockResolvedValue([
           [
             null,
             {
-              equipment_id: 'eq-1',
-              tenant_id: 'tenant-1',
+              equipment_id: validEquipId1,
+              tenant_id: validTenantId,
               agent_status: 'ONLINE',
               cpu_usage: '22.0',
               memory_usage: '40.0',
@@ -144,8 +171,8 @@ describe('TelemetryBufferService', () => {
           [
             null,
             {
-              equipment_id: 'eq-2',
-              tenant_id: 'tenant-1',
+              equipment_id: validEquipId2,
+              tenant_id: validTenantId,
               agent_status: 'ONLINE',
               cpu_usage: '11.0',
               memory_usage: '30.0',
@@ -166,10 +193,46 @@ describe('TelemetryBufferService', () => {
       expect(mockRedis.spop).toHaveBeenCalledWith('telemetry:dirty_devices', 100);
       expect(mockRepo.upsertTelemetryBatch).toHaveBeenCalledWith(
         expect.arrayContaining([
-          expect.objectContaining({ equipment_id: 'eq-1', cpu_usage: 22.0 }),
-          expect.objectContaining({ equipment_id: 'eq-2', cpu_usage: 11.0 }),
+          expect.objectContaining({ equipment_id: validEquipId1, cpu_usage: 22.0 }),
+          expect.objectContaining({ equipment_id: validEquipId2, cpu_usage: 11.0 }),
         ])
       );
+    });
+
+    it('filters out non-UUID records from Redis and purges their device hash keys', async () => {
+      mockRedis.spop.mockResolvedValue(['invalid-eq-01', validEquipId1]);
+
+      const readPipeline = {
+        hgetall: vi.fn().mockReturnThis(),
+        del: vi.fn().mockReturnThis(),
+        exec: vi.fn().mockResolvedValue([
+          [
+            null,
+            {
+              equipment_id: 'invalid-eq-01',
+              tenant_id: 'tenant-123',
+              cpu_usage: '44.5',
+            },
+          ],
+          [
+            null,
+            {
+              equipment_id: validEquipId1,
+              tenant_id: validTenantId,
+              cpu_usage: '20.0',
+            },
+          ],
+        ]),
+      };
+      mockRedis.pipeline.mockReturnValue(readPipeline);
+
+      const flushed = await service.flushBatch(100);
+
+      expect(flushed).toBe(1);
+      expect(readPipeline.del).toHaveBeenCalledWith('telemetry:device:invalid-eq-01');
+      expect(mockRepo.upsertTelemetryBatch).toHaveBeenCalledWith([
+        expect.objectContaining({ equipment_id: validEquipId1, cpu_usage: 20.0 }),
+      ]);
     });
 
     it('returns 0 and avoids query if dirty set is empty', async () => {
@@ -182,11 +245,12 @@ describe('TelemetryBufferService', () => {
 
     it('prevents concurrent overlapping flushes', async () => {
       mockRedis.spop.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve(['eq-1']), 50))
+        () => new Promise((resolve) => setTimeout(() => resolve([validEquipId1]), 50))
       );
       const readPipeline = {
         hgetall: vi.fn().mockReturnThis(),
-        exec: vi.fn().mockResolvedValue([[null, { equipment_id: 'eq-1', tenant_id: 't-1' }]]),
+        del: vi.fn().mockReturnThis(),
+        exec: vi.fn().mockResolvedValue([[null, { equipment_id: validEquipId1, tenant_id: validTenantId }]]),
       };
       mockRedis.pipeline.mockReturnValue(readPipeline);
 

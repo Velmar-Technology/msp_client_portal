@@ -30,9 +30,26 @@ function createMockReq(agentId: string, token = 'test-token') {
 describe('AgentGateway', () => {
   let gateway: AgentGateway;
   let wss: MockWebSocketServer;
+  let mockTelemetryBuffer: any;
+  let defaultMockClusterBroker: any;
 
   beforeEach(() => {
-    gateway = new AgentGateway();
+    mockTelemetryBuffer = {
+      bufferPing: vi.fn().mockResolvedValue(undefined),
+    };
+    defaultMockClusterBroker = {
+      start: vi.fn().mockResolvedValue(undefined),
+      registerLocalExecutor: vi.fn(),
+      registerAgentPresence: vi.fn().mockResolvedValue(undefined),
+      unregisterAgentPresence: vi.fn().mockResolvedValue(undefined),
+      isAgentPresent: vi.fn().mockResolvedValue(false),
+      publishCommand: vi.fn().mockImplementation((equipmentId: string) => {
+        return Promise.reject(
+          new Error(`Agent for equipment '${equipmentId}' is not connected (OFFLINE).`)
+        );
+      }),
+    };
+    gateway = new AgentGateway(mockTelemetryBuffer, defaultMockClusterBroker);
     wss = new MockWebSocketServer();
     gateway.init(wss as any);
   });
@@ -572,23 +589,20 @@ describe('AgentGateway', () => {
   });
 
   describe('TELEMETRY_PING buffering', () => {
-    it('should forward inbound TELEMETRY_PING messages to TelemetryBufferService', async () => {
-      const mockBufferService = {
-        bufferPing: vi.fn().mockResolvedValue(undefined),
-      };
-      const customGateway = new AgentGateway(mockBufferService as any);
-      customGateway.init(wss as any);
-
+    it('should forward inbound TELEMETRY_PING messages to TelemetryBufferService when bound to slot with valid UUIDs', async () => {
+      const slotUuid = 'a0000000-0000-0000-0000-000000000001';
+      const tenantUuid = 'b0000000-0000-0000-0000-000000000002';
       const ws = new MockWebSocket();
-      const req = createMockReq('eq-telemetry-01', 'tok-abc');
+      const req = createMockReq('agent-instance-01', 'tok-abc');
       wss.emit('connection', ws, req);
+
+      gateway.setAgentSlotId('agent-instance-01', slotUuid, tenantUuid);
 
       ws.emit(
         'message',
         JSON.stringify({
           command: 'TELEMETRY_PING',
           payload: {
-            tenant_id: 'tenant-123',
             cpu_usage: 44.5,
             memory_usage: 62.0,
             disk_usage: 50.1,
@@ -596,16 +610,36 @@ describe('AgentGateway', () => {
         })
       );
 
-      expect(mockBufferService.bufferPing).toHaveBeenCalledWith(
+      expect(mockTelemetryBuffer.bufferPing).toHaveBeenCalledWith(
         expect.objectContaining({
-          equipment_id: 'eq-telemetry-01',
-          tenant_id: 'tenant-123',
+          equipment_id: slotUuid,
+          tenant_id: tenantUuid,
           agent_status: 'ONLINE',
           cpu_usage: 44.5,
           memory_usage: 62.0,
           disk_usage: 50.1,
         })
       );
+    });
+
+    it('should drop TELEMETRY_PING persistence for unlinked agents or non-UUID identifiers', async () => {
+      const ws = new MockWebSocket();
+      const req = createMockReq('unlinked-agent', 'tok-abc');
+      wss.emit('connection', ws, req);
+
+      ws.emit(
+        'message',
+        JSON.stringify({
+          command: 'TELEMETRY_PING',
+          payload: {
+            tenant_id: 'non-uuid-tenant',
+            cpu_usage: 50.0,
+          },
+        })
+      );
+
+      expect(mockTelemetryBuffer.bufferPing).not.toHaveBeenCalled();
+      expect(gateway.getAgentStatus('unlinked-agent').online).toBe(true);
     });
   });
 
