@@ -459,7 +459,7 @@ export function TicketsPage() {
                 variant="outline"
                 size="sm"
                 onClick={handleMarkAllAsRead}
-                className="h-8 px-3 rounded-xl text-xs font-semibold gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
+                className="h-7 px-2.5 rounded-lg text-xs font-medium gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground shadow-subtle"
                 title={t("tickets.markAllAsRead", "Mark all as read")}
               >
                 <CheckCheck className="h-3.5 w-3.5" />
@@ -471,7 +471,7 @@ export function TicketsPage() {
                 type="button"
                 size="sm"
                 onClick={() => setShowNewTicket(true)}
-                className="h-8 px-3.5 rounded-xl text-xs font-semibold gap-1.5 cursor-pointer shadow-2xs"
+                className="h-7 px-3 rounded-lg text-xs font-medium gap-1.5 cursor-pointer shadow-subtle"
               >
                 <Plus className="h-3.5 w-3.5" />
                 <span>{t("tickets.newTicket")}</span>
@@ -480,17 +480,18 @@ export function TicketsPage() {
           </div>
         }
       >
-        <div className="flex flex-col gap-5">
-          {/* ElevenLabs Wide Search Bar */}
-          <PageSearchInput
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder={t("tickets.searchPlaceholder") || "Search tickets..."}
-          />
+        <div className="space-y-4">
+          {/* Integrated Filter Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="w-full sm:w-72">
+              <PageSearchInput
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder={t("tickets.searchPlaceholder") || "Search tickets..."}
+              />
+            </div>
 
-          {/* ElevenLabs + Filter Pills Row with ViewSwitcher on the right */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2">
               <PageFilterPill
                 label={t("tickets.colStatus") || "Status"}
                 value={statusFilter}
@@ -524,14 +525,14 @@ export function TicketsPage() {
                   variant="ghost"
                   size="xs"
                   onClick={handleClearAllFilters}
-                  className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+                  className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer rounded-full"
                 >
                   {t("tickets.clearFilters") || "Clear all"}
                 </Button>
               )}
-            </div>
 
-            <div className="flex items-center gap-2 self-end sm:self-auto">
+              <div className="h-4 w-px bg-border/60 mx-1 hidden sm:block" />
+
               <PageViewSwitcher
                 value={viewMode}
                 onChange={handleViewChange}
@@ -577,7 +578,7 @@ export function TicketsPage() {
           ) : (
             <>
               <PageView type="list">
-                <PageContentCard>
+                <div className="rounded-lg border border-border/70 overflow-hidden bg-card shadow-subtle">
                   <DataTable
                     columns={columns}
                     data={tickets}
@@ -609,7 +610,7 @@ export function TicketsPage() {
                       onLimitChange: handleLimitChange,
                     }}
                   />
-                </PageContentCard>
+                </div>
               </PageView>
 
               <PageView type="kanban">
