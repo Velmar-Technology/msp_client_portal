@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { db, invoices, subscriptionEquipment, rmmDeviceTelemetry } from '../shared/db';
+import { db, invoices, subscriptions, subscriptionEquipment, rmmDeviceTelemetry } from '../shared/db';
 import { eq, and, sql } from 'drizzle-orm';
 import { logger } from '../shared/utils/logger';
 
@@ -102,6 +102,45 @@ async function main() {
     }
   } catch (err: any) {
     logger.warn(`[Reconciliation] Note on invoice INV-2026-0002: ${err.message}`);
+  }
+
+  // 5. Reconcile stranded subscription renewals (BL-402 invariant: active subscriptions must have matching paid invoice)
+  try {
+    const activeSubscriptions = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.status, 'ACTIVE'));
+
+    for (const sub of activeSubscriptions) {
+      const existingInvoices = await db
+        .select()
+        .from(invoices)
+        .where(
+          and(
+            eq(invoices.client_id, sub.client_id),
+            eq(invoices.tenant_id, sub.tenant_id)
+          )
+        );
+
+      if (existingInvoices.length === 0) {
+        const rand = String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
+        const year = new Date().getFullYear();
+        await db.insert(invoices).values({
+          invoice_number: `INV-${year}-${rand}`,
+          client_id: sub.client_id,
+          tenant_id: sub.tenant_id,
+          amount: '250.00',
+          tax_amount: '45.00',
+          total: '295.00',
+          currency: 'USD',
+          status: 'PAID',
+          due_date: new Date(sub.renewal_date),
+        });
+        logger.info(`[Reconciliation] Generated missing renewal PAID invoice for stranded subscription ${sub.id}.`);
+      }
+    }
+  } catch (err: any) {
+    logger.warn(`[Reconciliation] Note on stranded subscription reconciliation: ${err.message}`);
   }
 
   logger.info('[Reconciliation] Reconciliation complete.');

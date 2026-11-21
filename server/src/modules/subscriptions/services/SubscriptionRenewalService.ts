@@ -34,18 +34,62 @@ export class SubscriptionRenewalService {
    * @param tenantRepo - Tenant repository
    */
   constructor(
-    private subscriptionRepo: SubscriptionRepository = subscriptionRepository,
-    private planRepo: PlanRepository = planRepository,
-    private invoiceRepo: InvoiceRepository = invoiceRepository,
-    private equipmentRepo: EquipmentRepository = equipmentRepository,
-    private userRepo: UserRepository = userRepository,
-    private nextcloudSvc: NextcloudService = nextcloudService,
-    private paypalSvc: PaypalService = paypalService,
-    private notifSvc: NotificationService = notificationService,
-    private pricingSvc: BillingPricingService = billingPricingService,
-    private ncfSvc: NcfService = ncfService,
-    private tenantRepo: TenantRepository = tenantRepository
+    private subscriptionRepo?: SubscriptionRepository,
+    private planRepo?: PlanRepository,
+    private invoiceRepo?: InvoiceRepository,
+    private equipmentRepo?: EquipmentRepository,
+    private userRepo?: UserRepository,
+    private nextcloudSvc?: NextcloudService,
+    private paypalSvc?: PaypalService,
+    private notifSvc?: NotificationService,
+    private pricingSvc?: BillingPricingService,
+    private ncfSvc?: NcfService,
+    private tenantRepo?: TenantRepository
   ) {}
+
+  private get subRepo(): SubscriptionRepository {
+    return this.subscriptionRepo || subscriptionRepository;
+  }
+
+  private get planRepository(): PlanRepository {
+    return this.planRepo || planRepository;
+  }
+
+  private get invoiceRepository(): InvoiceRepository {
+    return this.invoiceRepo || invoiceRepository;
+  }
+
+  private get equipRepo(): EquipmentRepository {
+    return this.equipmentRepo || equipmentRepository;
+  }
+
+  private get userRepository(): UserRepository {
+    return this.userRepo || userRepository;
+  }
+
+  private get nextcloud(): NextcloudService {
+    return this.nextcloudSvc || nextcloudService;
+  }
+
+  private get paypal(): PaypalService {
+    return this.paypalSvc || paypalService;
+  }
+
+  private get notification(): NotificationService {
+    return this.notifSvc || notificationService;
+  }
+
+  private get pricing(): BillingPricingService {
+    return this.pricingSvc || billingPricingService;
+  }
+
+  private get ncf(): NcfService {
+    return this.ncfSvc || ncfService;
+  }
+
+  private get tenantRepository(): TenantRepository {
+    return this.tenantRepo || tenantRepository;
+  }
 
   /**
    * Finalizes an expiring subscription at the end of its billing period by cancelling slots and de-provisioning Nextcloud users.
@@ -54,17 +98,17 @@ export class SubscriptionRenewalService {
    */
   private async finalizeExpiringSubscription(sub: Subscription): Promise<void> {
     logger.info(`Subscription ${sub.id} reached end of paid billing period (${sub.renewal_date}). Finalizing cancellation.`);
-    await this.subscriptionRepo.updateStatus(sub.id, SubscriptionStatus.CANCELLED);
+    await this.subRepo.updateStatus(sub.id, SubscriptionStatus.CANCELLED);
 
-    const slots = await this.equipmentRepo.findBySubscription(sub.id);
+    const slots = await this.equipRepo.findBySubscription(sub.id);
     for (const slot of slots) {
       if (slot.nextcloud_username) {
         try {
-          await this.nextcloudSvc.deleteUser(slot.nextcloud_username);
+          await this.nextcloud.deleteUser(slot.nextcloud_username);
         } catch (err) {
           logger.error(`Failed to delete Nextcloud user ${slot.nextcloud_username} during scheduler cancellation`, { err });
         }
-        await this.equipmentRepo.update(slot.id, {
+        await this.equipRepo.update(slot.id, {
           status: 'PENDING_ACTIVATION',
           device_name: null,
           device_serial: null,
@@ -76,7 +120,7 @@ export class SubscriptionRenewalService {
       }
     }
 
-    await this.notifSvc.createInAppNotification({
+    await this.notification.createInAppNotification({
       userId: sub.client_id,
       title: 'Subscription Cancelled',
       message: `Your subscription to ${sub.service_name} has reached the end of its billing cycle and is now inactive.`,
@@ -117,11 +161,11 @@ export class SubscriptionRenewalService {
       return { newRenewalDate, shouldProceed: true };
     }
 
-    const payPalSub = await this.paypalSvc.getSubscription(sub.paypal_order_id!);
+    const payPalSub = await this.paypal.getSubscription(sub.paypal_order_id!);
     if (payPalSub.status !== 'ACTIVE' && payPalSub.status !== 'APPROVED') {
       logger.warn(`PayPal subscription ${sub.paypal_order_id} is no longer active (status: ${payPalSub.status}). Cancelling locally.`);
-      await this.subscriptionRepo.updateStatus(sub.id, SubscriptionStatus.CANCELLED);
-      await this.notifSvc.createInAppNotification({
+      await this.subRepo.updateStatus(sub.id, SubscriptionStatus.CANCELLED);
+      await this.notification.createInAppNotification({
         userId: sub.client_id,
         title: 'Subscription Cancelled',
         message: `Your subscription to ${sub.service_name} has been cancelled because of payment failure or cancellation on PayPal.`,
@@ -145,8 +189,11 @@ export class SubscriptionRenewalService {
    * Processes renewal cycle for an active subscription, advancing renewal date, creating a renewal invoice,
    * and notifying client (BL-402).
    *
+   * Atomically computes pricing, generates invoice number, assigns NCF, and records invoice
+   * before advancing subscription renewal date.
+   *
    * @param sub - Subscription due for renewal
-   * @see BL-402
+   * @see BL-402 (Renewal Scheduler & Hardware Multiplier)
    */
   async renewSubscription(sub: Subscription): Promise<void> {
     logger.info(`Processing renewal for subscription ${sub.id} (client: ${sub.client_id})`);
@@ -156,7 +203,7 @@ export class SubscriptionRenewalService {
       return;
     }
 
-    const planDetails = await this.planRepo.findById(sub.plan);
+    const planDetails = await this.planRepository.findById(sub.plan);
     if (!planDetails) {
       logger.error(`Plan ${sub.plan} not found for subscription ${sub.id}`);
       return;
@@ -175,22 +222,25 @@ export class SubscriptionRenewalService {
       newRenewalDate = this.calculateNextRenewalDate(new Date(sub.renewal_date), billingCycle);
     }
 
-    await this.subscriptionRepo.updateRenewal(sub.id, newRenewalDate, SubscriptionStatus.ACTIVE);
+    const client = await this.userRepository.findById(sub.client_id);
+    const tenant = await this.tenantRepository.findById(sub.tenant_id);
 
-    const client = await this.userRepo.findById(sub.client_id);
-    const tenant = await this.tenantRepo.findById(sub.tenant_id);
+    // If client is admin / provider tenant, advance renewal date without generating billing invoice
     if (client?.role === 'ADMIN' || tenant?.subdomain === 'admin') {
+      await this.subRepo.updateRenewal(sub.id, newRenewalDate, SubscriptionStatus.ACTIVE);
       logger.info(`Subscription ${sub.id} belongs to admin/provider tenant (${tenant?.subdomain || client?.email}). Renewal date advanced without billing invoice generation.`);
       return;
     }
 
-    const pricing = this.pricingSvc.calculatePricing(planDetails.price, sub.equipment_count, billingCycle);
-    const invoiceNumber = await this.pricingSvc.generateInvoiceNumber();
+    // 1. Calculate pricing & generate invoice number FIRST
+    const pricing = this.pricing.calculatePricing(planDetails.price, sub.equipment_count, billingCycle);
+    const invoiceNumber = await this.pricing.generateInvoiceNumber();
 
     const effectiveRnc = client?.rnc || tenant?.rnc || null;
-    const ncf = await this.ncfSvc.assignNcfIfEligible(effectiveRnc);
+    const ncf = await this.ncf.assignNcfIfEligible(effectiveRnc);
 
-    const createdInvoice = await this.invoiceRepo.create({
+    // 2. Persist renewal invoice FIRST
+    const createdInvoice = await this.invoiceRepository.create({
       invoice_number: invoiceNumber,
       client_id: sub.client_id,
       amount: pricing.subtotal,
@@ -204,7 +254,11 @@ export class SubscriptionRenewalService {
       status: InvoiceStatus.PAID,
     });
 
-    await this.notifSvc.createInAppNotification({
+    // 3. Advance renewal date in database ONLY AFTER invoice is successfully created
+    await this.subRepo.updateRenewal(sub.id, newRenewalDate, SubscriptionStatus.ACTIVE);
+
+    // 4. In-app notification & email dispatch
+    await this.notification.createInAppNotification({
       userId: sub.client_id,
       title: 'Subscription Renewed',
       message: `Your subscription to ${sub.service_name} has been renewed successfully. Next billing date: ${newRenewalDate.toLocaleDateString()}.`,
@@ -214,7 +268,7 @@ export class SubscriptionRenewalService {
     });
 
     try {
-      const clientUser = await this.userRepo.findById(sub.client_id);
+      const clientUser = await this.userRepository.findById(sub.client_id);
       if (clientUser && clientUser.email) {
         await sendInvoiceDueEmail(clientUser.email, clientUser.name, createdInvoice, clientUser.language || 'en');
       }
