@@ -1,0 +1,3 @@
+code,module,description,roles
+system:read,system,View platform infrastructure health and external service connectivity,ADMIN|TECHNICIAN
+system:audit,system,Run system audits and inspect telemetry diagnostics,ADMIN

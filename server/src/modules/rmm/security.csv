@@ -1,0 +1,6 @@
+code,module,description,roles
+maintenance:read,rmm,View maintenance windows and execution schedules,ADMIN|TECHNICIAN|CLIENT
+maintenance:manage,rmm,Create and schedule system maintenance windows,ADMIN|TECHNICIAN
+alerts:read,rmm,View real-time RMM endpoint alerts and flapping events,ADMIN|TECHNICIAN
+alerts:manage,rmm,Acknowledge and dismiss RMM alerts,ADMIN|TECHNICIAN
+rmm:telemetry:read,rmm,View live endpoint telemetry and patch status,ADMIN|TECHNICIAN

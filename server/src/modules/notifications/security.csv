@@ -1,0 +1,3 @@
+code,module,description,roles
+notifications:read,notifications,View and receive personal notification messages,ADMIN|TECHNICIAN|CLIENT|GUEST
+notifications:manage,notifications,Update delivery preferences and templates,ADMIN|TECHNICIAN|CLIENT|GUEST

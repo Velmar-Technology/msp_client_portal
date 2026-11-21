@@ -56,7 +56,12 @@ describe('featureRegistry (Zero-Touch Frontend Auto-Discovery & Hierarchy)', () 
       '/devices',
       '/assets',
       '/resources',
+      '/password-manager',
+      '/settings/ai',
+      '/maintenance',
       '/helpdesk',
+      '/plans',
+      '/billing',
       '/settings',
     ]);
 

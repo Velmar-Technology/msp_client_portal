@@ -7,14 +7,6 @@ import { DocumentTitle } from "./useDocumentTitle";
 import { publicRoutes } from "./publicRoutes";
 import { getDiscoveredFeatureRoutes } from "./featureRegistry";
 import { authRoutes } from "@/features/auth";
-import { dashboardRoutes } from "@/features/dashboard";
-import { billingRoutes } from "@/features/billing";
-import { subscriptionRoutes } from "@/features/subscriptions";
-import { equipmentRoutes } from "@/features/equipment";
-import { rmmRoutes } from "@/features/rmm";
-import { financialRoutes } from "@/features/financial";
-import { settingsRoutes } from "@/features/settings";
-import { systemRoutes } from "@/features/system";
 import type { AppRouteObject } from "./types";
 
 const NotFoundPage = lazyWithRetry(() => import("@/pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })));
@@ -55,17 +47,7 @@ function applyGuards(routes: AppRouteObject[]): RouteObject[] {
   });
 }
 
-const protectedFeatureRoutes: RouteObject[] = applyGuards([
-  ...dashboardRoutes,
-  ...billingRoutes,
-  ...subscriptionRoutes,
-  ...equipmentRoutes,
-  ...rmmRoutes,
-  ...financialRoutes,
-  ...settingsRoutes,
-  ...systemRoutes,
-  ...getDiscoveredFeatureRoutes(),
-]);
+const protectedFeatureRoutes: RouteObject[] = applyGuards(getDiscoveredFeatureRoutes());
 
 /**
  * SOTA Application Data Router (createBrowserRouter).

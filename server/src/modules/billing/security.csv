@@ -1,0 +1,7 @@
+code,module,description,roles
+invoices:read,billing,View invoice records and payment history,ADMIN|TECHNICIAN|CLIENT
+invoices:write,billing,Create and update invoices and payment methods,ADMIN
+invoices:mark_paid,billing,Capture payments and mark invoices paid,ADMIN
+expenses:read,billing,View operational expense records and profit split calculations,ADMIN
+expenses:write,billing,Record and categorize business operational expenses,ADMIN
+financial:read,billing,Access financial P&L dashboard and performance statistics,ADMIN

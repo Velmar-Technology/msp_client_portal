@@ -1,0 +1,3 @@
+code,module,description,roles
+devices:read,equipment,View workstation device inventory and telemetry status,ADMIN|TECHNICIAN|CLIENT
+devices:manage,equipment,Activate deactivate and manage workstation slots,ADMIN|TECHNICIAN|CLIENT

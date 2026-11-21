@@ -1,0 +1,5 @@
+code,module,description,roles
+plans:read,subscriptions,View subscription plans catalog and pricing,ADMIN|TECHNICIAN|CLIENT|GUEST
+plans:manage,subscriptions,Create and update subscription plans and features,ADMIN
+subscriptions:read,subscriptions,View tenant subscription details and entitlements,ADMIN|TECHNICIAN|CLIENT
+subscriptions:manage,subscriptions,Manage and modify customer subscriptions,ADMIN

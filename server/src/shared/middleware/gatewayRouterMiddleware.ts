@@ -1,12 +1,4 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { invoiceRoutes, expenseRoutes } from '@modules/billing';
-import { subscriptionRoutes, planRoutes } from '@modules/subscriptions';
-import { equipmentRoutes } from '@modules/equipment';
-import { authRoutes, userRoutes, authzRoutes, tenantRoutes } from '@modules/auth';
-import { rmmRoutes, alertRoutes, maintenanceRoutes } from '@modules/rmm';
-import { systemRoutes } from '@modules/system';
-import { notificationRoutes, notificationPreferenceRoutes } from '@modules/notifications';
-import { navRoutes } from '@modules/nav';
 import { registeredModuleManifests } from '@shared/registry/modules.generated';
 import { resolveModuleRouteMounts } from '@shared/registry/moduleManifest.types';
 
@@ -14,38 +6,13 @@ import { resolveModuleRouteMounts } from '@shared/registry/moduleManifest.types'
  * Express router acting as the API Gateway Layer Cluster Dispatcher.
  * Maps path clusters (e.g., /billing, /workspaces) to internal microservice/domain routers
  * while enforcing uniform header propagation (X-User-Id, X-Tenant-Id).
+ *
+ * Fully zero-touch: automatically mounts all discovered flat & hierarchical module manifests
+ * from `server/src/modules/**\/manifest.ts` (ADR-017).
  */
 export const gatewayClusterRouter = Router();
 
-// ---- Route Gateway Cluster Routing ----
-
-// 1. Billing Cluster (/billing/*, /invoices/*, /expenses/*)
-gatewayClusterRouter.use('/billing/invoices', invoiceRoutes);
-gatewayClusterRouter.use('/billing/expenses', expenseRoutes);
-
-// 2. Workspaces Cluster (/workspaces/subscriptions/*, /workspaces/equipment/*)
-gatewayClusterRouter.use('/workspaces/subscriptions', subscriptionRoutes);
-gatewayClusterRouter.use('/workspaces/equipment', equipmentRoutes);
-
-// 3. Directly mapped standard domain routes
-gatewayClusterRouter.use('/auth', authRoutes);
-gatewayClusterRouter.use('/users', userRoutes);
-gatewayClusterRouter.use('/tenants', tenantRoutes);
-gatewayClusterRouter.use('/subscriptions', subscriptionRoutes);
-gatewayClusterRouter.use('/invoices', invoiceRoutes);
-gatewayClusterRouter.use('/notifications', notificationRoutes);
-gatewayClusterRouter.use('/notification-preferences', notificationPreferenceRoutes);
-gatewayClusterRouter.use('/plans', planRoutes);
-gatewayClusterRouter.use('/system', systemRoutes);
-gatewayClusterRouter.use('/equipment', equipmentRoutes);
-gatewayClusterRouter.use('/expenses', expenseRoutes);
-gatewayClusterRouter.use('/maintenance', maintenanceRoutes);
-gatewayClusterRouter.use('/alerts', alertRoutes);
-gatewayClusterRouter.use('/rmm', rmmRoutes);
-gatewayClusterRouter.use('/nav', navRoutes);
-gatewayClusterRouter.use('/authz', authzRoutes);
-
-// 4. Auto-discovered flat & hierarchical module manifests (`server/src/modules/**/manifest.ts`)
+// Auto-discovered flat & hierarchical module manifests (`server/src/modules/**/manifest.ts`)
 for (const mount of resolveModuleRouteMounts(registeredModuleManifests)) {
   gatewayClusterRouter.use(mount.prefix, mount.router);
 }

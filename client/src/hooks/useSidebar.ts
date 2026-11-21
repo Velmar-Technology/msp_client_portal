@@ -1,25 +1,10 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import i18n from "i18next";
-import {
-  LayoutDashboard,
-  Users,
-  Shield,
-  Laptop,
-  Landmark,
-  Calendar,
-  Download,
-  Activity,
-  KeyRound,
-  Sparkles,
-  Package,
-  Receipt,
-  type LucideIcon,
-} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEntitlements } from "@/hooks/useEntitlements";
 import { subscriptionService, planService, type Plan, type Subscription } from "@/features/subscriptions";
-import { FEATURE_CODES } from "@/constants/subscriptions";
 import { mergeFeatureNavItems } from "@/routes/featureRegistry";
 import type { NavKey } from "@shared/contracts";
 
@@ -40,35 +25,9 @@ export interface NavItem {
   counterKey?: NavKey;
 }
 
-const baseClientNavItems: NavItem[] = [
-  { to: "/dashboard", icon: LayoutDashboard, labelKey: "dashboard", groupLabelKey: "sidebar.groups.operations", order: 10 },
-  { to: "/devices", icon: Laptop, labelKey: "devices", requiredFeature: FEATURE_CODES.RMM_PATCH_MANAGEMENT, counterKey: "devices", order: 20 },
-  { to: "/resources", icon: Download, labelKey: "resources", requiredFeature: FEATURE_CODES.CLOUD_STORAGE, order: 30 },
-  { to: "/password-manager", icon: KeyRound, labelKey: "passwordManager", requiredFeature: FEATURE_CODES.PASSWORD_MANAGER, order: 40 },
-  { to: "/settings/ai", icon: Sparkles, labelKey: "cafAiSettings", requiredFeature: FEATURE_CODES.CAF_EDUCATION_AGENT, order: 50 },
-  { to: "/maintenance", icon: Calendar, labelKey: "maintenance", requiredFeature: FEATURE_CODES.RMM_PATCH_MANAGEMENT, counterKey: "maintenance", order: 60 },
-  { to: "/plans", icon: Package, labelKey: "plans", groupLabelKey: "sidebar.groups.account", order: 80 },
-  { to: "/billing", icon: Receipt, labelKey: "billing", counterKey: "billing", order: 90 },
-];
-
-const baseTechNavItems: NavItem[] = [
-  { to: "/tech/dashboard", icon: LayoutDashboard, labelKey: "dashboard", groupLabelKey: "sidebar.groups.operations", order: 10 },
-  { to: "/maintenance", icon: Calendar, labelKey: "maintenance", counterKey: "maintenance", order: 60 },
-];
-
-const baseAdminNavItems: NavItem[] = [
-  { to: "/dashboard", icon: Shield, labelKey: "adminDashboard", groupLabelKey: "sidebar.groups.management", order: 10 },
-  { to: "/financial", icon: Landmark, labelKey: "financial", order: 30 },
-  { to: "/users", icon: Users, labelKey: "userManagement", order: 40 },
-  { to: "/admin/api-status", icon: Activity, labelKey: "apiStatus", order: 50 },
-  { to: "/devices", icon: Laptop, labelKey: "devices", groupLabelKey: "sidebar.groups.operations", counterKey: "devices", order: 20 },
-  { to: "/resources", icon: Download, labelKey: "resources", order: 30 },
-  { to: "/password-manager", icon: KeyRound, labelKey: "passwordManager", order: 40 },
-  { to: "/settings/ai", icon: Sparkles, labelKey: "cafAiSettings", order: 50 },
-  { to: "/maintenance", icon: Calendar, labelKey: "maintenance", counterKey: "maintenance", order: 60 },
-  { to: "/plans", icon: Package, labelKey: "plans", groupLabelKey: "sidebar.groups.account", order: 80 },
-  { to: "/billing", icon: Receipt, labelKey: "billing", counterKey: "billing", order: 90 },
-];
+const baseClientNavItems: NavItem[] = [];
+const baseTechNavItems: NavItem[] = [];
+const baseAdminNavItems: NavItem[] = [];
 
 const clientNavItems: NavItem[] = mergeFeatureNavItems(baseClientNavItems, "CLIENT");
 const techNavItems: NavItem[] = mergeFeatureNavItems(baseTechNavItems, "TECHNICIAN");

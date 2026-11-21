@@ -1,0 +1,2 @@
+code,module,description,roles
+nav:counters:read,nav,Read real-time navigation badge counters,ADMIN|TECHNICIAN|CLIENT|GUEST
