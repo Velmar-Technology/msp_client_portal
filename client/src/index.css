@@ -29,6 +29,9 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-muted: var(--border-muted);
+  --color-surface-subtle: var(--surface-subtle);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-skeleton: var(--skeleton);
@@ -57,6 +60,9 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 
   --shadow-eleven: 0 0 1.143px 0 rgba(0, 0, 0, 0.40), 0 2px 4px 0 rgba(0, 0, 0, 0.04);
+  --shadow-subtle: 0px 2px 3px 0px rgba(0, 0, 0, 0.03), 0px 2px 2px -1px rgba(0, 0, 0, 0.03);
+  --shadow-subtle-hover: 0px 2px 4px 0px rgba(0, 0, 0, 0.05), 0px 1px 2px -1px rgba(0, 0, 0, 0.04);
+  --shadow-button-solid: 0px 2px 3px 0px rgba(0, 0, 0, 0.06), 0px 1px 1px 0px rgba(0, 0, 0, 0.08), 1px 4px 8px 0px rgba(0, 0, 0, 0.12), 0px 2px 0.4px 0px rgba(255, 255, 255, 0.12) inset;
 
   --animate-fade-in: fadeIn 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-fade-out: fadeOut 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -84,6 +90,9 @@
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   --border: rgba(0, 0, 0, 0.08);
+  --border-subtle: rgba(0, 0, 0, 0.04);
+  --border-muted: rgba(0, 0, 0, 0.02);
+  --surface-subtle: #f9f9fb;
   --input: rgba(0, 0, 0, 0.08);
   --ring: #0e0e11;
   --chart-1: #18181b;
@@ -128,6 +137,9 @@
   --destructive: #7f1d1d;
   --destructive-foreground: #fafafa;
   --border: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-muted: rgba(255, 255, 255, 0.02);
+  --surface-subtle: #18181c;
   --input: rgba(255, 255, 255, 0.12);
   --ring: #d4d4d8;
   --chart-1: #fafafa;

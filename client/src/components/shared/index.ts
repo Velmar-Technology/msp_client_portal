@@ -13,3 +13,5 @@ export { PageHeader, type PageHeaderProps } from './PageHeader';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { ModalFooter, type ModalFooterProps } from './ModalFooter';
 export { TableToolbar, type TableToolbarProps } from './TableToolbar';
+export { SectionHeader, type SectionHeaderProps } from './SectionHeader';
+export { FormCard, FormCardBody, type FormCardProps, type FormCardBodyProps } from './FormCard';
