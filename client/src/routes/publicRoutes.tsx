@@ -12,6 +12,9 @@ const TermsPage = lazyWithRetry(() =>
 const PrivacyPage = lazyWithRetry(() =>
   import("@/routes/_public/privacy").then((m) => ({ default: m.PrivacyPage || m.default }))
 );
+const StyleGuidePage = lazyWithRetry(() =>
+  import("@/components/shared/StyleGuidePage").then((m) => ({ default: m.StyleGuidePage }))
+);
 
 /**
  * Public Informational Routes (Landing, Terms, Privacy)
@@ -41,6 +44,14 @@ export const publicRoutes: RouteObject[] = [
         element: (
           <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
             <PrivacyPage />
+          </RouteSuspenseWrapper>
+        ),
+      },
+      {
+        path: "/dev/style-guide",
+        element: (
+          <RouteSuspenseWrapper fallback={<ContentPageSkeleton />}>
+            <StyleGuidePage />
           </RouteSuspenseWrapper>
         ),
       },

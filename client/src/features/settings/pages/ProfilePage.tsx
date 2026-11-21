@@ -296,287 +296,327 @@ export function ProfilePage() {
 
   return (
     <PageShell
-      variant="narrow"
+      variant="constrained"
       title={t("profile.settingsTitle", "Settings")}
       subtitle={t("profile.settingsSubtitle", "Manage your profile, credentials, and account preferences.")}
       tabs={tabs}
       activeTab={activeTab === "account" ? "profile" : activeTab}
       onTabChange={setActiveTab}
+      syncUrl
+      tabParamKey="tab"
     >
 
         {/* --- TAB 1: PROFILE --- */}
         {(activeTab === "profile" || activeTab === "account") && (
-          <ListGroup>
-            {/* Row 1: Profile Picture & Identity */}
-            <ListItem
-              title={t("profile.avatarTitle", "Profile Picture & Identity")}
-              description={
-                <div className="flex items-center gap-3 mt-1.5">
-                  <div className="relative group shrink-0">
-                    {user?.avatarUrl ? (
-                      <img
-                        src={user.avatarUrl}
-                        alt={user.name}
-                        className="h-11 w-11 rounded-full border border-border object-cover shadow-2xs"
-                      />
-                    ) : (
-                      <div className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-muted text-base font-bold text-muted-foreground shadow-2xs">
-                        {user?.name?.charAt(0).toUpperCase() || "U"}
+          <div className="space-y-6">
+            {/* Section 1: Personal Identity */}
+            <section className="space-y-3">
+              <SectionHeader
+                title={t("profile.sectionAccount", "Personal Identity")}
+                description={t("profile.sectionAccountDesc", "Profile credentials, avatar, and identification")}
+              />
+              <ListGroup>
+                {/* Row 1: Profile Picture & Identity */}
+                <ListItem
+                  title={t("profile.avatarTitle", "Profile Picture & Identity")}
+                  description={
+                    <div className="flex items-center gap-3 mt-1.5">
+                      <div className="relative group shrink-0">
+                        {user?.avatarUrl ? (
+                          <img
+                            src={user.avatarUrl}
+                            alt={user.name}
+                            className="h-11 w-11 rounded-full border border-border object-cover shadow-2xs"
+                          />
+                        ) : (
+                          <div className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-muted text-base font-bold text-muted-foreground shadow-2xs">
+                            {user?.name?.charAt(0).toUpperCase() || "U"}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-foreground text-sm">{user?.name}</span>
-                      <Badge variant="outline" className="text-[10px] uppercase font-mono px-1.5 py-0">
-                        {user?.role}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-foreground text-sm">{user?.name}</span>
+                          <Badge variant="outline" className="text-[10px] uppercase font-mono px-1.5 py-0">
+                            {user?.role}
+                          </Badge>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <Clock className="h-3 w-3" /> {lastLoginText}
+                        </p>
+                      </div>
+                    </div>
+                  }
+                  trailing={
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleAvatarClick}
+                        disabled={uploadingAvatar}
+                        className="h-7 px-2.5 text-xs font-medium cursor-pointer"
+                      >
+                        {uploadingAvatar ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                        ) : (
+                          <Camera className="h-3.5 w-3.5 mr-1.5" />
+                        )}
+                        {t("profile.updatePicture", "Update Picture")}
+                      </Button>
+                      <input
+                        id="profile-avatar-upload"
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleAvatarChange}
+                        accept="image/*"
+                        className="hidden"
+                        aria-label={t("profile.avatarInput", "Upload profile picture")}
+                      />
+                    </>
+                  }
+                />
+
+                {/* Row 2: Full Name */}
+                <ListItem
+                  title={t("profile.fullName", "Full Name")}
+                  description={user?.name || "—"}
+                  trailing={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setNameModalOpen(true)}
+                      className="h-7 px-2.5 text-xs font-medium cursor-pointer"
+                    >
+                      {t("profile.updateName", "Update Name")}
+                    </Button>
+                  }
+                />
+
+                {/* Row 3: E-Mail Address */}
+                <ListItem
+                  title={t("profile.email", "E-Mail Address")}
+                  description={user?.email || "—"}
+                  trailing={
+                    <Badge variant="secondary" className="text-[11px] gap-1 px-2 py-0.5 font-normal">
+                      <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                      {t("profile.emailVerified", "Verified")}
+                    </Badge>
+                  }
+                />
+
+                {/* Row 4: Phone Number */}
+                <ListItem
+                  title={t("profile.phoneNumber", "Phone Number (WhatsApp)")}
+                  description={user?.phoneNumber || t("profile.notConfigured", "Not configured")}
+                  trailing={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPhoneModalOpen(true)}
+                      className="h-7 px-2.5 text-xs font-medium cursor-pointer"
+                    >
+                      {t("profile.updatePhone", "Update Phone")}
+                    </Button>
+                  }
+                />
+
+                {/* Row 5: RNC / Cédula */}
+                <ListItem
+                  title={t("billing.rncLabel", "RNC / Cédula (NCF)")}
+                  description={user?.rnc || t("profile.notConfigured", "Not configured")}
+                  trailing={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setRncModalOpen(true)}
+                      className="h-7 px-2.5 text-xs font-medium cursor-pointer"
+                    >
+                      {t("profile.updateRnc", "Update RNC")}
+                    </Button>
+                  }
+                />
+              </ListGroup>
+            </section>
+
+            {/* Section 2: Preferences & Workspace */}
+            <section className="space-y-3">
+              <SectionHeader
+                title={t("profile.sectionPreferences", "Preferences & Workspace")}
+                description={t("profile.sectionPreferencesDesc", "Account localization, billing tier, and session logout")}
+              />
+              <ListGroup>
+                {/* Row 6: Current Plan */}
+                <ListItem
+                  title={t("profile.currentPlan", "Current Plan")}
+                  description={
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="font-medium text-foreground">{user?.clientType || t("profile.standardPlan", "Standard")}</span>
+                      <Badge variant="outline" className="text-[10px] text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
+                        {user?.accountStatus || "ACTIVE"}
                       </Badge>
                     </div>
-                    <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <Clock className="h-3 w-3" /> {lastLoginText}
+                  }
+                  trailing={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate("/billing")}
+                      className="h-7 px-2.5 text-xs font-medium cursor-pointer"
+                    >
+                      {t("profile.manageSubscription", "Manage Subscription")}
+                    </Button>
+                  }
+                />
+
+                {/* Row 7: Application Language */}
+                <ListItem
+                  title={t("profile.languageSetting", "Application language")}
+                  description={
+                    user?.language === "es_DO"
+                      ? t("profile.languages.es_DO", "Español (República Dominicana)")
+                      : t("profile.languages.en_US", "English (United States)")
+                  }
+                  trailing={
+                    <Select
+                      value={user?.language || "en_US"}
+                      onValueChange={handleLanguageChange}
+                    >
+                      <SelectTrigger className="h-7 w-[170px] text-xs font-medium">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="en_US">🇺🇸 {t("profile.languages.en_US", "English (United States)")}</SelectItem>
+                        <SelectItem value="es_DO">🇩🇴 {t("profile.languages.es_DO", "Español (República Dominicana)")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  }
+                />
+
+                {/* Row 8: Sign out of all devices */}
+                <ListItem
+                  title={t("profile.signOutAllDevices", "Sign out of all devices")}
+                  description={t(
+                    "profile.signOutAllDevicesDesc",
+                    "Sign out of all active sessions and refresh tokens across your devices."
+                  )}
+                  trailing={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        logout();
+                        navigate("/login");
+                      }}
+                      className="h-7 px-2.5 text-xs font-medium cursor-pointer"
+                    >
+                      {t("profile.signOut", "Sign out")}
+                    </Button>
+                  }
+                />
+              </ListGroup>
+            </section>
+
+            {/* Section 3: Danger Zone */}
+            <section className="space-y-3 pt-2">
+              <SectionHeader
+                title={t("settings.groups.danger", "Danger Zone")}
+                description={t(
+                  "profile.deleteAccountDesc",
+                  "Permanently delete your entire account across all workspaces. This action cannot be reversed."
+                )}
+              />
+              <div className="border border-destructive/40 rounded-lg p-4 bg-destructive/5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-red-500 dark:text-red-400">
+                      {t("profile.deleteAccount", "Delete Entire Account")}
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {t(
+                        "profile.deleteAccountDesc",
+                        "Permanently delete your entire account across all workspaces. This action cannot be reversed."
+                      )}
                     </p>
                   </div>
-                </div>
-              }
-              trailing={
-                <>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={handleAvatarClick}
-                    disabled={uploadingAvatar}
-                    className="h-8 px-3 text-xs font-medium cursor-pointer"
+                    onClick={() => setDeleteModalOpen(true)}
+                    className="h-7 px-3 text-xs border-red-500/50 text-red-500 dark:text-red-400 hover:bg-destructive/10 shrink-0 cursor-pointer"
                   >
-                    {uploadingAvatar ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-                    ) : (
-                      <Camera className="h-3.5 w-3.5 mr-1.5" />
-                    )}
-                    {t("profile.updatePicture", "Update Picture")}
+                    {t("profile.deleteAccountBtn", "Delete Account")}
                   </Button>
-                  <input
-                    id="profile-avatar-upload"
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleAvatarChange}
-                    accept="image/*"
-                    className="hidden"
-                    aria-label={t("profile.avatarInput", "Upload profile picture")}
-                  />
-                </>
-              }
-            />
-
-            {/* Row 2: E-Mail Address */}
-            <ListItem
-              title={t("profile.email", "E-Mail Address")}
-              description={user?.email || "—"}
-              trailing={
-                <Badge variant="secondary" className="text-[11px] gap-1 px-2 py-0.5 font-normal">
-                  <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                  {t("profile.emailVerified", "Verified")}
-                </Badge>
-              }
-            />
-
-            {/* Row 3: Full Name */}
-            <ListItem
-              title={t("profile.fullName", "Full Name")}
-              description={user?.name || "—"}
-              trailing={
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setNameModalOpen(true)}
-                  className="h-8 px-3 text-xs font-medium cursor-pointer"
-                >
-                  {t("profile.updateName", "Update Name")}
-                </Button>
-              }
-            />
-
-            {/* Row 4: Current Plan */}
-            <ListItem
-              title={t("profile.currentPlan", "Current Plan")}
-              description={
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="font-medium text-foreground">{user?.clientType || t("profile.standardPlan", "Standard")}</span>
-                  <Badge variant="outline" className="text-[10px] text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
-                    {user?.accountStatus || "ACTIVE"}
-                  </Badge>
                 </div>
-              }
-              trailing={
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate("/billing")}
-                  className="h-8 px-3 text-xs font-medium cursor-pointer"
-                >
-                  {t("profile.manageSubscription", "Manage Subscription")}
-                </Button>
-              }
-            />
-
-            {/* Row 5: Phone Number */}
-            <ListItem
-              title={t("profile.phoneNumber", "Phone Number (WhatsApp)")}
-              description={user?.phoneNumber || t("profile.notConfigured", "Not configured")}
-              trailing={
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPhoneModalOpen(true)}
-                  className="h-8 px-3 text-xs font-medium cursor-pointer"
-                >
-                  {t("profile.updatePhone", "Update Phone")}
-                </Button>
-              }
-            />
-
-            {/* Row 6: RNC / Cédula */}
-            <ListItem
-              title={t("billing.rncLabel", "RNC / Cédula (NCF)")}
-              description={user?.rnc || t("profile.notConfigured", "Not configured")}
-              trailing={
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setRncModalOpen(true)}
-                  className="h-8 px-3 text-xs font-medium cursor-pointer"
-                >
-                  {t("profile.updateRnc", "Update RNC")}
-                </Button>
-              }
-            />
-
-            {/* Row 7: Application Language */}
-            <ListItem
-              title={t("profile.languageSetting", "Application language")}
-              description={
-                user?.language === "es_DO"
-                  ? t("profile.languages.es_DO", "Español (República Dominicana)")
-                  : t("profile.languages.en_US", "English (United States)")
-              }
-              trailing={
-                <Select
-                  value={user?.language || "en_US"}
-                  onValueChange={handleLanguageChange}
-                >
-                  <SelectTrigger className="h-8 w-[170px] text-xs font-medium">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en_US">🇺🇸 {t("profile.languages.en_US", "English (United States)")}</SelectItem>
-                    <SelectItem value="es_DO">🇩🇴 {t("profile.languages.es_DO", "Español (República Dominicana)")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              }
-            />
-
-            {/* Row 8: Sign out of all devices */}
-            <ListItem
-              title={t("profile.signOutAllDevices", "Sign out of all devices")}
-              description={t(
-                "profile.signOutAllDevicesDesc",
-                "Sign out of all active sessions and refresh tokens across your devices."
-              )}
-              trailing={
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    logout();
-                    navigate("/login");
-                  }}
-                  className="h-8 px-3 text-xs font-medium cursor-pointer"
-                >
-                  {t("profile.signOut", "Sign out")}
-                </Button>
-              }
-            />
-
-            {/* Row 9: Delete Account (Danger Zone) */}
-            <ListItem
-              danger
-              title={t("profile.deleteAccount", "Delete Entire Account")}
-              description={t(
-                "profile.deleteAccountDesc",
-                "Permanently delete your entire account across all workspaces. This action cannot be reversed."
-              )}
-              trailing={
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setDeleteModalOpen(true)}
-                  className="h-8 px-3 text-xs font-medium border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
-                >
-                  {t("profile.deleteAccountBtn", "Delete Account")}
-                </Button>
-              }
-            />
-          </ListGroup>
+              </div>
+            </section>
+          </div>
         )}
 
         {/* --- TAB 2: SECURITY & PASSWORD --- */}
         {activeTab === "security" && (
-          <ListGroup>
-            {/* Row 1: Change Password */}
-            <ListItem
-              title={t("profile.passwordTitle", "Account Password")}
-              description={t(
-                "profile.passwordDesc",
-                "Ensure your account is protected with a strong, rotating password."
-              )}
-              trailing={
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPasswordModalOpen(true)}
-                  className="h-8 px-3 text-xs font-medium cursor-pointer"
-                >
-                  {t("profile.changePassword", "Change Password")}
-                </Button>
-              }
+          <div className="space-y-4">
+            <SectionHeader
+              title={t("profile.tabSecurity", "Security & Password")}
+              description={t("profile.passwordDesc", "Ensure your account is protected with a strong, rotating password.")}
             />
+            <ListGroup>
+              {/* Row 1: Change Password */}
+              <ListItem
+                title={t("profile.passwordTitle", "Account Password")}
+                description={t(
+                  "profile.passwordDesc",
+                  "Ensure your account is protected with a strong, rotating password."
+                )}
+                trailing={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPasswordModalOpen(true)}
+                    className="h-7 px-2.5 text-xs font-medium cursor-pointer"
+                  >
+                    {t("profile.changePassword", "Change Password")}
+                  </Button>
+                }
+              />
 
-            {/* Row 2: Two-Factor Authentication */}
-            <ListItem
-              title={t("profile.twoFactor", "Two-Factor Authentication (2FA)")}
-              description={t(
-                "profile.twoFactorDesc",
-                "Enforce high-assurance TOTP authenticator verification on login."
-              )}
-              trailing={
-                <Badge variant="outline" className="text-xs px-2 py-0.5 text-muted-foreground">
-                  {t("profile.twoFactorManaged", "Managed via IdP")}
-                </Badge>
-              }
-            />
+              {/* Row 2: Two-Factor Authentication */}
+              <ListItem
+                title={t("profile.twoFactor", "Two-Factor Authentication (2FA)")}
+                description={t(
+                  "profile.twoFactorDesc",
+                  "Enforce high-assurance TOTP authenticator verification on login."
+                )}
+                trailing={
+                  <Badge variant="outline" className="text-xs px-2 py-0.5 text-muted-foreground">
+                    {t("profile.twoFactorManaged", "Managed via IdP")}
+                  </Badge>
+                }
+              />
 
-            {/* Row 3: Active Session Telemetry */}
-            <ListItem
-              title={t("profile.activeSession", "Active Session & Security Log")}
-              description={
-                <span className="font-mono text-xs">
-                  {t("profile.ipAddress", "IP")}: {user?.lastLoginIp || "127.0.0.1"} • {lastLoginText}
-                </span>
-              }
-              trailing={
-                <Badge variant="secondary" className="text-[11px] text-emerald-600 dark:text-emerald-400">
-                  {t("profile.sessionActive", "Current Session")}
-                </Badge>
-              }
-            />
-          </ListGroup>
+              {/* Row 3: Active Session Telemetry */}
+              <ListItem
+                title={t("profile.activeSession", "Active Session & Security Log")}
+                description={
+                  <span className="font-mono text-xs">
+                    {t("profile.ipAddress", "IP")}: {user?.lastLoginIp || "127.0.0.1"} • {lastLoginText}
+                  </span>
+                }
+                trailing={
+                  <Badge variant="secondary" className="text-[11px] text-emerald-600 dark:text-emerald-400">
+                    {t("profile.sessionActive", "Current Session")}
+                  </Badge>
+                }
+              />
+            </ListGroup>
+          </div>
         )}
 
         {/* --- TAB 3: API KEYS (ADMIN ONLY) --- */}

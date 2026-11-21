@@ -74,26 +74,104 @@ import {
   GlowCardBadge,
 } from '@/components/ui/glow-card';
 
+import { useUrlState } from '@/hooks/useUrlState';
+import {
+  SettingsArchetype,
+  TableArchetype,
+  DashboardArchetype,
+  FormEditorArchetype,
+} from '@/components/layout/templates';
+import { Layers, Sliders, Table2, LayoutDashboard, FileEdit } from 'lucide-react';
+
+const SHOWROOM_TABS = [
+  { id: 'primitives', label: 'Primitives & Blocks', icon: Layers },
+  { id: 'settings', label: 'Settings Archetype', icon: Sliders },
+  { id: 'table', label: 'Table Archetype', icon: Table2 },
+  { id: 'dashboard', label: 'Dashboard Archetype', icon: LayoutDashboard },
+  { id: 'form', label: 'Form Editor Archetype', icon: FileEdit },
+];
+
 /**
  * Dev-only Live Style Guide component.
  * Demonstrates composed design system blocks, semantic theme tokens, and typography.
  */
 export const StyleGuidePage: React.FC = () => {
+  const { getParam, setParam } = useUrlState();
+  const tab = getParam('tab', 'primitives');
+  const setTab = (newTab: string) => setParam('tab', newTab);
+
+  const navBar = (
+    <div className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border/70 px-4 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-subtle mb-4">
+      <div className="flex items-center gap-2">
+        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+          Cal.com Layout Showroom
+        </span>
+        <span className="text-xs text-muted-foreground hidden sm:inline">
+          Interactive Archetype & Primitives Explorer
+        </span>
+      </div>
+      <HorizontalTabs
+        tabs={SHOWROOM_TABS}
+        activeTab={tab}
+        onTabChange={setTab}
+        className="w-auto"
+      />
+    </div>
+  );
+
+  if (tab === 'settings') {
+    return (
+      <div className="min-h-screen">
+        {navBar}
+        <SettingsArchetype />
+      </div>
+    );
+  }
+
+  if (tab === 'table') {
+    return (
+      <div className="min-h-screen">
+        {navBar}
+        <TableArchetype />
+      </div>
+    );
+  }
+
+  if (tab === 'dashboard') {
+    return (
+      <div className="min-h-screen">
+        {navBar}
+        <DashboardArchetype />
+      </div>
+    );
+  }
+
+  if (tab === 'form') {
+    return (
+      <div className="min-h-screen">
+        {navBar}
+        <FormEditorArchetype />
+      </div>
+    );
+  }
+
   return (
-    <PageShell
-      title="Design System Style Guide"
-      subtitle="Canonical showcase of unified L1 and L2 primitives, layout blocks, and theme tokens."
-      actions={
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            Secondary
-          </Button>
-          <Button size="sm">
-            Primary Action
-          </Button>
-        </div>
-      }
-    >
+    <div className="min-h-screen">
+      {navBar}
+      <PageShell
+        title="Design System Style Guide"
+        subtitle="Canonical showcase of unified L1 and L2 primitives, layout blocks, and theme tokens."
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm">
+              Secondary
+            </Button>
+            <Button size="sm">
+              Primary Action
+            </Button>
+          </div>
+        }
+      >
       {/* ElevenLabs Compound Layout Pattern */}
       <section className="space-y-4">
         <div>
@@ -737,5 +815,6 @@ export const StyleGuidePage: React.FC = () => {
          </div>
        </section>
     </PageShell>
+    </div>
   );
 };
