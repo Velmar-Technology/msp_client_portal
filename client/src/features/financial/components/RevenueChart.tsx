@@ -142,8 +142,8 @@ export function RevenueChart({ data, hoveredIndex, setHoveredIndex }: RevenueCha
   const tooltipX = hoveredIndex !== null ? getX(hoveredIndex) : 0;
 
   return (
-    <div className="h-full flex flex-col justify-between rounded-lg border border-border bg-card p-3.5 shadow-xs">
-      <div className="flex items-center justify-between border-b border-border pb-2.5">
+    <div className="h-full flex flex-col justify-between rounded-lg border border-border/70 bg-card p-3.5 shadow-subtle">
+      <div className="flex items-center justify-between border-b border-border/50 pb-2.5">
         <div>
           <h3 className="text-xs font-semibold text-foreground">{t("financial.revenueVsExpenses")}</h3>
           <p className="text-[10px] text-muted-foreground">{t("financial.analysisPeriodDesc")}</p>

@@ -315,7 +315,7 @@ export function TechnicianPayrollTable() {
     <div className="flex flex-col gap-4">
       {/* Top Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-card border border-border p-4 rounded-xl shadow-xs">
+        <div className="bg-card border border-border/70 p-4 rounded-lg shadow-subtle">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Bounties (OpEx)</span>
             <DollarSign className="h-4 w-4 text-emerald-500" />
@@ -324,7 +324,7 @@ export function TechnicianPayrollTable() {
           <span className="text-[10px] text-muted-foreground">Incurred labor costs (Pre-split)</span>
         </div>
 
-        <div className="bg-card border border-border p-4 rounded-xl shadow-xs">
+        <div className="bg-card border border-border/70 p-4 rounded-lg shadow-subtle">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pending Payouts</span>
             <Clock className="h-4 w-4 text-amber-500" />
@@ -333,7 +333,7 @@ export function TechnicianPayrollTable() {
           <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Awaiting admin distribution</span>
         </div>
 
-        <div className="bg-card border border-border p-4 rounded-xl shadow-xs">
+        <div className="bg-card border border-border/70 p-4 rounded-lg shadow-subtle">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Paid Out</span>
             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -342,7 +342,7 @@ export function TechnicianPayrollTable() {
           <span className="text-[10px] text-muted-foreground">Settled commissions</span>
         </div>
 
-        <div className="bg-card border border-border p-4 rounded-xl shadow-xs">
+        <div className="bg-card border border-border/70 p-4 rounded-lg shadow-subtle">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Active Technicians</span>
             <Users className="h-4 w-4 text-primary" />
@@ -362,8 +362,8 @@ export function TechnicianPayrollTable() {
       )}
 
       {/* Controls & Table Container */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden shadow-xs">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-4 border-b border-border bg-muted/20">
+      <div className="bg-card border border-border/70 rounded-lg overflow-hidden shadow-subtle">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-4 border-b border-border/70 bg-muted/20">
           <div>
             <h3 className="text-sm font-bold text-foreground">Technician Closed-Ticket Commission Ledger</h3>
             <p className="text-xs text-muted-foreground">
@@ -378,7 +378,7 @@ export function TechnicianPayrollTable() {
               size="sm"
               onClick={handleRecalculateCommissions}
               disabled={isRecalculating || loading}
-              className="h-7 text-xs font-medium gap-1.5 cursor-pointer text-foreground hover:bg-muted"
+              className="h-7 text-xs font-medium gap-1.5 cursor-pointer text-foreground hover:bg-muted rounded-lg shadow-subtle"
             >
               <RefreshCw className={`h-3 w-3 ${isRecalculating ? 'animate-spin text-primary' : 'text-muted-foreground'}`} />
               <span>{isRecalculating ? 'Recalculating...' : 'Recalculate Financials'}</span>
@@ -390,7 +390,7 @@ export function TechnicianPayrollTable() {
               size="sm"
               onClick={handleExportCsv}
               disabled={earnings.length === 0}
-              className="h-7 text-xs font-medium gap-1 cursor-pointer"
+              className="h-7 text-xs font-medium gap-1 cursor-pointer rounded-lg shadow-subtle"
             >
               <Download className="h-3 w-3" />
               <span>Export CSV</span>
@@ -403,7 +403,7 @@ export function TechnicianPayrollTable() {
                 size="sm"
                 onClick={handleBatchPayout}
                 disabled={processing}
-                className="h-7 text-xs font-semibold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+                className="h-7 text-xs font-medium gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer rounded-lg shadow-subtle"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 <span>Mark {selectedIds.length} as Paid</span>

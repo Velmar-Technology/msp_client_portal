@@ -37,7 +37,7 @@ const ExpenseDoughnut = lazyWithRetry(() =>
 function ChartSkeletonPlaceholder({ className }: { className?: string }) {
   return (
     <div
-      className={`bg-card border border-border rounded-xl p-5 shadow-xs flex flex-col justify-between ${className || "h-72"}`}
+      className={`bg-card border border-border/70 rounded-lg p-4 shadow-subtle flex flex-col justify-between ${className || "h-72"}`}
     >
       <div className="flex justify-between items-center mb-4">
         <Skeleton className="h-5 w-36" />
@@ -188,7 +188,7 @@ export function FinancialPage() {
               <>
                 {/* Date Selector */}
                 <Select value={dateRange} onValueChange={(val) => setDateRange(val as DateRange)}>
-                  <SelectTrigger size="default" className="h-7 w-36 text-xs font-medium bg-background">
+                  <SelectTrigger size="default" className="h-7 w-36 text-xs font-medium bg-background shadow-subtle rounded-lg">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -204,7 +204,7 @@ export function FinancialPage() {
                   size="sm"
                   onClick={handleExport}
                   disabled={isExporting}
-                  className="h-7 flex items-center gap-1 px-3 text-xs font-medium cursor-pointer shadow-xs"
+                  className="h-7 flex items-center gap-1 px-3 text-xs font-medium cursor-pointer shadow-subtle rounded-lg"
                 >
                   <Download className={`h-3 w-3 text-muted-foreground ${isExporting ? "animate-spin" : ""}`} />
                   {isExporting ? t("financial.exporting") : t("financial.export")}
@@ -265,7 +265,7 @@ export function FinancialPage() {
       {/* View 2: Dedicated Transactions Ledger View */}
       <PageView type="ledger" className="space-y-4">
         <section aria-label="Dedicated Transactions Ledger">
-          <div className="bg-card border border-border rounded-xl p-5 shadow-xs">
+          <div className="bg-card border border-border/70 rounded-lg p-4 shadow-subtle">
             <div className="mb-4">
               <h2 className="text-sm font-semibold text-foreground font-heading">
                 {t("financial.views.ledger", "Transactions Ledger")}

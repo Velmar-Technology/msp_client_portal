@@ -75,9 +75,9 @@ export function ExpenseDoughnut({ categories, hoveredIndex, setHoveredIndex, tot
   const activeCategory = hoveredIndex !== null ? categories[hoveredIndex] : null;
 
   return (
-    <div className="h-full flex flex-col justify-between rounded-lg border border-border bg-card p-3.5 shadow-xs">
+    <div className="h-full flex flex-col justify-between rounded-lg border border-border/70 bg-card p-3.5 shadow-subtle">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border pb-2.5">
+      <div className="flex items-center justify-between border-b border-border/50 pb-2.5">
         <div>
           <h3 className="text-xs font-semibold text-foreground">{t("financial.expenseBreakdown")}</h3>
           <p className="text-[10px] text-muted-foreground">{t("financial.distributionDesc")}</p>

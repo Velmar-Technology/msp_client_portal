@@ -53,11 +53,11 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
   };
 
   return (
-    <div className="rounded-lg border border-border bg-card shadow-xs">
+    <div className="rounded-lg border border-border/70 bg-card shadow-subtle overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-left text-[11px] leading-normal">
           <thead>
-            <tr className="border-b border-border bg-muted/30 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <tr className="border-b border-border/70 bg-muted/40 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
               <th className="px-3.5 py-2">{t("financial.date")}</th>
               <th className="px-3.5 py-2">{t("financial.description")}</th>
               <th className="px-3.5 py-2">{t("financial.category")}</th>
@@ -65,7 +65,7 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
               <th className="px-3.5 py-2 text-right">{t("financial.amount")}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="divide-y divide-border/50">
             {paginatedTransactions.map((txn) => {
               const isPositive = txn.amount > 0;
               const formattedAmount = isPositive
@@ -102,7 +102,7 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2.5 border-t border-border bg-muted/30 px-3.5 pb-2.5 rounded-b-lg">
+        <div className="flex items-center justify-between pt-2 border-t border-border/50 bg-muted/20 px-3.5 pb-2">
           <span className="text-[10px] font-medium text-muted-foreground font-mono">
             {t("financial.pageOf").replace("{page}", String(currentPage)).replace("{total}", String(totalPages))}
           </span>
@@ -110,7 +110,7 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 cursor-pointer"
+              className="h-6 w-6 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 cursor-pointer"
               disabled={currentPage <= 1}
               onClick={() => setCurrentPage(currentPage - 1)}
             >
@@ -119,7 +119,7 @@ export function TransactionsTable({ transactions }: TransactionsTableProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 cursor-pointer"
+              className="h-6 w-6 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 cursor-pointer"
               disabled={currentPage >= totalPages}
               onClick={() => setCurrentPage(currentPage + 1)}
             >

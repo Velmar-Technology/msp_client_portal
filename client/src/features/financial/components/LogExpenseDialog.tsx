@@ -98,7 +98,7 @@ export function LogExpenseDialog({ onExpenseLogged }: LogExpenseDialogProps) {
         <Button
           variant="outline"
           size="sm"
-          className="h-7 flex items-center gap-1 px-3 text-xs font-medium cursor-pointer shadow-xs"
+          className="h-7 flex items-center gap-1 px-3 text-xs font-medium cursor-pointer shadow-subtle rounded-lg"
         >
           <Plus className="h-3 w-3 text-muted-foreground" />
           {t("financial.addExpense")}
