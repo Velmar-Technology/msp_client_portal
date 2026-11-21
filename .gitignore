@@ -39,6 +39,7 @@ tmp/
 temp/
 scratch/
 *.csv
+!**/security.csv
 velmar_avatar_monogram.jpg
 
 # Rust

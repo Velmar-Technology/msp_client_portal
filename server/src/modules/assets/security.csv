@@ -1,0 +1,6 @@
+code,module,description,roles
+assets:read,assets,View hardware assets and consumables inventory,ADMIN|TECHNICIAN|CLIENT
+assets:create,assets,Create assets and consumables,ADMIN|TECHNICIAN
+assets:update,assets,Update assets and consumables,ADMIN|TECHNICIAN
+assets:delete,assets,Delete assets and consumables,ADMIN
+assets:manage,assets,Full management of assets and consumables,ADMIN

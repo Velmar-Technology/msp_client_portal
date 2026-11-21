@@ -1,0 +1,6 @@
+code,module,description,roles
+helpdesk:kb:read,helpdesk,View knowledge base articles,ADMIN|TECHNICIAN|CLIENT|GUEST
+helpdesk:kb:create,helpdesk,Create knowledge base articles,ADMIN|TECHNICIAN
+helpdesk:kb:update,helpdesk,Update knowledge base articles,ADMIN|TECHNICIAN
+helpdesk:kb:delete,helpdesk,Delete knowledge base articles,ADMIN
+helpdesk:kb:manage,helpdesk,Full management of knowledge base articles,ADMIN

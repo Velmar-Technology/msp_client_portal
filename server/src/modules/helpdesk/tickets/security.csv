@@ -1,0 +1,9 @@
+code,module,description,roles
+helpdesk:tickets:read,helpdesk,View support tickets and timelines,ADMIN|TECHNICIAN|CLIENT|GUEST
+helpdesk:tickets:create,helpdesk,Create support tickets and responses,ADMIN|TECHNICIAN|CLIENT|GUEST
+helpdesk:tickets:update,helpdesk,Update ticket status and assign technicians,ADMIN|TECHNICIAN
+helpdesk:tickets:delete,helpdesk,Delete support tickets,ADMIN
+helpdesk:tickets:manage,helpdesk,Full management of helpdesk tickets,ADMIN
+tickets:read,helpdesk,View support tickets (legacy alias),ADMIN|TECHNICIAN|CLIENT
+tickets:create,helpdesk,Create support tickets (legacy alias),ADMIN|TECHNICIAN|CLIENT
+tickets:manage,helpdesk,Manage support tickets (legacy alias),ADMIN|TECHNICIAN

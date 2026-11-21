@@ -1,0 +1,6 @@
+code,module,description,roles
+assets:consumables:read,assets,View consumable inventory and checkouts,ADMIN|TECHNICIAN|CLIENT
+assets:consumables:create,assets,Create consumable records,ADMIN|TECHNICIAN
+assets:consumables:update,assets,Update consumable inventory and checkouts,ADMIN|TECHNICIAN
+assets:consumables:delete,assets,Delete consumable records,ADMIN
+assets:consumables:manage,assets,Full management of consumable supplies,ADMIN

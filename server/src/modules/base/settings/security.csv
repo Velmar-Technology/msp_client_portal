@@ -1,0 +1,3 @@
+code,module,description,roles
+settings:read,base,View tenant configuration and settings,ADMIN|TECHNICIAN|CLIENT|GUEST
+settings:manage,base,Manage and update tenant configuration,ADMIN
