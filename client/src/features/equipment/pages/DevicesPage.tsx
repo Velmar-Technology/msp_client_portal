@@ -426,7 +426,7 @@ export function DevicesPage() {
               type="button"
               size="sm"
               onClick={handleOpenAddDevice}
-              className="h-8 px-3.5 rounded-xl text-xs font-semibold gap-1.5 cursor-pointer shadow-2xs"
+              className="h-7 px-3 rounded-lg text-xs font-medium gap-1.5 cursor-pointer shadow-subtle"
             >
               <Plus className="h-3.5 w-3.5" />
               <span>{t("devices.addDevice", "Add Device")}</span>
@@ -439,7 +439,7 @@ export function DevicesPage() {
                 onClick={() =>
                   handleOpenActivateWithOtp(firstAvailableSlot.subscription_id, firstAvailableSlot.slot_index)
                 }
-                className="h-8 px-3.5 rounded-xl text-xs font-semibold gap-1.5 cursor-pointer shadow-2xs"
+                className="h-7 px-3 rounded-lg text-xs font-medium gap-1.5 cursor-pointer shadow-subtle"
               >
                 <Laptop className="h-3.5 w-3.5" />
                 <span>{t("devices.activateDevice", "Activate Device")}</span>
@@ -449,64 +449,64 @@ export function DevicesPage() {
         }
       >
       {(currentView === "list" || currentView === "tiled") && (
-        <div className="space-y-3 mb-4">
-          <PageSearchInput
-            value={searchTerm}
-            onChange={setSearchTerm}
-            placeholder={isAdmin ? t("devices.adminSearchPlaceholder") : t("devices.searchPlaceholder")}
-          />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
+          <div className="w-full sm:w-72">
+            <PageSearchInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder={isAdmin ? t("devices.adminSearchPlaceholder") : t("devices.searchPlaceholder")}
+            />
+          </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Status Filter */}
-              <PageFilterPill
-                label={t("devices.tableStatus")}
-                value={selectedStatus && selectedStatus !== "all" ? selectedStatus : ""}
-                options={statusFilterOptions}
-                onChange={setSelectedStatus}
-                onClear={() => setSelectedStatus("")}
-              />
-              <span className="sr-only">{t("devices.filterAllStatuses")}</span>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Status Filter */}
+            <PageFilterPill
+              label={t("devices.tableStatus")}
+              value={selectedStatus && selectedStatus !== "all" ? selectedStatus : ""}
+              options={statusFilterOptions}
+              onChange={setSelectedStatus}
+              onClear={() => setSelectedStatus("")}
+            />
+            <span className="sr-only">{t("devices.filterAllStatuses")}</span>
 
-              {/* Client Filter for Admins */}
-              {isAdmin && uniqueClients.length > 0 && (
-                <>
-                  <PageFilterPill
-                    label={t("devices.tableClientTenant")}
-                    value={selectedClient && selectedClient !== "all" ? selectedClient : ""}
-                    options={clientFilterOptions}
-                    onChange={setSelectedClient}
-                    onClear={() => setSelectedClient("")}
-                  />
-                  <span className="sr-only">{t("devices.filterAllClients")}</span>
-                </>
-              )}
-
-              {/* Multi-Subscription Selector */}
-              {activeSubscriptions.length > 1 && !isAdmin && (
-                <SubscriptionSelector
-                  subscriptions={activeSubscriptions}
-                  selectedId={selectedSubscriptionId || activeSub?.id || ""}
-                  onChange={setSelectedSubscriptionId}
+            {/* Client Filter for Admins */}
+            {isAdmin && uniqueClients.length > 0 && (
+              <>
+                <PageFilterPill
+                  label={t("devices.tableClientTenant")}
+                  value={selectedClient && selectedClient !== "all" ? selectedClient : ""}
+                  options={clientFilterOptions}
+                  onChange={setSelectedClient}
+                  onClear={() => setSelectedClient("")}
                 />
-              )}
+                <span className="sr-only">{t("devices.filterAllClients")}</span>
+              </>
+            )}
 
-              {hasActiveFilters && (
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  onClick={handleClearAllFilters}
-                  className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer rounded-full"
-                >
-                  <X className="size-3 mr-1" />
-                  {t("common.clearFilters", "Clear all")}
-                </Button>
-              )}
-            </div>
+            {/* Multi-Subscription Selector */}
+            {activeSubscriptions.length > 1 && !isAdmin && (
+              <SubscriptionSelector
+                subscriptions={activeSubscriptions}
+                selectedId={selectedSubscriptionId || activeSub?.id || ""}
+                onChange={setSelectedSubscriptionId}
+              />
+            )}
 
-            <div className="flex items-center gap-2">
-              <PageViewSwitcher size="sm" />
-            </div>
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={handleClearAllFilters}
+                className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer rounded-full"
+              >
+                <X className="size-3 mr-1" />
+                {t("common.clearFilters", "Clear all")}
+              </Button>
+            )}
+
+            <div className="h-4 w-px bg-border/60 mx-1 hidden sm:block" />
+
+            <PageViewSwitcher size="sm" />
           </div>
         </div>
       )}
@@ -563,7 +563,7 @@ export function DevicesPage() {
                 />
               </PageContentCard>
             ) : (
-              <PageContentCard className="p-0 border-border/70 overflow-hidden">
+              <div className="rounded-lg border border-border/70 overflow-hidden bg-card shadow-subtle">
                 <DataTable
                   columns={equipmentColumns}
                   data={paginatedEquipment}
@@ -577,7 +577,7 @@ export function DevicesPage() {
                   sorting={sorting}
                   onSortingChange={setSorting}
                 />
-              </PageContentCard>
+              </div>
             )}
           </PageView>
 
